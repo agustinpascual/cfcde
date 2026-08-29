@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { criarPix } from "@/lib/pinpay";
 import { excedeu, ipDe } from "@/lib/limite";
 import { calcularTotal, type IdFrete } from "@/lib/precos";
+import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,6 +74,30 @@ export async function POST(req: Request) {
       } catch (e) {
         console.error("[pinpay] falha ao gerar QR local:", (e as Error).message);
       }
+    }
+
+    /* Registra o pedido. Se o banco falhar, a cobrança já existe na PinPay —
+       então logamos e seguimos, em vez de derrubar a compra do cliente. */
+    const db = supabaseAdmin();
+    if (db) {
+      const { error } = await db.from("pedidos").insert({
+        referencia: pedido,
+        pix_id: cobranca.id,
+        status: "pendente",
+        valor_centavos: valores.total,
+        subtotal_centavos: valores.subtotal,
+        desconto_centavos: valores.desconto,
+        frete_centavos: valores.frete.centavos,
+        kit: valores.kit.nome,
+        quantidade: qtd,
+        frete_tipo: valores.frete.nome,
+        cliente_nome: nome,
+        cliente_email: email,
+        cliente_documento: documento,
+        cliente_telefone: soDigitos(body.celular) || null,
+        endereco: (body.endereco && typeof body.endereco === "object") ? body.endereco : null,
+      });
+      if (error) console.error("[pix] falha ao registrar pedido:", error.message);
     }
 
     // devolve só o que o front precisa — nada de credencial

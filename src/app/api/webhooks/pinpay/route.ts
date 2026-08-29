@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,15 +44,48 @@ export async function POST(req: Request) {
   const { event, data } = envelope;
   const referencia = (data?.external_reference ?? data?.transaction_id ?? data?.id) as string | undefined;
 
+  const db = supabaseAdmin();
+  const pixId = (data?.transaction_id ?? data?.id) as string | undefined;
+  const ref = data?.external_reference as string | undefined;
+
+  /* Idempotente: a PinPay reenvia o mesmo evento, e marcar como pago duas
+     vezes tem que dar no mesmo. */
+  async function marcar(status: string, pago = false) {
+    if (!db) return;
+    const alvo = db.from("pedidos").update({
+      status,
+      ...(pago ? { pago_em: new Date().toISOString() } : {}),
+    });
+    const { error } = pixId ? await alvo.eq("pix_id", pixId)
+                 : ref     ? await alvo.eq("referencia", ref)
+                           : { error: new Error("evento sem identificador") };
+    if (error) console.error("[pinpay] falha ao atualizar pedido:", error.message);
+  }
+
+  // guarda o evento cru, para auditoria
+  if (db) {
+    await db.from("eventos_webhook").insert({
+      provedor: "pinpay", evento: event ?? "desconhecido",
+      pix_id: pixId ?? null, payload: envelope, processado: true,
+    });
+  }
+
   switch (event) {
     case "payment_approved":
-      // TODO: marcar o pedido como pago no seu banco e disparar a confirmação.
-      // Precisa ser idempotente: a PinPay pode reenviar o mesmo evento.
+      await marcar("aprovado", true);
       console.info("[pinpay] pagamento aprovado:", referencia);
       break;
     case "payment_failed":
+      await marcar("falhou");
+      console.info("[pinpay] pagamento falhou:", referencia);
+      break;
     case "payment_expired":
-      console.info(`[pinpay] ${event}:`, referencia);
+      await marcar("expirado");
+      console.info("[pinpay] cobrança expirada:", referencia);
+      break;
+    case "payment_refunded":
+      await marcar("estornado");
+      console.info("[pinpay] estorno:", referencia);
       break;
     default:
       console.info("[pinpay] evento ignorado:", event, referencia);

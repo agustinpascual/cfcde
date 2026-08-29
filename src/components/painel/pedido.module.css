@@ -1,0 +1,38 @@
+.voltar { margin-bottom: 16px; }
+.voltar a { font-size: 13px; color: #2f5fd0; }
+.voltar a:hover { text-decoration: underline; }
+
+.topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.seloGrande { font-size: 13px; padding: 7px 15px; }
+.pagamento { font-size: 13px; font-weight: 600; color: #475569; }
+.pagoEm { font-size: 12.5px; color: #64748b; margin-left: auto; }
+
+.grade { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.bloco { min-width: 0; }
+.blocoLargo { grid-column: 1 / -1; }
+.titulo { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: #64748b; margin-bottom: 16px; }
+
+.campos { display: flex; flex-direction: column; gap: 13px; }
+.campos > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.campos dt { font-size: 12.5px; color: #64748b; flex: 0 0 auto; }
+.campos dd { font-size: 13.5px; color: #16202e; text-align: right; overflow-wrap: anywhere; }
+
+.endereco { display: flex; flex-direction: column; gap: 4px; font-style: normal; font-size: 13.5px; color: #16202e; line-height: 1.5; }
+.frete { margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f3f6; font-size: 12.5px; color: #64748b; }
+.vazio { font-size: 13px; color: #94a3b8; }
+
+.item { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f3f6; }
+.itemNome { font-size: 15px; font-weight: 700; color: #16202e; }
+.qtd { font-style: normal; font-weight: 400; color: #64748b; margin-left: 7px; }
+.itemValor { font-size: 15px; font-weight: 700; color: #16202e; }
+
+.valores { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; }
+.valores > div { display: flex; justify-content: space-between; font-size: 13.5px; color: #475569; }
+.desconto dt, .desconto dd { color: #12a742; font-weight: 600; }
+.total { margin-top: 8px; padding-top: 14px; border-top: 1px solid #e6e9ee; font-size: 18px; font-weight: 800; color: #16202e; }
+.total dt, .total dd { font-size: 18px; font-weight: 800; color: #16202e; }
+
+.pixId { margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f3f6; font-size: 11.5px; color: #94a3b8; }
+.pixId code { font-family: ui-monospace, Menlo, monospace; background: #f6f7f9; border-radius: 4px; padding: 2px 6px; }
+
+@media (max-width: 860px) { .grade { grid-template-columns: 1fr; } .pagoEm { margin-left: 0; width: 100%; } }

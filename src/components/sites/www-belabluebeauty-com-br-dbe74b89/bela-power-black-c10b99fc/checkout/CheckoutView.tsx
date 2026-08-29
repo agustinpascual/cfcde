@@ -146,8 +146,11 @@ export default function CheckoutView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nome, email, documento: doc,
+          nome, email, documento: doc, celular, nascimento,
           kitIndex: carrinho.kitIndex, qtd: carrinho.qtd, frete: envio,
+          endereco: endereco
+            ? { ...endereco, cep, numero, complemento }
+            : null,
         }),
       });
       const d = await r.json();

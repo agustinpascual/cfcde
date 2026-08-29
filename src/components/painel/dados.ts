@@ -23,6 +23,19 @@ export type Pedido = {
   cliente_email: string | null; criado_em: string; pago_em: string | null;
 };
 
+export type Endereco = {
+  logradouro?: string; numero?: string; complemento?: string;
+  bairro?: string; localidade?: string; uf?: string; cep?: string;
+};
+
+export type PedidoDetalhe = Pedido & {
+  pix_id: string | null;
+  subtotal_centavos: number; desconto_centavos: number; frete_centavos: number;
+  frete_tipo: string | null;
+  cliente_documento: string | null; cliente_telefone: string | null;
+  endereco: Endereco | null;
+};
+
 const VAZIO_RESUMO: Resumo = {
   pedidos_total: 0, pedidos_pagos: 0, pedidos_pendentes: 0,
   receita_centavos: 0, receita_hoje_centavos: 0, pedidos_hoje: 0,
@@ -121,6 +134,10 @@ export const lerPedidos = (limite = 50) =>
     db.from("pedidos")
       .select("id,referencia,status,valor_centavos,kit,quantidade,cliente_nome,cliente_email,criado_em,pago_em")
       .order("criado_em", { ascending: false }).limit(limite));
+
+export const lerPedido = (id: string) =>
+  ler<PedidoDetalhe | null>("pedido", null, (db) =>
+    db.from("pedidos").select("*").eq("id", id).single());
 
 export const moeda = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

@@ -71,3 +71,6 @@
 }
 .sair { display: inline-block; color: #9fb3d6; font-size: 12px; margin-bottom: 8px; text-decoration: underline; }
 .sair:hover { color: #fff; }
+.linkPedido { color: #2f5fd0; font-weight: 700; }
+.linkPedido:hover { text-decoration: underline; }
+.formaPgto { display: block; font-size: 11px; color: #94a3b8; margin-top: 4px; font-weight: 600; }
