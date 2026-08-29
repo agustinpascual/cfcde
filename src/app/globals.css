@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Tokens extraídos de https://www.belabluebeauty.com.br/bela-power-black/
+   ============================================================ */
+:root {
+  --bb-navy: #0b2860;            /* rgb(11,40,96)   — cor primária da marca */
+  --bb-navy-mid: #12336e;        /* rgb(18,51,110)  — borda kit ativo / badge duração */
+  --bb-navy-btn: #1e4081;        /* rgb(30,64,129)  — botão newsletter */
+  --bb-navy-input: #1d3f82;      /* rgb(29,63,130)  — borda input newsletter */
+  --bb-navy-soft: #a6b6d5;       /* rgb(166,182,213)— texto newsletter */
+
+  --bb-green: #0ab83e;           /* rgb(10,184,62)  — PIX / sucesso */
+  --bb-green-wpp: #13b918;       /* rgb(19,185,24)  — WhatsApp / borda economia */
+
+  --bb-gold: #d4b45d;            /* rgb(212,180,93) — barra dourada */
+  --bb-gold-light: #e3c878;      /* rgb(227,200,120)*/
+  --bb-gold-dark: #a77b24;       /* rgb(167,123,36) */
+  --bb-gold-badge: #e5cc89;      /* rgb(229,204,137)*/
+  --bb-gold-black-span: #d8b85f; /* rgb(216,184,95) — "BLACK" no título */
+  --bb-gold-linha: #8f6c24;      /* rgb(143,108,36) — texto "LINHA BLACK" */
+  --bb-gold-linha-bg: #f7f2e5;   /* rgb(247,242,229)*/
+
+  --bb-star: #fbbc04;            /* rgb(251,188,4) */
+  --bb-star-half: #ffd700;       /* rgb(255,215,0) */
+
+  --bb-text: #212121;            /* rgb(33,33,33) */
+  --bb-text-2: #333333;
+  --bb-text-3: #222222;
+  --bb-muted: #91979a;           /* rgb(145,151,154) */
+  --bb-muted-2: #999999;
+  --bb-muted-3: #666666;
+  --bb-gray-bg: #f9f9f9;         /* rgb(249,249,249) */
+  --bb-gray-line: #dedede;       /* rgb(222,222,222) */
+  --bb-border: #e9e9e9;          /* rgb(233,233,233) */
+  --bb-pink-red: #e76570;        /* rgb(231,101,112) — badge % OFF do kit */
+
+  --bb-font: var(--font-instrument-sans), "Instrument Sans", sans-serif;
+  --bb-font-lato: var(--font-lato), "Lato", sans-serif;
+}
+
+/* Reset alinhado ao baseline do site (bootstrap-like) */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--bb-font);
+  font-size: 13px;
+  line-height: 18.59px;
+  color: var(--bb-text);
+  background: #fff;
+}
+h1, h2, h3, h4, h5, h6, p, ul, ol, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; }
+img { max-width: 100%; }
+
+/* container do site: 1440 na viewport desktop, max 1720 */
+.bb-container { width: 100%; max-width: 1720px; margin: 0 auto; padding: 0 20px; }
+
+/* ---------- Spinner circular das opções ---------- */
+@keyframes circularLoading { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+/* ---------- Indicador "online" do chat ---------- */
+@keyframes onlineIndicator {
+  0%   { transform: scale(1);   box-shadow: 0 2px 8px rgba(16,185,129,.4), 0 0 0 0 rgba(16,185,129,.7); }
+  50%  { transform: scale(1.1); box-shadow: 0 2px 8px rgba(16,185,129,.6), 0 0 0 6px rgba(16,185,129,0); }
+  100% { transform: scale(1);   box-shadow: 0 2px 8px rgba(16,185,129,.4), 0 0 0 0 rgba(16,185,129,0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-spinner, .bb-online-dot { animation: none !important; }
+}

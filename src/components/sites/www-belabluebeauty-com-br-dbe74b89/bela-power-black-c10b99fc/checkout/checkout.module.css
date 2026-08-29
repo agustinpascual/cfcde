@@ -1,0 +1,224 @@
+/* ==========================================================================
+   Checkout — valores de getComputedStyle() de
+   https://www.belabluebeauty.com.br/checkout/ em 1440px
+   ========================================================================== */
+.pagina { background: #f2f3f8; min-height: 100vh; }
+
+/* ---- barra do topo ---- */
+.topo { background: #fff; }
+.topoInner { display: flex; justify-content: space-between; align-items: center; padding: 22px 20px; }
+.topoLogo img { width: 75px; height: 44px; object-fit: contain; }
+.security { display: flex; align-items: center; gap: 4px; }
+.securityIcon { width: 34px; height: 34px; color: var(--bb-navy); flex: 0 0 34px; }
+.securityT { font-size: 12px; color: var(--bb-text); line-height: 17.16px; }
+.securityB { font-size: 16px; font-weight: 700; color: var(--bb-text); line-height: 22.88px; }
+
+/* ---- layout ---- */
+.secao { padding: 30px 0 50px; }
+.colunas { display: flex; align-items: flex-start; gap: 0; min-width: 0; }
+
+/* ---- coluna esquerda (formulário) ---- */
+.main { flex: 0 0 58.3333%; max-width: 58.3333%; background: #fff; padding: 40px; border: 1px solid #efefef; border-radius: 4px; color: var(--bb-text-2); }
+.grupo { margin-bottom: 30px; }
+.grupoTitulo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.grupoTitulo span { font-size: 21px; font-weight: 700; color: var(--bb-text-2); line-height: 25.19px; }
+.grupoLink { font-size: 14px; color: var(--bb-text-2); text-decoration: underline; }
+.linha { display: flex; gap: 14px; }
+.campo { flex: 1 1 auto; position: relative; min-width: 0; }
+.input { width: 100%; height: 50px; padding: 18px; border-radius: 8px; border: 1px solid #ced4da; background: #fff; color: var(--bb-text-2); font-size: 15px; outline: none; }
+.input:focus { border-color: var(--bb-text-2); }
+.inputErro { border-color: #f1aeb5; background: #fdf2f3; }
+.rotulo { position: absolute; top: -8px; left: 12px; background: #fff; padding: 0 5px; font-size: 12px; color: #6c757d; }
+.rotulo em { color: #dc3545; font-style: normal; }
+.btnEscuro { height: 50px; padding: 0 18px; min-width: 111px; background: var(--bb-text-2); color: #fff; font-size: 15px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.btnEscuro:hover { background: #111; }
+.btnEscuro:disabled { opacity: .55; cursor: default; }
+.erro { font-size: 12px; color: #dc3545; margin-top: 6px; }
+.ok { font-size: 13px; color: #198754; margin-top: 8px; }
+
+.checkbox { display: flex; gap: 7px; align-items: center; font-size: 13px; color: var(--bb-text-2); cursor: pointer; }
+.checkbox input { width: 18px; height: 18px; accent-color: var(--bb-text-2); }
+.obs { width: 100%; margin-top: 10px; min-height: 80px; padding: 14px; border-radius: 8px; border: 1px solid #ced4da; font-size: 14px; resize: vertical; outline: none; font-family: inherit; }
+
+/* ---- pagamento ---- */
+.pagSub { font-size: 13px; color: var(--bb-text-2); margin-bottom: 14px; }
+.listaPag { border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; }
+.pagItem { display: flex; align-items: center; gap: 12px; padding: 18px 20px; cursor: pointer; background: #fff; }
+.pagItem + .pagItem { border-top: 1px solid #dee2e6; }
+.pagItemAtivo { background: #fbfbfc; }
+.pagRadio { width: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--bb-text-2); }
+.pagNome { flex: 1 1 auto; font-size: 15px; color: var(--bb-text-2); }
+.pagBandeiras { display: flex; align-items: center; gap: 6px; }
+.pagBandeiras img { width: 36px; height: 22px; object-fit: contain; border-radius: 3px; }
+.pagMais { font-size: 12px; color: var(--bb-text-2); border: 1px solid #dee2e6; border-radius: 4px; padding: 4px 8px; background: #fff; }
+.pagDetalhe { padding: 0 20px 18px 52px; font-size: 13px; color: #6c757d; line-height: 19px; background: #fbfbfc; }
+
+.btnFinalizar { width: 100%; height: 54px; background: var(--bb-navy); color: #fff; font-size: 16px; font-weight: 700; border-radius: 8px; margin-top: 24px; }
+.btnFinalizar:hover { background: var(--bb-navy-mid); }
+.btnFinalizar:disabled { opacity: .5; cursor: default; }
+.aviso { font-size: 12px; color: #6c757d; margin-top: 12px; text-align: center; line-height: 17px; }
+
+.rodapeLinks { padding-top: 20px; margin-top: 24px; border-top: 1px solid #efefef; }
+.rodapeLinks ul { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.rodapeLinks span { font-size: 13px; color: var(--bb-text-2); }
+
+/* ---- coluna direita (resumo) ---- */
+.resumo { flex: 1 1 0; min-width: 0; background: var(--bb-gray-bg); padding: 40px 55px 40px 40px; border-radius: 4px; color: var(--bb-text-2); }
+.dropList { padding: 0 5px 20px 0; }
+.itemLinha { display: flex; padding-top: 5px; gap: 0; }
+.thumb { position: relative; width: 60px; height: 60px; flex: 0 0 60px; }
+.thumb img { width: 60px; height: 60px; border-radius: 8px; border: 1px solid #eee; object-fit: cover; }
+.badge { position: absolute; top: -5px; right: -9px; width: 18px; height: 18px; background: var(--bb-text-2); color: #fff; font-size: 11px; border-radius: 9px; border: 1px solid var(--bb-gray-bg); display: flex; justify-content: center; align-items: center; }
+.det { flex: 1 1 auto; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-left: 15px; }
+.produtoNome { display: block; font-size: 15px; font-weight: 500; color: var(--bb-text-2); line-height: 18px; overflow-wrap: anywhere; }
+.produtoVariacao { display: block; font-size: 12px; color: #6c757d; margin-top: 4px; }
+.valores { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; }
+.valorOriginal { font-size: 12px; text-decoration: line-through; color: var(--bb-text-2); line-height: 14px; }
+.valorParcial { font-size: 14px; color: var(--bb-text-2); line-height: 20px; }
+
+.cupomForm { display: flex; gap: 15px; height: 50px; }
+.cupomInput { flex: 1 1 auto; min-width: 0; height: 50px; padding: 18px; border-radius: 8px; border: 1px solid #ced4da; background: #fff; font-size: 15px; color: var(--bb-text-2); outline: none; }
+
+.dropFooter { padding-top: 30px; }
+.totalLinha { display: flex; justify-content: space-between; align-items: center; font-size: 14px; line-height: 20px; margin-bottom: 6px; }
+.totalFinal { display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: 600; line-height: 25.73px; margin-top: 10px; }
+
+.avaliacoesCheckout { display: flex; gap: 10px; margin-top: 30px; }
+.avalItem { flex: 1 1 0; max-width: calc(50% - 5px); background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
+.avalProduto { font-size: 11px; font-weight: 600; color: var(--bb-text-2); line-height: 15.72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avalVoto { color: #ffc107; font-size: 14px; line-height: 20px; margin-top: 4px; }
+.avalComentario { font-size: 14px; line-height: 16.8px; margin: 5px 0; color: var(--bb-text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.avalNome { font-size: 10px; font-weight: 500; margin-top: 8px; color: #6c757d; text-transform: uppercase; }
+.avalNav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.avalBtn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #ddd; background: #fff; display: flex; align-items: center; justify-content: center; color: var(--bb-text-2); }
+.avalBtn:hover { border-color: var(--bb-text-2); }
+
+/* ---- responsivo ---- */
+@media (max-width: 991px) {
+  .colunas { flex-direction: column; }
+  .main, .resumo { flex: 1 1 100%; max-width: 100%; width: 100%; }
+  .resumo { padding: 30px 20px; margin-top: 16px; }
+  .main { padding: 24px 20px; }
+}
+@media (max-width: 767px) {
+  .secao { padding: 16px 0 30px; }
+  .grupoTitulo span { font-size: 18px; }
+  .linha { flex-wrap: wrap; }
+  .campo { flex: 1 1 100%; }
+  .btnEscuro { flex: 1 1 100%; }
+  .cupomForm { flex-wrap: wrap; height: auto; }
+  .cupomInput { flex: 1 1 100%; }
+  .avaliacoesCheckout { flex-direction: column; }
+  .avalItem { max-width: 100%; }
+  .topoInner { padding: 14px 20px; }
+  .securityT { display: none; }
+  .securityB { font-size: 14px; }
+  .det { flex-wrap: wrap; gap: 6px; }
+}
+
+/* ---- opções de envio ---- */
+.listaEnvio { margin-top: 12px; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; }
+.envioItem { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; background: #fff; }
+.envioItem + .envioItem { border-top: 1px solid #dee2e6; }
+.envioItemAtivo { background: #fbfbfc; }
+.envioNome { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--bb-text-2); }
+.envioTag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; background: var(--bb-navy); color: #fff; border-radius: 20px; padding: 3px 8px; }
+.envioPrazo { flex: 0 0 auto; font-size: 13px; color: #6c757d; }
+.envioPreco { flex: 0 0 auto; min-width: 74px; text-align: right; font-size: 15px; font-weight: 800; color: var(--bb-text-2); }
+.envioGratis { color: #12a742; }
+@media (max-width: 767px) {
+  .envioItem { flex-wrap: wrap; gap: 6px 10px; }
+  .envioNome { flex: 1 1 100%; }
+  .envioPrazo { flex: 1 1 auto; }
+}
+
+/* ---- carrinho recolhível no topo (vem fechado) ---- */
+.carrinho { background: #fff; border: 1px solid #efefef; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+.carrinhoBarra { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; background: #fff; text-align: left; }
+.carrinhoBarra:hover { background: #fafbfc; }
+.carrinhoEsq { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.carrinhoIcone { color: var(--bb-navy); flex: 0 0 20px; }
+.carrinhoLabel { font-size: 15px; font-weight: 600; color: var(--bb-navy); }
+.carrinhoQtd { font-weight: 400; color: #6c757d; margin-left: 4px; }
+.carrinhoSeta { color: var(--bb-navy); transition: transform .22s ease; flex: 0 0 18px; }
+.carrinhoAberto .carrinhoSeta { transform: rotate(180deg); }
+.carrinhoTotal { font-size: 20px; font-weight: 800; color: var(--bb-text-2); white-space: nowrap; }
+.carrinhoCorpo { padding: 4px 22px 22px; border-top: 1px solid #efefef; }
+.carrinhoCorpo .itemLinha { padding-top: 18px; }
+.carrinhoCorpo .thumb { width: 72px; height: 72px; flex: 0 0 72px; }
+.carrinhoCorpo .thumb img { width: 72px; height: 72px; }
+.carrinhoCorpo .cupomForm { margin-top: 20px; }
+.produtoDesc { display: block; font-size: 12px; color: #6c757d; margin-top: 3px; }
+
+/* ---- aside vira prova social ---- */
+.asideTitulo { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: #6c757d; margin-bottom: 12px; }
+.garantias { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+.garantias li { font-size: 13px; color: var(--bb-text-2); line-height: 18px; }
+
+@media (max-width: 767px) {
+  .carrinhoBarra { padding: 14px 16px; gap: 10px; }
+  .carrinhoLabel { font-size: 14px; }
+  .carrinhoQtd { display: block; margin-left: 0; font-size: 12px; }
+  .carrinhoTotal { font-size: 18px; }
+  .carrinhoCorpo { padding: 4px 16px 18px; }
+}
+
+/* ---- grade de campos (dados pessoais / endereço) ---- */
+.grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px 14px; margin-top: 22px; }
+.campoLargo { grid-column: 1 / -1; }
+.campoUf { position: relative; min-width: 0; }
+.campoUf .input { text-transform: uppercase; }
+.grade .input[readonly] { background: #f6f7f9; color: #6c757d; }
+.faltando { font-size: 12px; color: #6c757d; margin-top: 8px; text-align: center; }
+
+/* ---- carrossel de depoimentos ---- */
+.asideQtd { font-weight: 400; color: #adb5bd; }
+.avaliacoesCheckout .avalItem { animation: coFade .45s ease both; }
+@keyframes coFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.avalProgresso { height: 3px; background: #e6e8ec; border-radius: 3px; margin-top: 14px; overflow: hidden; }
+.avalProgressoFill { display: block; height: 100%; background: var(--bb-navy); border-radius: 3px; transition: width .45s ease; }
+@media (prefers-reduced-motion: reduce) { .avaliacoesCheckout .avalItem { animation: none; } }
+
+@media (max-width: 767px) {
+  .grade { grid-template-columns: 1fr; gap: 20px; }
+  .campoUf { grid-column: auto; }
+}
+
+/* ---- PIX como única forma de pagamento ---- */
+.pagIcone { object-fit: contain; margin-right: 8px; vertical-align: middle; }
+.pagNome { display: flex; align-items: center; }
+.pagSelo { flex: 0 0 auto; background: #12a742; color: #fff; font-size: 12px; font-weight: 800; border-radius: 20px; padding: 5px 11px; letter-spacing: .3px; }
+.linhaDesconto span { color: #12a742; font-weight: 700; }
+
+/* No checkout não existe a barra fixa de compra, então a notificação
+   pode encostar no rodapé da tela. */
+.pagina { --bb-toast-bottom: 10px; }
+@media (max-width: 767px) { .pagina { --bb-toast-bottom: 8px; } }
+
+/* spinner dentro do campo de CEP durante a consulta */
+.campoSpinner { position: absolute; right: 16px; top: 50%; margin-top: -9px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #dee2e6; border-top-color: var(--bb-navy); animation: coGira .7s linear infinite; }
+@keyframes coGira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .campoSpinner { animation-duration: 2s; } }
+
+/* ---- painel do PIX ---- */
+.pix { margin-top: 22px; padding: 26px 24px; border: 1px solid #dee2e6; border-radius: 12px; background: #fff; text-align: center; }
+.pixTitulo { font-size: 19px; font-weight: 700; color: var(--bb-text-2); margin-bottom: 6px; }
+.pixTexto { font-size: 14px; color: #6c757d; line-height: 20px; }
+.pixQr { display: block; margin: 20px auto 14px; width: 220px; height: 220px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
+.pixLabel { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #adb5bd; font-weight: 700; margin-bottom: 8px; }
+.pixCopia { display: flex; gap: 10px; align-items: stretch; }
+.pixCodigo { flex: 1 1 auto; min-width: 0; background: #f6f7f9; border: 1px solid #e6e8ec; border-radius: 8px; padding: 13px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--bb-text-2); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pixEspera { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; font-size: 13px; color: #6c757d; }
+.pixPulso { width: 9px; height: 9px; border-radius: 50%; background: #12a742; animation: coPulso 1.4s ease-in-out infinite; }
+.pixTempo { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--bb-text-2); }
+@keyframes coPulso { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.82); } }
+
+.pixAprovado { border-color: #12a742; background: #f4fcf6; }
+.pixCheck { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: #12a742; color: #fff; font-size: 30px; display: flex; align-items: center; justify-content: center; }
+
+@media (prefers-reduced-motion: reduce) { .pixPulso { animation: none; } }
+@media (max-width: 767px) {
+  .pix { padding: 20px 16px; }
+  .pixCopia { flex-direction: column; }
+  .pixQr { width: 190px; height: 190px; }
+}
