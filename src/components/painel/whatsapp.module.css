@@ -1,0 +1,22 @@
+.barra { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.estado { font-size: 12px; font-weight: 700; border-radius: 20px; padding: 6px 13px; }
+.estadoOn { background: #ecfdf5; color: #047857; }
+.estadoOff { background: #f1f5f9; color: #64748b; }
+.btnTreinar { margin-left: auto; background: #0b2860; color: #fff; font-size: 13px; font-weight: 700; border-radius: 9px; padding: 10px 18px; }
+.btnTreinar:hover { background: #12336e; }
+
+.lista { display: flex; flex-direction: column; }
+.item { display: flex; align-items: center; gap: 13px; padding: 14px 4px; border-bottom: 1px solid #f1f3f6; }
+.item:last-child { border-bottom: 0; }
+.avatar { flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; background: #0b2860; color: #fff; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.corpo { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.linhaTopo { display: flex; align-items: baseline; gap: 10px; }
+.nome { font-size: 14px; color: #16202e; }
+.hora { font-size: 11.5px; color: #94a3b8; margin-left: auto; white-space: nowrap; }
+.previa { font-size: 13px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marcas { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+.naoLidas { background: #12a742; color: #fff; font-size: 11px; font-weight: 700; border-radius: 20px; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+.humano { background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 700; border-radius: 20px; padding: 3px 9px; }
+.pendente { background: #fffbeb; color: #b45309; font-size: 11px; font-weight: 700; border-radius: 20px; padding: 3px 9px; }
+
+@media (max-width: 600px) { .btnTreinar { margin-left: 0; width: 100%; text-align: center; } }

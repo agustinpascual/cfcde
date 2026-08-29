@@ -60,22 +60,30 @@ export async function POST(req: Request) {
   };
 
   try {
-    await db.from("sessoes").upsert(sessaoLinha, { onConflict: "sessao" });
+    /* O supabase-js devolve o erro no objeto, não lança. Sem checar,
+       a rota respondia ok:true mesmo com a tabela inexistente. */
+    const { error: erroSessao } = await db
+      .from("sessoes").upsert(sessaoLinha, { onConflict: "sessao" });
+    if (erroSessao) {
+      console.error("[track] sessoes:", erroSessao.message);
+      return NextResponse.json({ ok: false, motivo: erroSessao.message }, { status: 202 });
+    }
 
     const tipo = txt(corpo.tipo, 20);
     // heartbeat não vira evento — só atualiza visto_em acima
     if (tipo && TIPOS.has(tipo)) {
-      await db.from("eventos").insert({
+      const { error: erroEvento } = await db.from("eventos").insert({
         sessao,
         tipo,
         pagina: txt(corpo.pagina, 160),
         dados: (corpo.dados && typeof corpo.dados === "object" ? corpo.dados : {}) as object,
       });
+      if (erroEvento) console.error("[track] eventos:", erroEvento.message);
     }
   } catch (e) {
     console.error("[track] falha ao gravar:", (e as Error).message);
     return NextResponse.json({ ok: false }, { status: 202 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, cidade: sessaoLinha.cidade, uf: sessaoLinha.uf });
 }
