@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
-import { estadoInstalacao, configurado, lerAoVivo, lerPedidos, moeda } from "@/components/painel/dados";
+import Paginacao from "@/components/painel/Paginacao";
+import { estadoInstalacao, configurado, lerAoVivo, lerPaginaPedidos, moeda, POR_PAGINA } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
@@ -24,28 +25,31 @@ const quando = (iso: string) =>
     day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
   });
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
   if (!painelConfigurado()) redirect("/painel");
   if (!(await autenticado())) redirect("/painel/entrar");
 
-  const [pedidos, vivos] = await Promise.all([lerPedidos(100), lerAoVivo()]);
-
-  const _inst = await estadoInstalacao();
-
+  const pagina = Math.max(1, Number((await searchParams).p) || 1);
+  const [{ linhas: pedidos, total }, vivos, _inst] = await Promise.all([
+    lerPaginaPedidos(pagina), lerAoVivo(), estadoInstalacao(),
+  ]);
   const _faltam = _inst?.filter((t) => !t.existe).length ?? 0;
-
+  const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   return (
     <Casca atual="/painel/pedidos" titulo="Pedidos"
-      subtitulo={`${pedidos.length} mais recentes · clique para ver os detalhes`} aoVivo={vivos.length}>
+      subtitulo={total === 0 ? "Nenhum pedido ainda"
+        : `${total} ${total === 1 ? "pedido" : "pedidos"}${paginas > 1 ? ` · página ${pagina} de ${paginas}` : ""} · clique para ver os detalhes`}
+      aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
       <AvisoConfig faltando={configurado() ? [] : ["SUPABASE_SERVICE_ROLE_KEY"]} />
 
       <section className={s.cartao}>
         {pedidos.length === 0 ? (
           <p className={s.vazio}>
-            Nenhum pedido ainda. Assim que alguém gerar um PIX no checkout, ele aparece aqui —
-            e muda para “Pago” quando o webhook da PinPay confirmar.
+            {total > 0
+              ? "Esta página não existe mais. Volte para a primeira."
+              : "Nenhum pedido ainda. Assim que alguém gerar um PIX no checkout, ele aparece aqui — e muda para “Pago” quando o webhook da PinPay confirmar."}
           </p>
         ) : (
           <div className={s.tabelaWrap}>
@@ -81,6 +85,8 @@ export default async function Page() {
           </div>
         )}
       </section>
+
+      <Paginacao pagina={pagina} total={total} porPagina={POR_PAGINA} base="/painel/pedidos" />
     </Casca>
   );
 }

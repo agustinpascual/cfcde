@@ -129,11 +129,27 @@ export const lerFunil = () =>
 export const lerAoVivo = () =>
   ler<Sessao[]>("ao_vivo", [], (db) => db.from("ao_vivo").select("*").order("visto_em", { ascending: false }).limit(200));
 
-export const lerPedidos = (limite = 50) =>
-  ler<Pedido[]>("pedidos", [], (db) =>
-    db.from("pedidos")
-      .select("id,referencia,status,valor_centavos,kit,quantidade,cliente_nome,cliente_email,criado_em,pago_em")
-      .order("criado_em", { ascending: false }).limit(limite));
+export const POR_PAGINA = 10;
+
+/** Uma página de pedidos + o total, para montar a paginação.
+    `count: "exact"` vem fora de `data`, por isso não usa o helper `ler`. */
+export async function lerPaginaPedidos(pagina: number): Promise<{ linhas: Pedido[]; total: number }> {
+  const db = supabaseAdmin();
+  if (!db) return { linhas: [], total: 0 };
+  const de = (Math.max(1, pagina) - 1) * POR_PAGINA;
+  try {
+    const { data, error, count } = await db.from("pedidos")
+      .select("id,referencia,status,valor_centavos,kit,quantidade,cliente_nome,cliente_email,criado_em,pago_em",
+        { count: "exact" })
+      .order("criado_em", { ascending: false })
+      .range(de, de + POR_PAGINA - 1);
+    if (error) { console.error("[painel] pedidos:", error); return { linhas: [], total: 0 }; }
+    return { linhas: (data as Pedido[]) ?? [], total: count ?? 0 };
+  } catch (e) {
+    console.error("[painel] pedidos:", (e as Error).message);
+    return { linhas: [], total: 0 };
+  }
+}
 
 export const lerPedido = (id: string) =>
   ler<PedidoDetalhe | null>("pedido", null, (db) =>
