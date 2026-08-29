@@ -25,13 +25,22 @@ export async function GET(req: Request) {
   const tabelas: Record<string, string> = {};
   const db = supabaseAdmin();
   if (db) {
-    for (const t of ["pedidos", "sessoes", "eventos", "configuracoes", "conversas", "treinamento"]) {
-      const { error, count } = await db.from(t).select("*", { count: "exact", head: true });
-      tabelas[t] = error ? `ERRO: ${error.message}` : `ok (${count ?? 0} linhas)`;
+    /* Um select de verdade, não head:true — com head o supabase-js devolve
+       204 e error null mesmo quando a tabela NÃO existe, o que fazia este
+       diagnóstico reportar "ok" para tabela inexistente. */
+    for (const t of ["pedidos", "sessoes", "eventos", "eventos_webhook", "configuracoes", "conversas", "mensagens", "treinamento"]) {
+      const { error, count } = await db.from(t).select("*", { count: "exact" }).limit(1);
+      tabelas[t] = error
+        ? (/schema cache|does not exist/i.test(error.message) ? "NÃO EXISTE — rode supabase/TUDO.sql" : `ERRO: ${error.message}`)
+        : `ok (${count ?? 0} linhas)`;
     }
   }
 
+  const faltando = Object.entries(tabelas).filter(([, v]) => !v.startsWith("ok")).map(([k]) => k);
+
   return NextResponse.json({
+    pronto: faltando.length === 0,
+    tabelasFaltando: faltando,
     geolocalizacao: geo,
     geoDisponivel: Boolean(geo.latitude && geo.longitude),
     // o IP em si não é guardado — só cidade/UF e a coordenada aproximada
