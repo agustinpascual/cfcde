@@ -39,7 +39,10 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
           ))}
         </div>
 
-        <p className={s.rodapeLateral}>Dados em tempo real do Supabase</p>
+        <div className={s.rodapeLateral}>
+          <a href="/painel/sair" className={s.sair}>Sair</a>
+          <p>Dados em tempo real do Supabase</p>
+        </div>
       </nav>
 
       <div className={s.conteudo}>

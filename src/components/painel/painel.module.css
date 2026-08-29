@@ -69,3 +69,5 @@
   .link { white-space: nowrap; }
   .corpo, .cabecalho { padding-left: 18px; padding-right: 18px; }
 }
+.sair { display: inline-block; color: #9fb3d6; font-size: 12px; margin-bottom: 8px; text-decoration: underline; }
+.sair:hover { color: #fff; }
