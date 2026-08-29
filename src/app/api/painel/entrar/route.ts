@@ -32,7 +32,10 @@ export async function POST(req: Request) {
 
   const corpo = await req.json().catch(() => ({}));
   const email = String(corpo.email ?? "").trim().toLowerCase();
-  const senha = String(corpo.senha ?? "");
+  /* Tira espaço/quebra de linha das pontas: colar a senha de um chat ou
+     e-mail costuma trazer um invisível junto, e o erro fica indistinguível
+     de senha errada. O e-mail já era normalizado; a senha não era. */
+  const senha = String(corpo.senha ?? "").trim();
 
   // avalia as duas antes de responder, para não vazar qual delas errou
   const emailOk = igual(email, emailEsperado);

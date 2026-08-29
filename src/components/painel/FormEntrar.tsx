@@ -14,7 +14,7 @@ export default function FormEntrar() {
     try {
       const r = await fetch("/api/painel/entrar", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify({ email: email.trim(), senha: senha.trim() }),
       });
       const d = await r.json();
       if (!r.ok) { setErro(d.erro ?? "Não foi possível entrar."); return; }
@@ -48,7 +48,7 @@ export default function FormEntrar() {
           autoComplete="current-password" />
         {erro && <p className={s.erro} role="alert">{erro}</p>}
 
-        <button type="submit" className={s.botao} disabled={enviando || !email || !senha}>
+        <button type="submit" className={s.botao} disabled={enviando || !email.trim() || !senha.trim()}>
           {enviando ? "Entrando…" : "Entrar"}
         </button>
       </form>
