@@ -10,6 +10,11 @@ export const dynamic = "force-dynamic";
    guardamos o IP em si, só cidade/UF e coordenadas aproximadas. */
 
 const TIPOS = new Set(["pageview", "secao", "checkout", "pix_gerado", "pix_copiado", "compra", "saida"]);
+
+/* O cliente já não manda ping do painel, mas a rota é pública: quem chamar
+   direto também não polui o mapa nem o funil. */
+const PRIVADAS = ["/painel"];
+const privada = (caminho: string | null) => Boolean(caminho && PRIVADAS.some((p) => caminho.startsWith(p)));
 const txt = (v: unknown, max = 120) => (typeof v === "string" ? v.slice(0, max) : null);
 
 function dispositivoDe(ua: string) {
@@ -37,6 +42,10 @@ export async function POST(req: Request) {
 
   const sessao = txt(corpo.sessao, 64);
   if (!sessao) return NextResponse.json({ erro: "sessão ausente" }, { status: 400 });
+
+  if (privada(txt(corpo.pagina, 160))) {
+    return NextResponse.json({ ok: false, motivo: "pagina_privada" }, { status: 202 });
+  }
 
   const h = req.headers;
   const decodifica = (v: string | null) => { try { return v ? decodeURIComponent(v) : null; } catch { return v; } };

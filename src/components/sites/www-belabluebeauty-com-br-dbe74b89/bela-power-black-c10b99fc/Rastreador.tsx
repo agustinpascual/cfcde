@@ -9,6 +9,11 @@ import { useEffect, useRef } from "react";
 const CHAVE = "bb:sessao";
 const PING = 20000;
 
+/* O painel admin não é visita de cliente. Sem isso o seu próprio acesso
+   aparecia no mapa ao vivo e contava no funil. */
+const PRIVADAS = ["/painel"];
+export const rastreavel = (caminho: string) => !PRIVADAS.some((p) => caminho.startsWith(p));
+
 function idDaSessao() {
   try {
     let id = sessionStorage.getItem(CHAVE);
@@ -24,6 +29,7 @@ function idDaSessao() {
 
 export function registrar(tipo: string, dados?: Record<string, unknown>) {
   try {
+    if (!rastreavel(location.pathname)) return;
     const sessao = sessionStorage.getItem(CHAVE);
     if (!sessao) return;
     const corpo = JSON.stringify({ sessao, tipo, pagina: location.pathname, dados });
@@ -38,6 +44,7 @@ export default function Rastreador() {
   const secaoAtual = useRef<string>("");
 
   useEffect(() => {
+    if (!rastreavel(pathname)) return;
     const sessao = idDaSessao();
     if (!sessao) return;
 
