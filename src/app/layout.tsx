@@ -21,7 +21,10 @@ const lato = Lato({
 /* Domínio público. Serve de base para URLs absolutas (Open Graph, canonical).
    É secundário até o domínio próprio ser apontado — troque a env quando for. */
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bella-gummy.vercel.app";
-const OG_IMG = "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images/imag1.png";
+/* 1200x630 é a proporção que WhatsApp, Facebook e LinkedIn esperam.
+   Precisa ser PNG de verdade: a imagem anterior era WebP com extensão .png
+   e, com nosniff ligado, os crawlers recusavam e o preview saía sem imagem. */
+const OG_IMG = "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images/og-compartilhamento.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -55,7 +58,7 @@ export const metadata: Metadata = {
     title: "Gummys - Suplemento Alimentar em goma",
     description:
       "Suplemento alimentar em gomas mastigáveis. Sem água, sem preparo. Kits com até 44% de desconto e frete grátis para todo o Brasil.",
-    images: [{ url: OG_IMG, width: 1200, height: 1200, alt: "Bela Gummy — suplemento alimentar em gomas" }],
+    images: [{ url: OG_IMG, width: 1200, height: 630, type: "image/png", alt: "Bela Gummy — suplemento alimentar em gomas" }],
   },
   twitter: {
     card: "summary_large_image",

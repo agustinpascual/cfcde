@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+import { metadadosPagina } from "@/lib/seo";
 import PaginaInstitucional from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/PaginaInstitucional";
 import FormContato from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/FormContato";
 import s from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/pagina.module.css";
 import { WHATSAPP_LINK, WHATSAPP_NUMERO } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/contato";
 
-export const metadata: Metadata = {
-  title: "Fale conosco — Bela Blue Beauty",
-  description: "Envie sua mensagem para o time da Bela Blue Beauty.",
-};
+export const metadata: Metadata = metadadosPagina({
+  titulo: "Fale conosco — Bela Blue Beauty",
+  descricao: "Envie sua mensagem para o time da Bela Blue Beauty ou fale direto no WhatsApp.",
+  caminho: "/contato",
+});
 
 export default function Page() {
   return (

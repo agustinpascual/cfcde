@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { metadadosPagina } from "@/lib/seo";
 import PaginaInstitucional from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/PaginaInstitucional";
 import s from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/pagina.module.css";
 
-export const metadata: Metadata = {
-  title: "Sobre nós — Bela Blue Beauty",
-  description: "Quem somos, nossa missão, visão e valores.",
-};
+export const metadata: Metadata = metadadosPagina({
+  titulo: "Sobre nós — Bela Blue Beauty",
+  descricao: "Quem somos, nossa missão, visão e valores. Loja de produtos para emagrecimento e beauty.",
+  caminho: "/sobre",
+});
 
 const VALORES = [
   { titulo: "Missão", texto: "Entregar com excelência um resultado visível, transformador e satisfatório promovendo saúde física e mental, aliados ao bem estar e beleza." },

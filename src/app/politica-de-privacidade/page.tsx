@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { metadadosPagina } from "@/lib/seo";
 import PaginaInstitucional from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/PaginaInstitucional";
 import s from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/pagina.module.css";
 import { WHATSAPP_NUMERO, WHATSAPP_LINK } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/contato";
 
-export const metadata: Metadata = {
-  title: "Política de privacidade — Bela Blue Beauty",
-  description: "Como a Bela Blue Beauty trata e protege os seus dados pessoais.",
-};
+export const metadata: Metadata = metadadosPagina({
+  titulo: "Política de privacidade — Bela Blue Beauty",
+  descricao: "Como a Bela Blue Beauty trata e protege os seus dados pessoais.",
+  caminho: "/politica-de-privacidade",
+});
 
 export default function Page() {
   return (
