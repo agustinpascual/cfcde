@@ -1,13 +1,14 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IMG, descricao, produto, reviews } from "../data";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { opcoesFrete } from "../data";
 import PurchaseNotifications from "../PurchaseNotifications";
 import SiteFooter from "../SiteFooter";
-import PixPanel, { type Cobranca } from "./PixPanel";
+import { guardarCobranca } from "./cobranca";
 import {
   celularValido, documentoValido, emailValido, mascaraCelular, mascaraCep,
   mascaraCpfCnpj, mascaraNascimento, nascimentoValido, nomeValido, soDigitos,
@@ -43,6 +44,7 @@ const formasPagamento = [
 
 
 export default function CheckoutView() {
+  const router = useRouter();
   const carrinho = useCarrinho();
   const r = useMemo(() => resumo(carrinho), [carrinho]);
 
@@ -68,7 +70,6 @@ export default function CheckoutView() {
   const [cupom, setCupom] = useState("");
   const [avalIndice, setAvalIndice] = useState(0);
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
-  const [cobranca, setCobranca] = useState<Cobranca | null>(null);
   const [gerando, setGerando] = useState(false);
   const [erroPix, setErroPix] = useState("");
   const [pausado, setPausado] = useState(false);
@@ -151,7 +152,9 @@ export default function CheckoutView() {
       });
       const d = await r.json();
       if (!r.ok) { setErroPix(d.erro ?? "Não foi possível gerar o PIX."); return; }
-      setCobranca(d as Cobranca);
+      // guarda para a página de pagamento abrir instantânea, sem novo request
+      guardarCobranca(d);
+      router.push(`/pagamento/${d.id}`);
     } catch {
       setErroPix("Falha de conexão. Tente novamente.");
     } finally {
@@ -412,7 +415,6 @@ export default function CheckoutView() {
                   {gerando ? "Gerando PIX…" : "Finalizar compra"}
                 </button>
                 {erroPix && <p className={s.erro} role="alert">{erroPix}</p>}
-                {cobranca && <PixPanel cobranca={cobranca} aoAprovar={() => {}} />}
               </div>
 
             </div>
