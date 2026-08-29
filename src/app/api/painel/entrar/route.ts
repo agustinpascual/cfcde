@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { excedeu, ipDe } from "@/lib/limite";
 import { criarSessao, emailAdmin, NOME_COOKIE } from "@/lib/painel-auth";
 
 export const runtime = "nodejs";
@@ -12,6 +13,14 @@ function igual(a: string, b: string) {
 }
 
 export async function POST(req: Request) {
+  // trava força bruta na senha do painel
+  if (excedeu(`login:${ipDe(req)}`, 5, 300_000)) {
+    return NextResponse.json(
+      { erro: "Muitas tentativas. Aguarde 5 minutos." },
+      { status: 429, headers: { "Retry-After": "300" } }
+    );
+  }
+
   const senhaEsperada = process.env.PAINEL_SENHA;
   const emailEsperado = emailAdmin();
   if (!senhaEsperada || !emailEsperado) {

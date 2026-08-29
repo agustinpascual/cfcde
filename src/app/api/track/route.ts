@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { excedeu, ipDe } from "@/lib/limite";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
@@ -18,6 +19,11 @@ function dispositivoDe(ua: string) {
 }
 
 export async function POST(req: Request) {
+  // o heartbeat legítimo é a cada 20s; 40/min já cobre várias abas
+  if (excedeu(`track:${ipDe(req)}`, 40, 60_000)) {
+    return new NextResponse(null, { status: 429 });
+  }
+
   const db = supabaseAdmin();
   // sem service_role o site segue normal; só não registra
   if (!db) return NextResponse.json({ ok: false, motivo: "sem_supabase" }, { status: 202 });

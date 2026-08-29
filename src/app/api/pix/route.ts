@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { criarPix } from "@/lib/pinpay";
+import { excedeu, ipDe } from "@/lib/limite";
 import { calcularTotal, type IdFrete } from "@/lib/precos";
 
 export const runtime = "nodejs";
@@ -10,6 +11,14 @@ const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const emailOk = (v: unknown) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v ?? "").trim());
 
 export async function POST(req: Request) {
+  // cada chamada cria uma cobrança de verdade na conta do lojista
+  if (excedeu(`pix:${ipDe(req)}`, 8, 60_000)) {
+    return NextResponse.json(
+      { erro: "Muitas tentativas. Aguarde um minuto." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
