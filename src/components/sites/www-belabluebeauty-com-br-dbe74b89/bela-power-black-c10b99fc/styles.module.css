@@ -585,3 +585,6 @@
   .criadorCard { flex: 0 0 62vw; }
   .criadoresTrilho { margin: 0 -20px; padding: 0 20px 8px; }
 }
+
+/* selo do processador, logo abaixo do Comprar agora */
+.processadorProd { display: flex; justify-content: center; margin: 16px 0 4px; }

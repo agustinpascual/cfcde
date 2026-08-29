@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { gravarCarrinho } from "./cart";
 import { IMG, kits, produto, resumoAvaliacoes } from "./data";
 import KitSelector from "./KitSelector";
+import SeloStone from "./SeloStone";
 import ShippingCalculator from "./ShippingCalculator";
 import { HeartIcon, Stars } from "./icons";
 import { useStock } from "./StockContext";
@@ -111,6 +112,10 @@ export default function ProductInfo() {
           </span>
         </div>
         <button className={s.btComprar} onClick={comprar}>Comprar agora</button>
+      </div>
+
+      <div className={s.processadorProd}>
+        <SeloStone compacto />
       </div>
 
       <ShippingCalculator />
