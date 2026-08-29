@@ -1,49 +1,88 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Sessao } from "./dados";
+import { ESTADOS, MAPA } from "./mapa-brasil";
 import m from "./mapa.module.css";
 
-/* Mapa do Brasil em SVG puro, com projeção equiretangular simples.
-   Sem biblioteca de mapas e sem chave de API — as coordenadas vêm dos
-   headers de geolocalização do Vercel. */
+/* Mapa do Brasil com a malha real do IBGE por estado.
+   Sem biblioteca de mapas e sem chave de API — as coordenadas das sessões
+   vêm dos headers de geolocalização do Vercel. */
 
-// caixa geográfica do Brasil
-const OESTE = -74, LESTE = -34.5, NORTE = 5.5, SUL = -34;
-const W = 460, H = 480;
+const cosLat = Math.cos((MAPA.latMedia * Math.PI) / 180);
+const escala = MAPA.largura / (MAPA.leste - MAPA.oeste);
+const px = (lng: number) => (lng - MAPA.oeste) * escala;
+const py = (lat: number) => (MAPA.norte - lat) * escala * cosLat;
 
-const px = (lng: number) => ((lng - OESTE) / (LESTE - OESTE)) * W;
-const py = (lat: number) => ((NORTE - lat) / (NORTE - SUL)) * H;
-
-/* contorno simplificado do território — suficiente para leitura de posição */
-const CONTORNO =
-  "M181,44 L212,30 L241,40 L263,33 L286,44 L300,66 L318,74 L330,96 L349,110 L363,140 " +
-  "L378,168 L392,196 L399,226 L392,256 L378,282 L369,310 L356,338 L338,362 L318,384 " +
-  "L296,404 L272,420 L246,432 L222,438 L200,432 L184,416 L176,394 L168,368 L152,348 " +
-  "L134,330 L118,308 L104,284 L92,258 L82,230 L74,202 L70,174 L74,146 L86,120 L104,98 " +
-  "L124,78 L148,58 Z";
+type Grupo = { chave: string; x: number; y: number; sessoes: Sessao[] };
 
 export default function MapaBrasil({ sessoes }: { sessoes: Sessao[] }) {
-  const [ativa, setAtiva] = useState<string | null>(null);
-  const comGeo = sessoes.filter((s) => s.latitude != null && s.longitude != null);
+  const [ativo, setAtivo] = useState<string | null>(null);
+
+  /* agrupa quem está na mesma cidade para não empilhar pontos idênticos */
+  const grupos = useMemo<Grupo[]>(() => {
+    const mapa = new Map<string, Grupo>();
+    for (const s of sessoes) {
+      if (s.latitude == null || s.longitude == null) continue;
+      const chave = `${s.latitude.toFixed(2)},${s.longitude.toFixed(2)}`;
+      const g = mapa.get(chave);
+      if (g) g.sessoes.push(s);
+      else mapa.set(chave, { chave, x: px(s.longitude), y: py(s.latitude), sessoes: [s] });
+    }
+    return [...mapa.values()];
+  }, [sessoes]);
+
+  /* contagem por UF, para pintar os estados com mais gente */
+  const porUf = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const s of sessoes) if (s.uf) c[s.uf] = (c[s.uf] ?? 0) + 1;
+    return c;
+  }, [sessoes]);
+  const maxUf = Math.max(1, ...Object.values(porUf));
+
+  const corDo = (s: Sessao) =>
+    s.copiou_pix ? "#c2410c"
+      : s.pagina?.startsWith("/checkout") || s.pagina?.startsWith("/pagamento") ? "#1d9a8a"
+      : "#2f5fd0";
 
   return (
     <div className={m.wrap}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={m.svg} role="img"
-        aria-label={`Mapa com ${comGeo.length} sessões ativas no Brasil`}>
-        <path d={CONTORNO} fill="#eef1f6" stroke="#dfe4ec" strokeWidth="1.5" />
+      <svg viewBox={`0 0 ${MAPA.largura} ${MAPA.altura}`} className={m.svg} role="img"
+        aria-label={`Mapa do Brasil com ${grupos.length} localidade(s) e ${sessoes.length} sessão(ões) ativas`}>
 
-        {comGeo.map((s) => {
-          const x = px(s.longitude!), y = py(s.latitude!);
-          const noCheckout = s.pagina?.startsWith("/checkout") || s.pagina?.startsWith("/pagamento");
-          const cor = s.copiou_pix ? "#c2410c" : noCheckout ? "#1d9a8a" : "#2f5fd0";
+        {/* estados: escala sequencial de um só tom, clara → escura */}
+        {ESTADOS.map((e) => {
+          const n = porUf[e.uf] ?? 0;
+          const intensidade = n ? 0.1 + (n / maxUf) * 0.28 : 0;
           return (
-            <g key={s.sessao} onMouseEnter={() => setAtiva(s.sessao)} onMouseLeave={() => setAtiva(null)}>
-              <circle cx={x} cy={y} r="11" fill={cor} opacity="0.16" className={m.halo} />
+            <path key={e.uf} d={e.d}
+              fill={n ? `rgba(47,95,208,${intensidade.toFixed(3)})` : "#eef1f6"}
+              stroke="#dbe1ea" strokeWidth="0.7" strokeLinejoin="round">
+              <title>{e.uf}{n ? ` — ${n} online` : ""}</title>
+            </path>
+          );
+        })}
+
+        {/* siglas só onde há gente, para não poluir */}
+        {ESTADOS.filter((e) => porUf[e.uf]).map((e) => (
+          <text key={`t-${e.uf}`} x={e.x} y={e.y} textAnchor="middle" className={m.sigla}>{e.uf}</text>
+        ))}
+
+        {grupos.map((g) => {
+          const principal = g.sessoes[0];
+          const cor = corDo(principal);
+          const r = g.sessoes.length > 1 ? 7 : 5;
+          return (
+            <g key={g.chave} onMouseEnter={() => setAtivo(g.chave)} onMouseLeave={() => setAtivo(null)}>
+              <circle cx={g.x} cy={g.y} r={r + 6} fill={cor} opacity="0.18" className={m.halo} />
               {/* anel branco separa pontos sobrepostos */}
-              <circle cx={x} cy={y} r="5" fill={cor} stroke="#fff" strokeWidth="2" className={m.ponto} />
-              {ativa === s.sessao && (
-                <text x={x} y={y - 14} textAnchor="middle" className={m.rotulo}>
-                  {s.cidade ?? "?"}{s.uf ? `/${s.uf}` : ""}
+              <circle cx={g.x} cy={g.y} r={r} fill={cor} stroke="#fff" strokeWidth="2" className={m.ponto} />
+              {g.sessoes.length > 1 && (
+                <text x={g.x} y={g.y + 3.4} textAnchor="middle" className={m.contagem}>{g.sessoes.length}</text>
+              )}
+              {ativo === g.chave && (
+                <text x={g.x} y={g.y - r - 8} textAnchor="middle" className={m.rotulo}>
+                  {principal.cidade ?? "?"}{principal.uf ? `/${principal.uf}` : ""}
+                  {g.sessoes.length > 1 ? ` · ${g.sessoes.length} pessoas` : ""}
                 </text>
               )}
             </g>
@@ -51,14 +90,14 @@ export default function MapaBrasil({ sessoes }: { sessoes: Sessao[] }) {
         })}
       </svg>
 
-      {/* legenda: identidade nunca só pela cor — cada item tem texto */}
+      {/* identidade nunca só pela cor — cada item tem texto */}
       <ul className={m.legenda}>
         <li><span style={{ background: "#2f5fd0" }} /> Navegando</li>
         <li><span style={{ background: "#1d9a8a" }} /> No checkout</li>
         <li><span style={{ background: "#c2410c" }} /> Copiou o PIX</li>
       </ul>
 
-      {comGeo.length === 0 && (
+      {grupos.length === 0 && (
         <p className={m.vazio}>
           Nenhuma sessão com localização. A geolocalização vem dos headers do Vercel —
           em <code>localhost</code> ela não existe.

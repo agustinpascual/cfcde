@@ -3,19 +3,23 @@ import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
 import Casca from "@/components/painel/Casca";
 import { AreaTempo, BarrasH } from "@/components/painel/Grafico";
-import { configurado, lerAoVivo, lerFunil, lerResumo, lerVendasPorDia, moeda } from "@/components/painel/dados";
+import FiltroPeriodo from "@/components/painel/FiltroPeriodo";
+import { configurado, lerAoVivo, lerFunil, lerResumo, lerVendasPorDia, moeda, resolverPeriodo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
 export const metadata: Metadata = { title: "Vendas", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-export default async function Page() {
+export default async function Page({ searchParams }: {
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
+}) {
   if (!painelConfigurado()) return <SemSenha />;
   if (!(await autenticado())) redirect("/painel/entrar");
 
+  const periodo = resolverPeriodo(await searchParams);
   const [resumo, dias, funil, vivos] = await Promise.all([
-    lerResumo(), lerVendasPorDia(), lerFunil(), lerAoVivo(),
+    lerResumo(periodo), lerVendasPorDia(periodo), lerFunil(), lerAoVivo(),
   ]);
 
   const faltando: string[] = [];
@@ -43,11 +47,13 @@ export default async function Page() {
   const ticket = resumo.pedidos_pagos ? resumo.receita_centavos / resumo.pedidos_pagos : 0;
 
   return (
-    <Casca atual="/painel" titulo="Vendas" subtitulo="Resumo do desempenho da loja" aoVivo={vivos.length}>
+    <Casca atual="/painel" titulo="Vendas" subtitulo={`Resumo do desempenho · ${periodo.rotulo}`} aoVivo={vivos.length}>
       <AvisoConfig faltando={faltando} />
 
+      <FiltroPeriodo de={periodo.de} ate={periodo.ate} />
+
       <div className={s.kpis}>
-        <Kpi rotulo="Receita total" valor={moeda(resumo.receita_centavos)} nota={`${resumo.pedidos_pagos} pedidos pagos`} />
+        <Kpi rotulo="Receita no período" valor={moeda(resumo.receita_centavos)} nota={`${resumo.pedidos_pagos} pedidos pagos`} />
         <Kpi rotulo="Receita hoje" valor={moeda(resumo.receita_hoje_centavos)} nota={`${resumo.pedidos_hoje} pedidos hoje`} />
         <Kpi rotulo="Ticket médio" valor={moeda(ticket)} nota="por pedido pago" />
         <Kpi rotulo="Aguardando pagamento" valor={String(resumo.pedidos_pendentes)} nota="PIX gerado sem confirmação" />
@@ -57,7 +63,7 @@ export default async function Page() {
       <div className={s.grade}>
         <section className={s.cartao}>
           <h2 className={s.cartaoTitulo}>Receita por dia</h2>
-          <p className={s.cartaoSub}>Últimos 30 dias, apenas pedidos aprovados</p>
+          <p className={s.cartaoSub}>{periodo.rotulo} · apenas pedidos aprovados</p>
           <AreaTempo dados={serie} formato="moeda" />
         </section>
 

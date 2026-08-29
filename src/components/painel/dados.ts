@@ -44,11 +44,71 @@ async function ler<T>(view: string, cair: T, montar: (db: NonNullable<ReturnType
   }
 }
 
-export const lerResumo = () =>
-  ler<Resumo>("painel_resumo", VAZIO_RESUMO, (db) => db.from("painel_resumo").select("*").single());
+/* ---------- período ---------- */
+export type Periodo = { de: string; ate: string; dias: number; rotulo: string };
 
-export const lerVendasPorDia = () =>
-  ler<DiaVenda[]>("vendas_por_dia", [], (db) => db.from("vendas_por_dia").select("*").order("dia"));
+export const PERIODOS: Record<string, { dias: number; rotulo: string }> = {
+  hoje: { dias: 1, rotulo: "Hoje" },
+  "7d": { dias: 7, rotulo: "7 dias" },
+  "30d": { dias: 30, rotulo: "30 dias" },
+  "90d": { dias: 90, rotulo: "90 dias" },
+};
+
+/** Resolve o período a partir da URL, com 30 dias como padrão. */
+export function resolverPeriodo(busca?: { periodo?: string; de?: string; ate?: string }): Periodo {
+  const hoje = new Date();
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+  // intervalo escolhido à mão vence o atalho
+  if (busca?.de && busca?.ate && /^\d{4}-\d{2}-\d{2}$/.test(busca.de) && /^\d{4}-\d{2}-\d{2}$/.test(busca.ate)) {
+    const de = new Date(busca.de + "T00:00:00");
+    const ate = new Date(busca.ate + "T00:00:00");
+    if (de <= ate) {
+      const dias = Math.round((ate.getTime() - de.getTime()) / 86400000) + 1;
+      return { de: busca.de, ate: busca.ate, dias, rotulo: `${busca.de} a ${busca.ate}` };
+    }
+  }
+
+  const p = PERIODOS[busca?.periodo ?? "30d"] ?? PERIODOS["30d"];
+  const inicio = new Date(hoje);
+  inicio.setDate(inicio.getDate() - (p.dias - 1));
+  return { de: iso(inicio), ate: iso(hoje), dias: p.dias, rotulo: p.rotulo };
+}
+
+/* Fim do dia final, para o filtro pegar o dia inteiro. */
+const fimDoDia = (d: string) => `${d}T23:59:59.999Z`;
+const inicioDoDia = (d: string) => `${d}T00:00:00.000Z`;
+
+export const lerResumo = (p?: Periodo) =>
+  p
+    ? ler<Resumo>("resumo_periodo", VAZIO_RESUMO, async (db) => {
+        const { data, error } = await db.from("pedidos")
+          .select("status,valor_centavos,criado_em")
+          .gte("criado_em", inicioDoDia(p.de)).lte("criado_em", fimDoDia(p.ate));
+        if (error) return { data: null, error };
+        const linhas = (data ?? []) as { status: string; valor_centavos: number; criado_em: string }[];
+        const pagos = linhas.filter((l) => l.status === "aprovado");
+        const hoje = new Date().toISOString().slice(0, 10);
+        const doDia = linhas.filter((l) => l.criado_em.slice(0, 10) === hoje);
+        return {
+          data: {
+            pedidos_total: linhas.length,
+            pedidos_pagos: pagos.length,
+            pedidos_pendentes: linhas.filter((l) => l.status === "pendente").length,
+            receita_centavos: pagos.reduce((a, l) => a + l.valor_centavos, 0),
+            receita_hoje_centavos: doDia.filter((l) => l.status === "aprovado").reduce((a, l) => a + l.valor_centavos, 0),
+            pedidos_hoje: doDia.length,
+          },
+          error: null,
+        };
+      })
+    : ler<Resumo>("painel_resumo", VAZIO_RESUMO, (db) => db.from("painel_resumo").select("*").single());
+
+export const lerVendasPorDia = (p?: Periodo) =>
+  ler<DiaVenda[]>("vendas_por_dia", [], (db) => {
+    const q = db.from("vendas_por_dia").select("*").order("dia");
+    return p ? q.gte("dia", p.de).lte("dia", p.ate) : q;
+  });
 
 export const lerFunil = () =>
   ler<Funil>("funil_24h", VAZIO_FUNIL, (db) => db.from("funil_24h").select("*").single());
