@@ -70,7 +70,7 @@ export default function Faq() {
         const on = aberta === i;
         return (
           <div key={item.p} className={`${s.faqItem} ${on ? s.faqAberto : ""}`}>
-            <button type="button" className={s.faqBotao} aria-expanded={on}
+            <button type="button" className={s.faqBotao} aria-expanded={on} aria-controls={`faq-${i}`}
               onClick={() => setAberta(on ? null : i)}>
               {item.p}
               <svg className={s.faqSeta} viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -78,7 +78,9 @@ export default function Faq() {
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </button>
-            {on && <div className={s.faqCorpo}>{item.r}</div>}
+            {/* sempre no DOM (escondido com [hidden]) para o buscador indexar
+                todas as respostas, não só a do item aberto */}
+            <div className={s.faqCorpo} hidden={!on} id={`faq-${i}`}>{item.r}</div>
           </div>
         );
       })}
