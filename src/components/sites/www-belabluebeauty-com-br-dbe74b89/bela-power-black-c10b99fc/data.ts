@@ -1,4 +1,4 @@
-import type { FooterColumn, Kit, NavItem, RelatedProduct, Review } from "./types";
+import type { FooterColumn, Kit, NavItem, Review } from "./types";
 
 export const IMG = "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images";
 
@@ -34,12 +34,6 @@ export const produto = {
     { thumb: `${IMG}/imag2.webp`, full: `${IMG}/imag2.webp`, ratio: 1 },
     { thumb: `${IMG}/imag3.webp`, full: `${IMG}/imag3.webp`, ratio: 1 },
     { thumb: `${IMG}/imag4.webp`, full: `${IMG}/imag4.webp`, ratio: 1 },
-  ],
-  outrasOpcoes: [
-    { img: `${IMG}/10-natural-fit-tradicional-passo-1.png` },
-    { img: `${IMG}/12-bela-redtox.png` },
-    { img: `${IMG}/35-img.png` },
-    { img: `${IMG}/36-img.png` },
   ],
 };
 
@@ -171,14 +165,6 @@ export const resumoAvaliacoes = {
   /* todas as avaliações publicadas no original são 5 estrelas */
   distribuicao: { 5: 37, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>,
 };
-
-/* ---------- Quem viu, viu também ---------- */
-export const relateds: RelatedProduct[] = [
-  { title: "Bela Redtox", img: `${IMG}/12-bela-redtox.png`, de: "R$279,98", por: "R$179,99", parcelas: "3x de R$60,00 sem juros", boleto: "R$179,99 no boleto", pix: "R$179,99 com PIX", desconto: "-36% OFF" },
-  { title: "Natural Fit Turbo - Passo 2", img: `${IMG}/35-img.png`, de: "R$459,98", por: "R$259,99", parcelas: "3x de R$86,66 sem juros", boleto: "R$259,99 no boleto", pix: "R$259,99 com PIX", desconto: "-43% OFF" },
-  { title: "Bela Redtox Light", img: `${IMG}/36-img.png`, de: "R$299,98", por: "R$189,99", parcelas: "3x de R$63,33 sem juros", boleto: "R$189,99 no boleto", pix: "R$189,99 com PIX", desconto: "-37% OFF" },
-  { title: "2 Bela Power - Emagrecedor passo 1 Natural para Queima de Gordura e Mais Disposição", img: `${IMG}/42-2-bela-power-emagrecedor-passo-1.png`, de: "R$539,98", por: "R$512,98", parcelas: "3x de R$170,99 sem juros", boleto: "R$512,98 no boleto", pix: "R$512,98 com PIX", desconto: "-33% OFF" },
-];
 
 export const topVendasLabel = "TOP ENTRE OS PRODUTOS MAIS VENDIDOS";
 

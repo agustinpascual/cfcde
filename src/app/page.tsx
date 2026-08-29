@@ -5,7 +5,6 @@ import FloatingWidgets from "@/components/sites/www-belabluebeauty-com-br-dbe74b
 import ProductGallery from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/ProductGallery";
 import ProductInfo from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/ProductInfo";
 import PurchaseNotifications from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/PurchaseNotifications";
-import RelatedProducts from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/RelatedProducts";
 import ReviewsSection from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/ReviewsSection";
 import SiteFooter from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/SiteFooter";
 import SiteHeader from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/SiteHeader";
@@ -34,8 +33,6 @@ export default function Page() {
             <ReviewsSection />
           </div>
         </div>
-
-        <RelatedProducts />
 
         <div className="bb-container"><AlertsStrip /></div>
       </main>

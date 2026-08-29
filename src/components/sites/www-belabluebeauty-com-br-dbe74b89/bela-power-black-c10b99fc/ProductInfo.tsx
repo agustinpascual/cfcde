@@ -122,16 +122,6 @@ export default function ProductInfo() {
         ))}
       </div>
 
-      <div className={s.outrasOpcoes}>
-        <p>Outras opções:</p>
-        <div className={s.opcoesLista}>
-          {produto.outrasOpcoes.map((o, i) => (
-            <span key={i} className={s.opcaoThumb} aria-label={`Opção ${i + 1}`}>
-              <Image src={o.img} alt="" width={98} height={98} sizes="98px" loading="lazy" />
-            </span>
-          ))}
-        </div>
-      </div>
 
       {/* barra fixa de compra — seletor de kit + preço do kit escolhido */}
       <div className={`${s.barraCompra} ${barraFixa ? s.barraCompraVisivel : ""}`} aria-hidden={!barraFixa}>

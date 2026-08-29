@@ -58,12 +58,24 @@ export async function POST(req: Request) {
       status: cobranca.status,
     });
   } catch (e) {
-    const err = e as Error & { status?: number };
-    console.error("[pinpay] falha ao criar PIX:", err.message);
-    const semChave = /PINPAY_TOKEN/.test(err.message);
+    const err = e as Error & { status?: number; codigo?: string };
+    console.error("[pinpay] falha ao criar PIX:", err.status ?? "-", err.codigo ?? "-", err.message);
+
+    if (!process.env.PINPAY_TOKEN) {
+      return NextResponse.json(
+        { erro: "Pagamento indisponível: PINPAY_TOKEN não configurado no servidor." },
+        { status: 503 }
+      );
+    }
+    if (err.status === 401) {
+      return NextResponse.json(
+        { erro: "Credencial da PinPay recusada. Confira a chave sk_ em .env.local." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
-      { erro: semChave ? "Pagamento não configurado no servidor." : "Não foi possível gerar o PIX agora." },
-      { status: semChave ? 503 : (err.status ?? 502) }
+      { erro: "Não foi possível gerar o PIX agora. Tente novamente." },
+      { status: err.status ?? 502 }
     );
   }
 }

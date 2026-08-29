@@ -47,11 +47,19 @@ async function chamar<T>(caminho: string, init?: RequestInit): Promise<T> {
   try { corpo = texto ? JSON.parse(texto) : null; } catch { /* resposta não-JSON */ }
 
   if (!res.ok) {
-    const msg = (corpo as { message?: string; error?: string } | null);
-    throw Object.assign(
-      new Error(msg?.message || msg?.error || `PinPay respondeu ${res.status}`),
-      { status: res.status, corpo }
-    );
+    // A PinPay devolve { error: { code, message } } — o erro fica aninhado.
+    const c = corpo as { message?: string; error?: string | { code?: string; message?: string } } | null;
+    const aninhado = typeof c?.error === "object" ? c.error : null;
+    const texto =
+      aninhado?.message ??
+      (typeof c?.error === "string" ? c.error : undefined) ??
+      c?.message ??
+      `PinPay respondeu ${res.status}`;
+    throw Object.assign(new Error(texto), {
+      status: res.status,
+      codigo: aninhado?.code,
+      corpo,
+    });
   }
   return corpo as T;
 }

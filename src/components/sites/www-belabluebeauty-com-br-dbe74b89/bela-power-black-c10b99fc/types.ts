@@ -14,16 +14,6 @@ export type Kit = {
 
 export type NavItem = { label: string; dropdown?: boolean };
 
-export type RelatedProduct = {
-  title: string;
-  img: string;
-  de: string;
-  por: string;
-  parcelas: string;
-  boleto: string;
-  pix: string;
-  desconto: string;
-};
 
 export type Review = {
   autor: string;

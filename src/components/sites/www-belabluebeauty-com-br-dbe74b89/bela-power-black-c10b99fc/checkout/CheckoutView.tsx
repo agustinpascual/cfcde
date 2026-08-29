@@ -107,17 +107,25 @@ export default function CheckoutView() {
     }
   }
 
-  /* Confirma o e-mail sozinho: 700 ms depois de parar de digitar, ou ao sair do campo. */
-  function confirmarEmail(v: string) {
+  /* Abre os campos assim que o e-mail fica válido, mas SÓ move o cursor
+     quando a pessoa sinaliza que terminou (sair do campo ou Enter).
+     Roubar o foco por timer fazia o resto do que ela digitava — ".br" de
+     "@gmail.com.br", por exemplo — cair no campo Nome. */
+  function revelarCampos(v: string) {
+    setEmailOk(emailValido(v));
+  }
+
+  function concluirEmail(v: string) {
     if (!emailValido(v)) { setEmailOk(false); return; }
-    setEmailOk((jaOk) => { if (!jaOk) focarNome.current = true; return true; });
+    if (!emailOk) focarNome.current = true;
+    setEmailOk(true);
   }
 
   function aoDigitarEmail(v: string) {
     setEmail(v);
     if (timerEmail.current) clearTimeout(timerEmail.current);
     if (!emailValido(v)) { setEmailOk(false); return; }
-    timerEmail.current = setTimeout(() => confirmarEmail(v), 700);
+    timerEmail.current = setTimeout(() => revelarCampos(v), 700);
   }
 
   function aoDigitarCep(valor: string) {
@@ -261,8 +269,8 @@ export default function CheckoutView() {
                   <input id="co-email" className={`${s.input} ${email && !emailValido(email) ? s.inputErro : ""}`}
                     type="email" value={email} autoComplete="email" inputMode="email"
                     onChange={(ev) => aoDigitarEmail(ev.target.value)}
-                    onBlur={(ev) => confirmarEmail(ev.target.value)}
-                    onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); confirmarEmail(email); } }} />
+                    onBlur={(ev) => concluirEmail(ev.target.value)}
+                    onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); concluirEmail(email); } }} />
                 </div>
                 {emailOk && (
                   <>

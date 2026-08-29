@@ -201,24 +201,43 @@
 @media (prefers-reduced-motion: reduce) { .campoSpinner { animation-duration: 2s; } }
 
 /* ---- painel do PIX ---- */
-.pix { margin-top: 22px; padding: 26px 24px; border: 1px solid #dee2e6; border-radius: 12px; background: #fff; text-align: center; }
-.pixTitulo { font-size: 19px; font-weight: 700; color: var(--bb-text-2); margin-bottom: 6px; }
+.pix { margin-top: 22px; padding: 26px 24px; border: 1px solid #dee2e6; border-radius: 14px; background: #fff; }
+.pixTopo { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+.pixTitulo { font-size: 19px; font-weight: 700; color: var(--bb-text-2); margin-bottom: 5px; }
 .pixTexto { font-size: 14px; color: #6c757d; line-height: 20px; }
-.pixQr { display: block; margin: 20px auto 14px; width: 220px; height: 220px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
-.pixLabel { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #adb5bd; font-weight: 700; margin-bottom: 8px; }
+
+.pixRelogio { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; background: #f6f7f9; border: 1px solid #e6e8ec; border-radius: 10px; padding: 8px 16px; }
+.pixRelogioLabel { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #6c757d; font-weight: 700; }
+.pixRelogioTempo { font-size: 24px; font-weight: 900; color: var(--bb-text-2); font-variant-numeric: tabular-nums; line-height: 28px; }
+.pixRelogioAlerta { background: #fdeceb; border-color: #f6cfcd; }
+.pixRelogioAlerta .pixRelogioTempo, .pixRelogioAlerta .pixRelogioLabel { color: #c0272d; }
+
+.pixConteudo { display: flex; gap: 26px; align-items: flex-start; }
+.pixQrBox { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pixQr { width: 210px; height: 210px; border: 1px solid #eee; border-radius: 12px; background: #fff; display: block; }
+.pixQrDica { font-size: 11px; color: #adb5bd; text-align: center; max-width: 210px; }
+
+.pixPassos { flex: 1 1 auto; display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.pixPassos li { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; line-height: 20px; color: var(--bb-text-2); }
+.pixPassoNum { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; background: var(--bb-navy); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+.pixLabel { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #adb5bd; font-weight: 700; margin: 24px 0 8px; }
 .pixCopia { display: flex; gap: 10px; align-items: stretch; }
-.pixCodigo { flex: 1 1 auto; min-width: 0; background: #f6f7f9; border: 1px solid #e6e8ec; border-radius: 8px; padding: 13px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--bb-text-2); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pixEspera { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; font-size: 13px; color: #6c757d; }
-.pixPulso { width: 9px; height: 9px; border-radius: 50%; background: #12a742; animation: coPulso 1.4s ease-in-out infinite; }
-.pixTempo { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--bb-text-2); }
+.pixCodigo { flex: 1 1 auto; min-width: 0; background: #f6f7f9; border: 1px solid #e6e8ec; border-radius: 8px; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--bb-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pixEspera { display: flex; align-items: center; gap: 9px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef0f3; font-size: 13px; color: #6c757d; }
+.pixPulso { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: #12a742; animation: coPulso 1.4s ease-in-out infinite; }
 @keyframes coPulso { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.82); } }
 
-.pixAprovado { border-color: #12a742; background: #f4fcf6; }
+.pixAprovado { border-color: #12a742; background: #f4fcf6; text-align: center; }
 .pixCheck { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: #12a742; color: #fff; font-size: 30px; display: flex; align-items: center; justify-content: center; }
 
 @media (prefers-reduced-motion: reduce) { .pixPulso { animation: none; } }
 @media (max-width: 767px) {
   .pix { padding: 20px 16px; }
+  .pixConteudo { flex-direction: column; align-items: center; gap: 18px; }
+  .pixPassos { width: 100%; }
   .pixCopia { flex-direction: column; }
-  .pixQr { width: 190px; height: 190px; }
+  .pixQr { width: 200px; height: 200px; }
+  .pixTopo { gap: 12px; }
 }
