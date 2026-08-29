@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { ler } from "./config-integracoes";
+import { responderLocal } from "./robo-interno";
 import { supabaseAdmin } from "./supabase/servidor";
 
 /* Robô de atendimento do WhatsApp.
@@ -15,11 +16,16 @@ export type Treinamento = {
   nao_pode: string;
   exemplos: { pergunta: string; resposta: string }[];
   escalar_quando: string;
+  escalar_mensagem: string;
 };
+
+/* Texto padrão quando o robô não sabe. Editável no painel. */
+export const ENCAMINHAR_PADRAO =
+  "Essa eu vou te encaminhar para outro setor, que consegue te informar direitinho sobre isso. Só um instante.";
 
 export const TREINAMENTO_VAZIO: Treinamento = {
   ativo: false, tom: "", sobre_produto: "", regras: "", nao_pode: "",
-  exemplos: [], escalar_quando: "",
+  exemplos: [], escalar_quando: "", escalar_mensagem: ENCAMINHAR_PADRAO,
 };
 
 export async function lerTreinamento(): Promise<Treinamento> {
@@ -35,6 +41,7 @@ export async function lerTreinamento(): Promise<Treinamento> {
     nao_pode: data.nao_pode ?? "",
     exemplos: Array.isArray(data.exemplos) ? data.exemplos : [],
     escalar_quando: data.escalar_quando ?? "",
+    escalar_mensagem: data.escalar_mensagem?.trim() || ENCAMINHAR_PADRAO,
   };
 }
 
@@ -68,9 +75,9 @@ export function montarPrompt(t: Treinamento) {
     "\n\n## Regra final\n" +
     "Se não souber a resposta, ou se a pergunta envolver saúde, medicação, " +
     "condição médica, gravidez ou uso por menor de idade, NÃO invente e não " +
-    "aconselhe: responda que vai chamar alguém do time e encerre com a marcação " +
-    "[ESCALAR] no fim da mensagem. Nunca prometa resultado de emagrecimento, " +
-    "nunca compare o produto com medicamento.";
+    "aconselhe. Nesse caso responda exatamente isto e mais nada, seguido da " +
+    `marcação [ESCALAR]:\n"${t.escalar_mensagem || ENCAMINHAR_PADRAO}"\n` +
+    "Nunca prometa resultado de emagrecimento, nunca compare o produto com medicamento.";
 
   return p;
 }
@@ -80,8 +87,24 @@ export type Historico = { autor: "cliente" | "robo" | "atendente"; texto: string
 export type Resposta = { texto: string; escalar: boolean } | null;
 
 export async function responder(historico: Historico, t: Treinamento): Promise<Resposta> {
+  if (!t.ativo) return null;
+
+  const ultima = [...historico].reverse().find((m) => m.autor === "cliente")?.texto ?? "";
   const chave = process.env.ANTHROPIC_API_KEY;
-  if (!chave || !t.ativo) return null;
+
+  /* Sem chave da Anthropic o robô continua funcionando pelo motor interno:
+     casa a pergunta com o que você escreveu no treinamento e com as
+     intenções embutidas. Não inventa nada — se não reconhece, escala. */
+  if (!chave) {
+    const local = responderLocal(ultima, t.exemplos);
+    if (local) return { texto: local.texto, escalar: local.escalar };
+    return { texto: t.escalar_mensagem || ENCAMINHAR_PADRAO, escalar: true };
+  }
+
+  /* Com chave: o motor interno resolve primeiro os casos de segurança
+     (saúde, reclamação, troca) — resposta previsível vale mais que criativa. */
+  const local = responderLocal(ultima, t.exemplos);
+  if (local?.escalar) return { texto: local.texto, escalar: true };
 
   const client = new Anthropic({ apiKey: chave });
 
@@ -99,7 +122,7 @@ export async function responder(historico: Historico, t: Treinamento): Promise<R
       })),
     });
 
-    if (r.stop_reason === "refusal") return { texto: "", escalar: true };
+    if (r.stop_reason === "refusal") return { texto: t.escalar_mensagem || ENCAMINHAR_PADRAO, escalar: true };
 
     const texto = r.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
@@ -111,8 +134,12 @@ export async function responder(historico: Historico, t: Treinamento): Promise<R
     const escalar = texto.includes("[ESCALAR]");
     return { texto: texto.replace(/\[ESCALAR\]/g, "").trim(), escalar };
   } catch (e) {
-    console.error("[robo] falha ao responder:", (e as Error).message);
-    return null;
+    console.error("[robo] Claude falhou, caindo no motor interno:", (e as Error).message);
+    // a API caiu ou estourou cota — o atendimento não pode parar junto
+    const reserva = responderLocal(ultima, t.exemplos);
+    return reserva
+      ? { texto: reserva.texto, escalar: reserva.escalar }
+      : { texto: t.escalar_mensagem || ENCAMINHAR_PADRAO, escalar: true };
   }
 }
 

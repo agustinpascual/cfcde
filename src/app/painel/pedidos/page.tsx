@@ -3,7 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
 import Casca from "@/components/painel/Casca";
-import { configurado, lerAoVivo, lerPedidos, moeda } from "@/components/painel/dados";
+import FaixaInstalar from "@/components/painel/FaixaInstalar";
+import { estadoInstalacao, configurado, lerAoVivo, lerPedidos, moeda } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
@@ -29,9 +30,15 @@ export default async function Page() {
 
   const [pedidos, vivos] = await Promise.all([lerPedidos(100), lerAoVivo()]);
 
+  const _inst = await estadoInstalacao();
+
+  const _faltam = _inst?.filter((t) => !t.existe).length ?? 0;
+
+
   return (
     <Casca atual="/painel/pedidos" titulo="Pedidos"
       subtitulo={`${pedidos.length} mais recentes · clique para ver os detalhes`} aoVivo={vivos.length}>
+      <FaixaInstalar faltam={_faltam} />
       <AvisoConfig faltando={configurado() ? [] : ["SUPABASE_SERVICE_ROLE_KEY"]} />
 
       <section className={s.cartao}>

@@ -141,3 +141,31 @@ export const lerPedido = (id: string) =>
 
 export const moeda = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/* ---------- diagnóstico de instalação ---------- */
+export const TABELAS = [
+  { nome: "pedidos", para: "Pedidos e receita" },
+  { nome: "eventos", para: "Funil e rastreamento" },
+  { nome: "sessoes", para: "Visitantes ao vivo e mapa" },
+  { nome: "eventos_webhook", para: "Confirmação de pagamento" },
+  { nome: "configuracoes", para: "Integrações salvas no painel" },
+  { nome: "conversas", para: "WhatsApp" },
+  { nome: "mensagens", para: "WhatsApp" },
+  { nome: "treinamento", para: "Robô do WhatsApp" },
+] as const;
+
+export type EstadoTabela = { nome: string; para: string; existe: boolean };
+
+/** Consulta cada tabela de verdade — `head:true` devolve 204 até para tabela
+    inexistente, então o SELECT precisa pedir uma linha. */
+export async function estadoInstalacao(): Promise<EstadoTabela[] | null> {
+  const db = supabaseAdmin();
+  if (!db) return null;
+  return Promise.all(TABELAS.map(async ({ nome, para }) => {
+    const { error } = await db.from(nome).select("*").limit(1);
+    // PGRST205 = tabela ausente do cache do schema. Outros erros (RLS, etc.)
+    // significam que a tabela existe.
+    const existe = !error || (error as { code?: string }).code !== "PGRST205";
+    return { nome, para, existe };
+  }));
+}

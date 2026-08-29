@@ -9,6 +9,7 @@ const AJUDA = {
   regras: "Como conduzir a conversa: o que perguntar de volta, quando mandar o link, como falar de preço.",
   nao_pode: "Limites explícitos. Ex.: “Nunca prometer perda de peso, nunca comparar com medicamento, nunca dar conselho médico.”",
   escalar_quando: "Situações em que ele para e chama alguém. Ex.: “Reclamação, pedido atrasado, pergunta sobre saúde.”",
+  escalar_mensagem: "A frase exata que ele manda ao encaminhar. É o que o cliente lê quando o robô não sabe.",
 };
 
 export default function FormTreinamento({ inicial }: { inicial: Treinamento }) {
@@ -48,15 +49,16 @@ export default function FormTreinamento({ inicial }: { inicial: Treinamento }) {
         </span>
       </label>
 
-      {(["tom", "sobre_produto", "regras", "nao_pode", "escalar_quando"] as const).map((k) => (
+      {(["tom", "sobre_produto", "regras", "nao_pode", "escalar_quando", "escalar_mensagem"] as const).map((k) => (
         <div key={k} className={t.bloco}>
           <label className={t.rotulo} htmlFor={`tr-${k}`}>
             {{ tom: "Tom de voz", sobre_produto: "Sobre o produto", regras: "Como responder",
-               nao_pode: "O que não pode fazer", escalar_quando: "Quando chamar um humano" }[k]}
+               nao_pode: "O que não pode fazer", escalar_quando: "Quando chamar um humano",
+               escalar_mensagem: "Mensagem de encaminhamento" }[k]}
           </label>
           <p className={t.ajuda}>{AJUDA[k]}</p>
           <textarea id={`tr-${k}`} className={t.area} value={v[k]} onChange={campo(k)}
-            rows={k === "sobre_produto" ? 10 : k === "tom" ? 3 : 5} />
+            rows={k === "sobre_produto" ? 10 : k === "tom" || k === "escalar_mensagem" ? 3 : 5} />
         </div>
       ))}
 

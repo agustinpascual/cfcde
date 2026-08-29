@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
 import Casca from "@/components/painel/Casca";
+import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import { AreaTempo, BarrasH } from "@/components/painel/Grafico";
 import FiltroPeriodo from "@/components/painel/FiltroPeriodo";
-import { configurado, lerAoVivo, lerFunil, lerResumo, lerVendasPorDia, moeda, resolverPeriodo } from "@/components/painel/dados";
+import { estadoInstalacao, configurado, lerAoVivo, lerFunil, lerResumo, lerVendasPorDia, moeda, resolverPeriodo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
@@ -46,8 +47,14 @@ export default async function Page({ searchParams }: {
 
   const ticket = resumo.pedidos_pagos ? resumo.receita_centavos / resumo.pedidos_pagos : 0;
 
+  const _inst = await estadoInstalacao();
+
+  const _faltam = _inst?.filter((t) => !t.existe).length ?? 0;
+
+
   return (
     <Casca atual="/painel" titulo="Vendas" subtitulo={`Resumo do desempenho · ${periodo.rotulo}`} aoVivo={vivos.length}>
+      <FaixaInstalar faltam={_faltam} />
       <AvisoConfig faltando={faltando} />
 
       <FiltroPeriodo de={periodo.de} ate={periodo.ate} />

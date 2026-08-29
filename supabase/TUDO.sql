@@ -110,6 +110,7 @@ select
     and criado_em >= date_trunc('day', now())), 0)                  as receita_hoje_centavos,
   count(*) filter (where criado_em >= date_trunc('day', now()))      as pedidos_hoje
 from public.pedidos;
+
 -- =====================================================================
 -- Bela Gummy — sessões ao vivo e eventos de comportamento
 -- Rode depois da 0001. Supabase → SQL Editor → New query → Run
@@ -215,6 +216,7 @@ from public.pedidos
 where criado_em > now() - interval '30 days'
 group by 1
 order by 1;
+
 -- =====================================================================
 -- Bela Gummy — credenciais das integrações, editáveis pelo painel
 -- =====================================================================
@@ -240,6 +242,7 @@ drop trigger if exists configuracoes_atualizado_em on public.configuracoes;
 create trigger configuracoes_atualizado_em
   before update on public.configuracoes
   for each row execute function public.toca_config_atualizado_em();
+
 -- =====================================================================
 -- Bela Gummy — atendimento por WhatsApp (Z-API) e treinamento do robô
 -- =====================================================================
@@ -315,3 +318,8 @@ create policy "painel le mensagens" on public.mensagens for select to authentica
 
 drop policy if exists "painel le treinamento" on public.treinamento;
 create policy "painel le treinamento" on public.treinamento for select to authenticated using (true);
+
+-- Mensagem usada quando o robô não sabe responder e passa para um humano
+alter table public.treinamento
+  add column if not exists escalar_mensagem text not null default
+    'Essa eu vou te encaminhar para outro setor, que consegue te informar direitinho sobre isso. Só um instante.';

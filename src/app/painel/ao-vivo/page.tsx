@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
+import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import MapaBrasil from "@/components/painel/MapaBrasil";
 import Recarrega from "@/components/painel/Recarrega";
-import { lerAoVivo } from "@/components/painel/dados";
+import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
@@ -33,8 +34,14 @@ export default async function Page() {
   const noPagamento = vivos.filter((v) => v.pagina?.startsWith("/pagamento")).length;
   const copiaram = vivos.filter((v) => v.copiou_pix).length;
 
+  const _inst = await estadoInstalacao();
+
+  const _faltam = _inst?.filter((t) => !t.existe).length ?? 0;
+
+
   return (
     <Casca atual="/painel/ao-vivo" titulo="Ao vivo" subtitulo="Atualiza sozinho a cada 15 segundos" aoVivo={vivos.length}>
+      <FaixaInstalar faltam={_faltam} />
       <Recarrega segundos={15} />
 
       <div className={s.kpis}>

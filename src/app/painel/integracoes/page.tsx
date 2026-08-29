@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
+import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import FormIntegracao from "@/components/painel/FormIntegracao";
-import { lerAoVivo } from "@/components/painel/dados";
+import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { estadoDasChaves, type ChaveConfig } from "@/lib/config-integracoes";
 import { temChaveMestra } from "@/lib/cofre";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
@@ -47,8 +48,14 @@ export default async function Page() {
   const [vivos, chaves] = await Promise.all([lerAoVivo(), estadoDasChaves()]);
   const porChave = new Map(chaves.map((c) => [c.chave, c]));
 
+  const _inst = await estadoInstalacao();
+
+  const _faltam = _inst?.filter((t) => !t.existe).length ?? 0;
+
+
   return (
     <Casca atual="/painel/integracoes" titulo="Integrações" subtitulo="Edite as credenciais direto por aqui" aoVivo={vivos.length}>
+      <FaixaInstalar faltam={_faltam} />
       {!temChaveMestra() && (
         <div className={s.aviso}>
           <p className={s.avisoTitulo}>Edição bloqueada</p>
