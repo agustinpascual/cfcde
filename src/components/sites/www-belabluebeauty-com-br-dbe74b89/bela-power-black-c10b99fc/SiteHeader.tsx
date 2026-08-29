@@ -30,7 +30,7 @@ export default function SiteHeader() {
         </button>
 
         <div className={s.logo}>
-          <Link href="/" title="Mounja Gummy — Bela Blue Beauty">
+          <Link href="/" title="Bela Gummy — Bela Blue Beauty">
             <Image src={`${IMG}/00-comprar-bela-power-black-prazo-e.png`} alt="Bela Blue Beauty" width={114} height={67} priority sizes="114px" />
           </Link>
         </div>

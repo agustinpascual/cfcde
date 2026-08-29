@@ -20,7 +20,7 @@ export const categorias = [
 
 /* ---------- Produto ---------- */
 export const produto = {
-  nome: "Mounja Gummy",
+  nome: "Bela Gummy",
   nota: "5.0",
   avaliacoes: 39,
   de: "R$149,90",
@@ -57,21 +57,21 @@ export const kits: Kit[] = [
   },
 ];
 
-/* ---------- Card de descrição — Mounja Gummy ----------
+/* ---------- Card de descrição — Bela Gummy ----------
    Texto escrito para suplemento alimentar sob as regras da RDC 243/2018 (ANVISA):
    descreve formato, apresentação e orientação de uso, sem alegação terapêutica,
    sem promessa de resultado e sem comparação com medicamento.
    Os números marcados como (conferir rótulo) precisam bater com a embalagem real. */
 export const descricao = {
   badge: "Bela Blue Beauty",
-  tituloA: "MOUNJA",
+  tituloA: "BELA",
   tituloB: "GUMMY",
   subtitulo: "Suplemento alimentar em gomas mastigáveis",
   linha: "LINHA GUMMY",
   headline: "A praticidade de uma goma para uma rotina que não para",
   intro: {
     antes: "O ",
-    forte: "Mounja Gummy",
+    forte: "Bela Gummy",
     depois:
       " é o suplemento alimentar da Bela Blue Beauty apresentado em gomas mastigáveis. Foi desenvolvido para quem quer manter a suplementação em dia sem depender de água, cápsula ou preparo — basta abrir o pote e consumir a porção indicada no rótulo.",
   },
@@ -112,7 +112,7 @@ export const descricao = {
   ],
   imagem: {
     src: `${IMG}/emagrecimento1.webp`,
-    alt: "Mounja Gummy — linha Gummy da Bela Blue Beauty",
+    alt: "Bela Gummy — linha Gummy da Bela Blue Beauty",
     largura: 1536,
     altura: 1024,
   },
@@ -277,3 +277,37 @@ export const opcoesFrete = [
 ] as const;
 
 export type OpcaoFrete = (typeof opcoesFrete)[number];
+
+/* ---------- Criadores de conteúdo ----------
+   Cada item aceita um vídeo local (`src`, arquivo em /public/.../videos)
+   OU um embed (`embed`, URL de YouTube/Instagram). O `poster` é a capa
+   mostrada antes do play — sem ele o card fica cinza até carregar.
+   Enquanto não houver vídeo, a seção não é renderizada. */
+export type Criador = {
+  nome: string;
+  arroba: string;
+  seguidores?: string;
+  legenda: string;
+  src?: string;
+  embed?: string;
+  poster?: string;
+};
+
+export const criadores: Criador[] = [
+  // Exemplo de como preencher (descomente e ajuste quando tiver os vídeos):
+  // {
+  //   nome: "Nome da criadora",
+  //   arroba: "@usuaria",
+  //   seguidores: "128 mil",
+  //   legenda: "Uso todo dia depois do café — nem parece suplemento.",
+  //   src: `${IMG.replace("/images", "")}/videos/criadora-1.mp4`,
+  //   poster: `${IMG}/imag1.png`,
+  // },
+];
+
+export const criadoresTexto = {
+  selo: "Nas redes",
+  titulo: "Quem já incorporou na rotina",
+  subtitulo:
+    "Criadoras de conteúdo mostrando como o Bela Gummy entra no dia a dia — sem preparo, sem água, sem complicação.",
+};
