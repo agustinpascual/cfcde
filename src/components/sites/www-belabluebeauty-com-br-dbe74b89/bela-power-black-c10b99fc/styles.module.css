@@ -358,6 +358,8 @@
   .navList { gap: 18px; }
   .navLink { font-size: 14px; }
   .reviewsGrade { grid-template-columns: repeat(2, 1fr); }
+  .descCards { grid-template-columns: 1fr 1fr; }
+  .descCards > :nth-child(3) { grid-column: 1 / -1; }
 }
 
 @media (max-width: 991px) {
@@ -420,7 +422,7 @@
   .descTitulo { font-size: 28px; line-height: 32px; }
   .descBody { padding: 24px 18px; }
   .descIntro { margin: 0 0 24px; }
-  .descCards { flex-direction: column; }
+  .descCards { grid-template-columns: 1fr; }
   .descSpecs { padding: 14px 12px; }
   .infoDesc { padding-bottom: 20px; }
 
