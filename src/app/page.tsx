@@ -30,18 +30,18 @@ export default function Page() {
       <main style={{ overflow: "hidden" }}>
         <div id="produto">
           <div className={`bb-container ${s.centralProduct}`}>
-            <ProductGallery />
-            <ProductInfo />
+            <div data-secao="galeria" style={{ display: "contents" }}><ProductGallery /></div>
+            <div data-secao="compra" style={{ display: "contents" }}><ProductInfo /></div>
 
             <div style={{ width: "100%" }}>
-              <CreatorsSection />
+              <div data-secao="criadores" style={{ display: "contents" }}><CreatorsSection /></div>
             </div>
-            <DescriptionCard />
-            <ReviewsSection />
+            <div data-secao="descricao" style={{ display: "contents" }}><DescriptionCard /></div>
+            <div data-secao="avaliacoes" style={{ display: "contents" }}><ReviewsSection /></div>
           </div>
         </div>
 
-        <div className="bb-container"><AlertsStrip /></div>
+        <div className="bb-container"><div data-secao="beneficios" style={{ display: "contents" }}><AlertsStrip /></div></div>
       </main>
 
       <SiteFooter />

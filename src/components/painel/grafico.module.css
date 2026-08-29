@@ -1,0 +1,19 @@
+.wrap { position: relative; }
+.svg { width: 100%; height: auto; display: block; overflow: visible; }
+.eixo { font-size: 10.5px; fill: #94a3b8; font-family: inherit; }
+.vazio { padding: 34px 0; text-align: center; font-size: 13px; color: #94a3b8; }
+
+.dica { position: absolute; top: -6px; transform: translateX(-50%); background: #16202e; color: #fff; border-radius: 8px; padding: 7px 11px; font-size: 12px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.dica strong { font-size: 13.5px; font-weight: 700; }
+.dica span { color: #a9b6c9; font-size: 11px; }
+
+/* barras: rótulo direto em cada linha, sem legenda */
+.barras { display: flex; flex-direction: column; gap: 13px; }
+.barraLinha { display: grid; grid-template-columns: 118px 1fr auto; align-items: center; gap: 12px; }
+.barraRotulo { font-size: 13px; color: #475569; }
+.barraTrilho { height: 12px; background: #f1f3f6; border-radius: 4px; overflow: hidden; }
+.barraFill { display: block; height: 100%; border-radius: 4px; transition: width .4s cubic-bezier(.22,1,.36,1); }
+.barraValor { font-size: 13.5px; font-weight: 700; color: #16202e; text-align: right; white-space: nowrap; }
+.barraNota { display: block; font-size: 11px; font-weight: 400; font-style: normal; color: #94a3b8; margin-top: 1px; }
+
+@media (max-width: 620px) { .barraLinha { grid-template-columns: 90px 1fr auto; gap: 8px; } .barraRotulo { font-size: 12px; } }

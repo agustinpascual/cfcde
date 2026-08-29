@@ -6,6 +6,7 @@ import { lerCobranca, type Cobranca } from "../checkout/cobranca";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { IMG, produto } from "../data";
 import PurchaseNotifications from "../PurchaseNotifications";
+import { registrar } from "../Rastreador";
 import SiteFooter from "../SiteFooter";
 import s from "./pagamento.module.css";
 
@@ -65,7 +66,7 @@ export default function PagamentoView({ id }: { id: string }) {
         if (!res.ok) return;
         const d = await res.json();
         if (d.status === "approved" && !aprovado.current) {
-          aprovado.current = true; setStatus("approved"); clearInterval(t);
+          aprovado.current = true; setStatus("approved"); registrar("compra", { id }); clearInterval(t);
         } else if (d.status === "expired") { setStatus("expired"); clearInterval(t); }
       } catch { /* tenta de novo no próximo ciclo */ }
     }, 4000);
@@ -95,6 +96,7 @@ export default function PagamentoView({ id }: { id: string }) {
       return;
     }
     setCopiado(true);
+    registrar("pix_copiado", { pedido: cobranca.pedido, total: cobranca.total });
     setTimeout(() => setCopiado(false), 2600);
   }
 

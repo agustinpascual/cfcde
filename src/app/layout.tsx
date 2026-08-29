@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Sans, Lato } from "next/font/google";
+import { Suspense } from "react";
+import Rastreador from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -70,7 +72,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className={`${instrumentSans.variable} ${lato.variable}`}>{children}</body>
+      <body className={`${instrumentSans.variable} ${lato.variable}`}>
+        {children}
+        <Suspense fallback={null}><Rastreador /></Suspense>
+      </body>
     </html>
   );
 }
