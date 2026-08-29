@@ -153,7 +153,7 @@ export const reviews: Review[] = [
   { autor: "Anderson Freitas", data: "16/12/2025", estrelas: 5, texto: "O emagrecedor mais potente dos últimos tempos!! Dois dias baixei 4kg!!! Incrível essas cápsulas." },
   { autor: "Sara Guedes", data: "16/12/2025", estrelas: 5, texto: "Muito bom ! Zero fome, bastante sede e muito xixi." },
   { autor: "Daiana", data: "16/12/2025", estrelas: 5, texto: "Produto muito booom zero fome, realmente amei 😍🥰" },
-  { autor: "Michele Loh", data: "16/12/2025", estrelas: 5, texto: "Tomei somente três cápsulas do kit teste, eliminei 1.700kg nesses dias que tomei. Estou ansiosa para o lançamento!" },
+  { autor: "Michele Loh", data: "16/12/2025", estrelas: 5, texto: "Tomei somente três cápsulas do kit teste, eliminei 1,700kg nesses dias que tomei. Estou ansiosa para o lançamento!" },
   { autor: "Vivi Schaefer", data: "16/12/2025", estrelas: 5, texto: "Superou todas as minhas expectativas. Ele cumpre além do que promete. Nossa! Eu amei!" },
   { autor: "Maria luiza", data: "16/12/2025", estrelas: 5, texto: "Recebi o produto muito rápido, e ele é perfeito! Resultado em 1 dia de uso 🥰🥰" },
   { autor: "CARINI LONGEN", data: "16/12/2025", estrelas: 5, texto: "Ele é maravilhosa bem do jeito que eu gosto, apenas 1 cápsula conseguir perder -3kg na balança ajuda muito na retenção de líquidos eu super amei já estou esperando meu potinho para fazer o tratamento" },

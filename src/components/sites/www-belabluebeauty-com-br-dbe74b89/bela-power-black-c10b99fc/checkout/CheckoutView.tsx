@@ -13,10 +13,11 @@ import {
 } from "./mascaras";
 import s from "./checkout.module.css";
 
-/* Clone visual de https://www.belabluebeauty.com.br/checkout/
-   IMPORTANTE: é uma interface de demonstração. Nenhum dado é enviado a
-   servidor nenhum e não há captura de dados de cartão — a seleção de
-   pagamento é apenas visual, como na página de origem. */
+/* Checkout da loja.
+   O pagamento é PIX real via PinPay: a cobrança é criada em /api/pix (rota de
+   servidor) e o status é consultado por polling. A chave sk_ nunca chega ao
+   browser e o valor é recalculado no servidor a partir da tabela de preços.
+   Não há captura de dados de cartão nesta tela. */
 
 type Endereco = { logradouro: string; bairro: string; localidade: string; uf: string };
 
@@ -404,18 +405,6 @@ export default function CheckoutView() {
                 </button>
                 {erroPix && <p className={s.erro} role="alert">{erroPix}</p>}
                 {cobranca && <PixPanel cobranca={cobranca} aoAprovar={() => {}} />}
-                {!podeFinalizar && (
-                  <p className={s.faltando}>
-                    Faltam: {[
-                      !emailOk && "e-mail",
-                      !dadosOk && "dados pessoais",
-                      !enderecoOk && "endereço",
-                      !envio && "forma de envio",
-                      !pagamento && "pagamento",
-                    ].filter(Boolean).join(", ")}
-                  </p>
-                )}
-                <p className={s.aviso}>Esta é uma vitrine de demonstração — nenhum pagamento é processado.</p>
               </div>
 
               <div className={s.rodapeLinks}>
