@@ -11,7 +11,7 @@ export type Cobranca = {
   pedido: string;
   total: number;
   qr_code: string;
-  qr_code_url: string;
+  qr_code_url: string | null;
   expires_at: string;
 };
 
@@ -121,8 +121,12 @@ export default function PixPanel({ cobranca, aoAprovar }: { cobranca: Cobranca; 
         <>
           <div className={s.pixConteudo}>
             <div className={s.pixQrBox}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className={s.pixQr} src={cobranca.qr_code_url} alt="QR Code para pagamento PIX" width={210} height={210} />
+              {cobranca.qr_code_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img className={s.pixQr} src={cobranca.qr_code_url} alt="QR Code para pagamento PIX" width={210} height={210} />
+              ) : (
+                <div className={s.pixQrVazio}>QR indisponível — use o código copia e cola abaixo</div>
+              )}
               <span className={s.pixQrDica}>Aponte a câmera do app do banco</span>
             </div>
 

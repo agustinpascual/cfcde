@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import QRCode from "qrcode";
 import { criarPix } from "@/lib/pinpay";
 import { calcularTotal, type IdFrete } from "@/lib/precos";
 
@@ -47,13 +48,31 @@ export async function POST(req: Request) {
       metadata: { external_reference: pedido, checkout_url: `${origem}/checkout` },
     });
 
+    /* A PinPay às vezes devolve qr_code_url = null. O BR Code (qr_code) é o
+       dado autoritativo, então geramos a imagem aqui a partir dele — sem
+       depender de serviço externo de QR. */
+    const brcode = cobranca.pix?.qr_code ?? "";
+    let imagemQr = cobranca.pix?.qr_code_url ?? null;
+    if (!imagemQr && brcode) {
+      try {
+        imagemQr = await QRCode.toDataURL(brcode, {
+          errorCorrectionLevel: "M",
+          margin: 1,
+          width: 420,
+          color: { dark: "#0b2860", light: "#ffffff" },
+        });
+      } catch (e) {
+        console.error("[pinpay] falha ao gerar QR local:", (e as Error).message);
+      }
+    }
+
     // devolve só o que o front precisa — nada de credencial
     return NextResponse.json({
       id: cobranca.id,
       pedido,
       total: valores.total,
-      qr_code: cobranca.pix?.qr_code,
-      qr_code_url: cobranca.pix?.qr_code_url,
+      qr_code: brcode,
+      qr_code_url: imagemQr,
       expires_at: cobranca.pix?.expires_at,
       status: cobranca.status,
     });
