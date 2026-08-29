@@ -1,11 +1,18 @@
 import "server-only";
-import { kits, produto } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/data";
-import { opcoesFrete } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/data";
 
 /* Motor de resposta local, sem IA.
    Casa a mensagem do cliente com intenções conhecidas por sobreposição de
    palavras. Quando a confiança é baixa, escala para um humano em vez de
-   responder errado — para suplemento isso importa mais que cobrir tudo. */
+   responder errado.
+
+   As respostas seguem a política de atendimento do Mounja Gummy, que existe
+   por causa da Resolução-RE nº 3.242/2026 da Anvisa: o produto não tem
+   registro, notificação nem cadastro na Agência, e estão proibidas
+   fabricação, venda, distribuição, importação e divulgação.
+
+   Por isso este motor NÃO informa preço, frete, forma de pagamento nem modo
+   de uso, e nunca afirma eficácia. Nada aqui deve ser religado a `kits`,
+   `opcoesFrete` ou a qualquer dado comercial da loja. */
 
 /* ---------- normalização ---------- */
 const SEM_ACENTO = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -47,73 +54,196 @@ export type Intencao = {
   escalar?: boolean;
 };
 
-const moeda = (v: string) => v.replace("R$ ", "R$");
+const ANVISA =
+  "existe uma determinação da Anvisa relacionada ao produto, incluindo proibição de " +
+  "fabricação, venda, distribuição, importação e divulgação";
+
+const SEM_ORIENTAR_COMPRA =
+  "Não posso orientar uma compra ou envio do produto porque existe uma determinação " +
+  "sanitária vigente.";
 
 const INTERNAS: Intencao[] = [
+  /* --- identificação do produto --- */
+  {
+    id: "o_que_e",
+    gatilhos: ["que e", "produto", "goma", "gummy", "mounja", "sobre", "informacao", "conhecer"],
+    resposta: () =>
+      "O Mounja Gummy é apresentado como uma goma mastigável em pote com 30 unidades, " +
+      "com sabor informado de tangerina e limão. Porém, " + ANVISA + ".",
+  },
+  {
+    id: "para_que_serve",
+    gatilhos: ["serve", "finalidade", "funciona", "beneficio", "utilidade", "objetivo"],
+    resposta: () =>
+      "O produto foi comercializado com divulgação relacionada ao controle de peso. " +
+      "Entretanto, não posso afirmar que ele seja eficaz para emagrecimento nem " +
+      "recomendar seu uso. A Anvisa determinou a proibição do produto.",
+  },
+
+  /* --- promessas de resultado: sempre negadas --- */
+  {
+    id: "emagrece",
+    gatilhos: ["emagrece", "emagrecer", "emagrecimento", "perder peso", "secar", "queima gordura", "gordura", "barriga"],
+    resposta: () =>
+      "Não posso afirmar que o produto provoque emagrecimento ou garantir qualquer " +
+      "resultado. Além disso, existe uma determinação da Anvisa proibindo a venda e a " +
+      "divulgação do produto.",
+  },
+  {
+    id: "tempo_resultado",
+    gatilhos: ["quanto tempo", "faz efeito", "demora", "resultado", "primeiros resultados", "tres dias", "semana"],
+    resposta: () =>
+      "Não existe um prazo de resultado que eu possa garantir. Não é correto afirmar que " +
+      "o produto produz resultados em 3 dias ou em qualquer outro período específico.",
+  },
+  {
+    id: "quantos_quilos",
+    gatilhos: ["quantos quilos", "quantos kg", "perco", "vou perder", "quilo"],
+    resposta: () =>
+      "Não é possível determinar ou garantir quantos quilos uma pessoa perderia. Não devo " +
+      "fornecer uma estimativa individual de emagrecimento.",
+  },
+
+  /* --- comparações e natureza do produto --- */
+  {
+    id: "mounjaro",
+    gatilhos: ["mounjaro", "ozempic", "wegovy", "tirzepatida", "semaglutida", "caneta", "igual ao"],
+    resposta: () =>
+      "Não. Não devo apresentar o produto como equivalente, substituto ou semelhante a " +
+      "medicamentos como Mounjaro, Ozempic ou Wegovy.",
+  },
+  {
+    id: "medicamento",
+    gatilhos: ["medicamento", "remedio", "farmaco", "tarja"],
+    resposta: () => "Não devo apresentar o produto como medicamento.",
+  },
+
+  /* --- situação sanitária --- */
+  {
+    id: "anvisa",
+    gatilhos: ["anvisa", "aprovado", "registro", "registrado", "liberado", "autorizado", "notificacao"],
+    resposta: () =>
+      "Não. Segundo informação oficial publicada pela Anvisa em 17 de agosto de 2026, o " +
+      "Mounja Gummy não possui registro, notificação ou cadastro na Agência.",
+  },
+  {
+    id: "seguro",
+    gatilhos: ["seguro", "faz mal", "confiavel", "risco", "perigoso", "efeito colateral", "contraindicacao"],
+    resposta: () =>
+      "Não posso afirmar que o produto seja seguro. A Anvisa informou que o produto não " +
+      "possui registro, notificação ou cadastro na Agência e determinou sua apreensão e " +
+      "proibição.",
+  },
+  {
+    id: "composicao",
+    gatilhos: ["composicao", "ingrediente", "formula", "contem", "substancia", "tabela nutricional"],
+    resposta: () =>
+      "Para evitar te passar uma informação incorreta, não vou confirmar uma composição " +
+      "que não esteja respaldada por documentação oficial.",
+  },
+  {
+    id: "modo_uso",
+    gatilhos: ["como tomar", "como usar", "modo de uso", "posologia", "dose", "quantas gomas por dia", "quantas unidades", "horario", "tomo", "mastigar"],
+    resposta: () =>
+      "Não posso orientar sobre como utilizar o produto diante da determinação sanitária " +
+      "vigente.",
+  },
+
+  /* --- comercial: tudo recusado enquanto a proibição valer --- */
   {
     id: "preco",
-    gatilhos: ["preco", "quanto custa", "valor", "custa", "tabela", "desconto", "promocao", "barato", "caro", "pote", "kit", "unidade"],
+    gatilhos: ["preco", "quanto custa", "valor", "custa", "quanto e", "comprar", "compra", "pedido novo"],
     resposta: () =>
-      `Os valores são:\n\n` +
-      kits.map((k) => `• ${k.nome} — ${moeda(k.total)}${k.economia ? ` (${k.economia.toLowerCase()})` : ""}`).join("\n") +
-      `\n\nNo PIX tem 5% de desconto em qualquer um deles.`,
+      "Não posso orientar uma compra do produto porque existe uma determinação da Anvisa " +
+      "proibindo sua venda e divulgação.",
   },
   {
     id: "frete",
-    gatilhos: ["frete", "entrega", "envio", "chega", "correio", "sedex", "quanto tempo", "prazo", "demora"],
-    resposta: () =>
-      opcoesFrete
-        .map((o) => `• ${o.nome}: ${o.min} a ${o.max} dias úteis — ${o.preco === 0 ? "grátis" : `R$${o.preco.toFixed(2).replace(".", ",")}`}`)
-        .join("\n") + `\n\nO prazo começa a contar depois da confirmação do pagamento.`,
+    gatilhos: ["frete", "entrega", "envio", "chega", "correio", "sedex", "prazo de entrega", "cep"],
+    resposta: () => SEM_ORIENTAR_COMPRA,
   },
   {
     id: "pagamento",
-    gatilhos: ["pagar", "pagamento", "pix", "cartao", "boleto", "parcelar", "parcela", "forma de pagamento"],
-    resposta: () => `O pagamento é por PIX, com 5% de desconto já aplicado no total. O código aparece na hora e a aprovação é imediata.`,
+    gatilhos: ["pagar", "pagamento", "pix", "cartao", "boleto", "parcelar", "parcela", "link"],
+    resposta: () =>
+      "Não posso orientar pagamento nem enviar link de compra, porque existe uma " +
+      "determinação da Anvisa proibindo a venda e a divulgação do produto.",
   },
   {
-    id: "como_tomar",
-    gatilhos: ["como tomar", "como usar", "tomo", "toma", "quantas", "posologia", "dose", "por dia", "modo de uso", "quantidade", "horario"],
-    resposta: () => `A porção diária vem indicada no rótulo do pote — recomendo seguir exatamente o que está lá e não passar da quantidade indicada.`,
+    id: "kits_promocao",
+    gatilhos: ["kit", "desconto", "promocao", "oferta", "cupom", "frete gratis", "brinde", "combo"],
+    resposta: () =>
+      "Não posso oferecer kits, descontos ou promoções do produto. Existe uma determinação " +
+      "da Anvisa proibindo sua venda e divulgação.",
   },
   {
-    id: "o_que_e",
-    gatilhos: ["produto", "goma", "capsula", "serve", "funciona", "composicao", "ingrediente", "formula", "sabor", "natural"],
-    resposta: () => `O ${produto.nome} é um suplemento alimentar em gomas mastigáveis. Não precisa de água nem preparo — dá para tomar em qualquer horário do dia.`,
+    id: "insiste_compra",
+    gatilhos: ["mesmo assim quero", "quero comprar", "onde compro", "onde encontro", "tem em algum lugar", "outro site", "mercado livre", "shopee"],
+    resposta: () =>
+      "Entendo, mas não posso orientar uma compra ou indicar onde adquirir o produto " +
+      "enquanto existir a determinação sanitária vigente.",
   },
   {
-    id: "rastreio",
-    gatilhos: ["rastrear", "rastreio", "codigo de rastreio", "onde esta", "meu pedido", "pedido nao chegou", "cade"],
-    resposta: () => `Vou verificar seu pedido aqui, um instante.`,
+    id: "viu_propaganda",
+    gatilhos: ["vi um anuncio", "propaganda", "anuncio", "instagram", "tiktok", "facebook", "vi na internet", "vi vendendo"],
+    resposta: () =>
+      "É possível encontrar informações comerciais sobre o produto na internet, mas a " +
+      "existência de uma propaganda não significa que o produto esteja autorizado. A " +
+      "informação oficial da Anvisa deve prevalecer.",
+  },
+
+  /* --- tudo abaixo vai para atendimento humano (§23) --- */
+  {
+    id: "reacao_adversa",
+    gatilhos: ["passei mal", "passar mal", "reacao", "efeito ruim", "vomito", "nausea", "tontura", "dor", "alergia", "intoxicacao", "internado"],
+    resposta: () =>
+      "Sinto muito que isso tenha acontecido. Como você relatou um problema de saúde, não " +
+      "vou tentar diagnosticar ou orientar seu tratamento. Recomendo procurar atendimento " +
+      "profissional e, se houver sinais de emergência, buscar atendimento de urgência. " +
+      "Vou te encaminhar para o time agora.",
     escalar: true,
   },
   {
     id: "saude",
-    gatilhos: [
-      "gravida", "gravidez", "amamentando", "amamenta", "diabete", "diabetico", "pressao",
-      "remedio", "medicamento", "alergia", "alergico", "crianca", "menor", "cirurgia",
-      "anticoncepcional", "tireoide", "efeito colateral", "contraindicacao", "faz mal", "posso tomar",
-    ],
-    resposta: () => `Essa é uma pergunta de saúde, e eu não posso opinar. Vou chamar alguém do time — e vale conversar com seu médico ou nutricionista antes.`,
+    gatilhos: ["gravida", "gravidez", "amamentando", "amamenta", "diabete", "diabetico", "pressao",
+      "interacao", "anticoncepcional", "tireoide", "crianca", "menor", "cirurgia", "posso tomar", "doenca"],
+    resposta: () =>
+      "Essa é uma questão que precisa ser avaliada por um profissional de saúde. Não quero " +
+      "te passar uma orientação incorreta. Vou te encaminhar para o time.",
     escalar: true,
   },
   {
-    id: "troca",
-    gatilhos: ["trocar", "troca", "devolver", "devolucao", "arrependi", "cancelar", "reembolso", "estorno"],
-    resposta: () => `Você tem 7 dias para troca ou devolução. Vou chamar alguém do time para resolver isso com você.`,
+    id: "reembolso",
+    gatilhos: ["reembolso", "estorno", "devolver dinheiro", "cancelar", "cobranca", "cobrado", "estornar", "devolucao", "trocar", "arrependi"],
+    resposta: () =>
+      "Vou te encaminhar para outro setor, que consegue te informar direitinho sobre isso. " +
+      "Só um instante.",
+    escalar: true,
+  },
+  {
+    id: "rastreio",
+    gatilhos: ["rastrear", "rastreio", "codigo de rastreio", "onde esta", "meu pedido", "nao chegou", "cade", "atrasado"],
+    resposta: () =>
+      "Vou te encaminhar para outro setor, que consegue verificar seu pedido. Só um instante.",
     escalar: true,
   },
   {
     id: "reclamacao",
-    gatilhos: ["reclamacao", "reclamar", "pessimo", "horrivel", "processo", "procon", "golpe", "enganado", "absurdo"],
-    resposta: () => `Sinto muito por isso. Vou chamar alguém do time agora para te atender.`,
+    gatilhos: ["reclamacao", "reclamar", "pessimo", "horrivel", "processo", "procon", "golpe", "enganado", "absurdo", "advogado", "denuncia", "justica"],
+    resposta: () => "Sinto muito por isso. Vou te encaminhar para o time agora.",
     escalar: true,
   },
   {
-    id: "saudacao",
-    gatilhos: ["bom dia", "boa tarde", "boa noite", "tudo bem", "oi", "ola", "opa"],
-    resposta: () => `Oi! Como posso ajudar?`,
+    id: "documentacao",
+    gatilhos: ["documentacao", "laudo", "certificado", "nota fiscal", "comprovante", "resolucao", "documento sanitario"],
+    resposta: () =>
+      "Vou te encaminhar para outro setor, que consegue te informar direitinho sobre isso. " +
+      "Só um instante.",
+    escalar: true,
   },
+
+  { id: "saudacao", gatilhos: ["bom dia", "boa tarde", "boa noite", "tudo bem", "opa"],
+    resposta: () => "Olá! Em que posso ajudar?" },
 ];
 
 /* ---------- casamento ----------
