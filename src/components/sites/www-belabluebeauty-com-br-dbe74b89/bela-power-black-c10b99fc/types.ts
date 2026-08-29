@@ -23,4 +23,4 @@ export type Review = {
   foto?: string;
 };
 
-export type FooterColumn = { title: string; links: { label: string }[] };
+export type FooterColumn = { title: string; links: { label: string; href?: string }[] };

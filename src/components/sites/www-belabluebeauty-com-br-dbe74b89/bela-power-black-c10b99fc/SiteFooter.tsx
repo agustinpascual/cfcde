@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { IMG, bandeiras, footerColumns } from "./data";
 import Newsletter from "./Newsletter";
 import s from "./styles.module.css";
@@ -28,7 +29,11 @@ export default function SiteFooter() {
           {footerColumns.slice(1).map((col) => (
             <div key={col.title} className={s.footerCol}>
               <p className={s.footerColTitle}>{col.title}</p>
-              {col.links.map((l) => <span key={l.label} className={s.footerLink}>{l.label}</span>)}
+              {col.links.map((l) =>
+                l.href
+                  ? <Link key={l.label} href={l.href} className={s.footerLink}>{l.label}</Link>
+                  : <span key={l.label} className={s.footerLink}>{l.label}</span>
+              )}
             </div>
           ))}
 

@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useState } from "react";
 import { descricao as d } from "./data";
 import { ChevronDown } from "./icons";
@@ -38,11 +39,15 @@ export default function DescriptionCard() {
               <p className={s.descTexto}>{d.intro.antes}<strong>{d.intro.forte}</strong>{d.intro.depois}</p>
             </div>
 
+            <Image className={s.descImagem} src={d.imagem.src} alt={d.imagem.alt}
+              width={d.imagem.largura} height={d.imagem.altura}
+              sizes="(max-width: 767px) 100vw, 850px" loading="lazy" />
+
             <div className={s.descSpecs}>
               {d.specs.map((sp, i) => (
                 <span key={sp} style={{ display: "contents" }}>
                   <span>{sp}</span>
-                  {i < d.specs.length - 1 && <span aria-hidden>•</span>}
+                  {i < d.specs.length - 1 && <span className={s.descSep} aria-hidden />}
                 </span>
               ))}
             </div>

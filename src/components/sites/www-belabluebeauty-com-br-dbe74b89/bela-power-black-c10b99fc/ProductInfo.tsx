@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { gravarCarrinho } from "./cart";
-import { IMG, kits, produto } from "./data";
+import { IMG, kits, produto, resumoAvaliacoes } from "./data";
 import KitSelector from "./KitSelector";
 import ShippingCalculator from "./ShippingCalculator";
 import { HeartIcon, Stars } from "./icons";
@@ -64,11 +64,15 @@ export default function ProductInfo() {
       </div>
 
       <div className={s.grupoReviews}>
-        <span className={s.rating}>
-          <strong className={s.ratingNota}>{produto.nota}</strong>
-          <Stars nota={5} />
-          <span className={s.ratingQtd}>({produto.avaliacoes})</span>
-        </span>
+        <a href="#avaliacoes" className={s.rating}
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("avaliacoes")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}>
+          <strong className={s.ratingNota}>{resumoAvaliacoes.media.toFixed(1).replace(".", ",")}</strong>
+          <Stars nota={resumoAvaliacoes.media} />
+          <span className={s.ratingQtd}>{resumoAvaliacoes.total.toLocaleString("pt-BR")} avaliações</span>
+        </a>
       </div>
 
       <p className={s.precoDe}>de <s>{produto.de}</s> por</p>

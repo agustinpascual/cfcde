@@ -17,7 +17,7 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: "Comprar Mounja Gummy - Suplemento alimentar em gomas - R$89,90",
+  title: "Mounja Gummy - Emagrecedor natural",
   description:
     "Mounja Gummy — suplemento alimentar da Bela Blue Beauty em gomas mastigáveis. Linha Gummy: praticidade para manter a suplementação em dia, sem água e sem preparo. Kits com até 44% de desconto.",
   icons: {

@@ -51,13 +51,14 @@
 
 /* ---------------- Coluna de informações ---------------- */
 .detalhes { width: 560px; max-width: 100%; position: sticky; top: 112px; align-self: flex-start; padding-left: 59px; margin-bottom: 30px; }
-.tituloLinha { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 5px; }
-.nomeProduto { font-size: 22px; font-weight: 700; color: #000; line-height: 27px; max-width: 461px; }
+.tituloLinha { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 2px; }
+.nomeProduto { font-size: 27px; font-weight: 800; color: #000; line-height: 33px; letter-spacing: -.5px; max-width: 470px; }
 .wishBtn { color: #000; flex: 0 0 auto; padding-top: 4px; }
-.grupoReviews { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 12px; }
-.rating { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.grupoReviews { display: flex; flex-direction: column; align-items: flex-start; margin: 0 0 14px; }
+.rating { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 4px 0; cursor: pointer; }
+.rating:hover .ratingQtd { color: var(--bb-navy); text-decoration: underline; }
 .ratingNota { font-weight: 700; }
-.ratingQtd { color: var(--bb-muted); }
+.ratingQtd { color: var(--bb-muted); transition: color .15s; }
 
 .precoDe { font-size: 15px; color: var(--bb-muted); margin-bottom: 2px; }
 .precoDe s { text-decoration: line-through; }
@@ -154,34 +155,50 @@
 .accordionSetaAberta { transform: rotate(180deg); }
 .accordionCorpo { padding: 9px 0 5px; margin-bottom: 20px; line-height: 21px; }
 
-.descCard { background: #fff; border-radius: 24px; border: 1px solid #242424; box-shadow: rgba(0,0,0,.14) 0 14px 36px 0; overflow: hidden; color: #1b1b1b; line-height: 20.8px; }
-.descHeader { background: linear-gradient(135deg, rgb(9,9,9) 0%, rgb(23,23,23) 55%, rgb(42,42,42) 100%); padding: 52px 34px; text-align: center; color: #fff; }
-.descBadge { display: inline-block; font-size: 11px; font-weight: 700; color: var(--bb-gold-badge); padding: 6px 13px; margin-bottom: 16px; border-radius: 999px; border: 1px solid rgba(214,181,97,.6); text-transform: uppercase; letter-spacing: 1.9px; line-height: 17.6px; }
-.descTitulo { font-size: 42px; font-weight: 900; color: #fff; line-height: 46.2px; letter-spacing: -.9px; }
+/* Card de descrição — escala tipográfica e ritmo vertical fixos.
+   --dr = unidade de ritmo; todo espaçamento é múltiplo dela. */
+.descCard { --dr: 8px; background: #fff; border-radius: 24px; border: 1px solid #242424; box-shadow: rgba(0,0,0,.14) 0 14px 36px 0; overflow: hidden; color: #1b1b1b; }
+
+.descHeader { background: linear-gradient(135deg, rgb(9,9,9) 0%, rgb(23,23,23) 55%, rgb(42,42,42) 100%); padding: calc(var(--dr) * 7) calc(var(--dr) * 4.25); text-align: center; color: #fff; }
+.descBadge { display: inline-block; font-size: 11px; font-weight: 700; color: var(--bb-gold-badge); padding: 6px 13px; margin-bottom: calc(var(--dr) * 2); border-radius: 999px; border: 1px solid rgba(214,181,97,.6); text-transform: uppercase; letter-spacing: 1.9px; line-height: 1.6; }
+.descTitulo { font-size: clamp(30px, 4.4vw, 44px); font-weight: 900; color: #fff; line-height: 1.08; letter-spacing: -1.2px; }
 .descTitulo span { color: var(--bb-gold-black-span); }
-.descSub { font-size: 17px; color: #d8d8d8; margin-top: 14px; line-height: 25.5px; }
-.descRegua { width: 72px; height: 16px; margin: 22px auto 0; background-image: linear-gradient(90deg, rgb(167,123,36) 0%, rgb(227,200,120) 50%, rgb(167,123,36) 100%); }
-.descBody { background: #fff; padding: 36px 34px; }
-.descIntro { margin: 0 45px 32px; text-align: center; max-width: 760px; }
-.descLinha { display: inline-block; font-size: 12px; font-weight: 800; color: var(--bb-gold-linha); background: var(--bb-gold-linha-bg); padding: 5px 12px; margin-bottom: 12px; border-radius: 999px; letter-spacing: .9px; line-height: 19.2px; }
-.descHeadline { font-size: 25px; font-weight: 500; color: #161616; margin: 0 0 12px; line-height: 32.5px; }
-.descTexto { font-size: 16px; color: #626262; line-height: 24px; }
+.descSub { font-size: 17px; color: #cfcfcf; margin-top: calc(var(--dr) * 2); line-height: 1.5; }
+.descRegua { width: 72px; height: 3px; border-radius: 2px; margin: calc(var(--dr) * 3) auto 0; background-image: linear-gradient(90deg, rgb(167,123,36) 0%, rgb(227,200,120) 50%, rgb(167,123,36) 100%); }
+
+.descBody { background: #fff; padding: calc(var(--dr) * 5) calc(var(--dr) * 4.25); }
+
+/* bloco de abertura — largura de leitura confortável (~62ch) */
+.descIntro { max-width: 62ch; margin: 0 auto calc(var(--dr) * 4); text-align: center; }
+.descLinha { display: inline-block; font-size: 12px; font-weight: 800; color: var(--bb-gold-linha); background: var(--bb-gold-linha-bg); padding: 5px 12px; margin-bottom: calc(var(--dr) * 1.5); border-radius: 999px; letter-spacing: .9px; text-transform: uppercase; }
+.descHeadline { font-size: clamp(21px, 2.6vw, 27px); font-weight: 600; color: #141414; margin-bottom: calc(var(--dr) * 1.5); line-height: 1.25; letter-spacing: -.4px; }
+.descTexto { font-size: 16px; color: #5c5c5c; line-height: 1.65; }
 .descTexto strong { font-weight: 700; color: #161616; }
-.descSpecs { background-image: linear-gradient(90deg, rgb(251,248,239) 0%, rgb(255,255,255) 50%, rgb(251,248,239) 100%); padding: 18px 20px; margin-bottom: 30px; border-radius: 16px; border: 1px solid #e8dfc7; text-align: center; }
-.descSpecs span { display: inline-block; font-size: 14px; font-weight: 700; color: #2a2a2a; margin: 4px 12px; line-height: 22.4px; }
-.descCards { display: flex; gap: 14px; margin-bottom: 32px; }
-.descCardItem { flex: 1 1 274px; background: #fafafa; padding: 22px; border-radius: 17px; border: 1px solid #e6e6e6; text-align: center; }
-.descNum { width: 44px; height: 44px; margin: 0 auto 13px; background: #151515; color: var(--bb-gold-light); border-radius: 14px; font-size: 14px; font-weight: 800; line-height: 44px; }
-.descCardItem strong { display: block; font-size: 15px; font-weight: 700; color: #181818; margin-bottom: 6px; line-height: 24px; }
-.descCardItem span { font-size: 13px; color: #686868; line-height: 20.8px; }
-.descBloco { background: #fff; padding: 24px; margin-bottom: 16px; border-radius: 17px; border: 1px solid #e7e7e7; }
-.descBlocoTitulo { display: flex; align-items: center; margin-bottom: 10px; }
-.descBlocoBarra { width: 6px; height: 24px; background: var(--bb-gold); border-radius: 999px; margin-right: 11px; }
-.descBlocoTitulo h3 { font-size: 19px; font-weight: 500; color: #181818; line-height: 22.8px; }
-.descBloco p { font-size: 15px; color: #626262; line-height: 22.5px; }
-.descAviso { background: #141414; padding: 23px 24px; border-radius: 17px; border: 1px solid #2a2a2a; }
-.descAviso strong { display: block; font-size: 15px; font-weight: 700; color: var(--bb-gold-light); margin-bottom: 7px; line-height: 24px; }
-.descAviso p { font-size: 13px; color: #d4d4d4; line-height: 19.5px; }
+
+.descImagem { width: 100%; height: auto; border-radius: 16px; border: 1px solid #eceff3; margin-bottom: calc(var(--dr) * 4); display: block; }
+
+/* faixa de especificações */
+.descSpecs { background-image: linear-gradient(90deg, rgb(251,248,239) 0%, rgb(255,255,255) 50%, rgb(251,248,239) 100%); padding: calc(var(--dr) * 2.25) calc(var(--dr) * 2.5); margin-bottom: calc(var(--dr) * 4); border-radius: 16px; border: 1px solid #e8dfc7; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: calc(var(--dr) * 1) calc(var(--dr) * 3); }
+.descSpecs span { font-size: 14px; font-weight: 700; color: #2a2a2a; line-height: 1.6; }
+.descSpecs .descSep { width: 4px; height: 4px; border-radius: 50%; background: var(--bb-gold); flex: 0 0 4px; }
+
+/* três pilares */
+.descCards { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--dr) * 1.75); margin-bottom: calc(var(--dr) * 4); }
+.descCardItem { background: #fafafa; padding: calc(var(--dr) * 3); border-radius: 17px; border: 1px solid #ececec; text-align: center; display: flex; flex-direction: column; }
+.descNum { width: 42px; height: 42px; margin: 0 auto calc(var(--dr) * 1.75); background: #151515; color: var(--bb-gold-light); border-radius: 13px; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: .5px; }
+.descCardItem strong { display: block; font-size: 15px; font-weight: 700; color: #181818; margin-bottom: calc(var(--dr) * .75); line-height: 1.35; }
+.descCardItem span { font-size: 13.5px; color: #6b6b6b; line-height: 1.6; }
+
+/* blocos de texto longo */
+.descBloco { background: #fff; padding: calc(var(--dr) * 3); margin-bottom: calc(var(--dr) * 2); border-radius: 17px; border: 1px solid #ececec; }
+.descBlocoTitulo { display: flex; align-items: center; margin-bottom: calc(var(--dr) * 1.25); }
+.descBlocoBarra { width: 5px; height: 22px; background: var(--bb-gold); border-radius: 999px; margin-right: calc(var(--dr) * 1.5); flex: 0 0 5px; }
+.descBlocoTitulo h3 { font-size: 18px; font-weight: 600; color: #181818; line-height: 1.3; letter-spacing: -.2px; }
+.descBloco p { font-size: 15px; color: #5c5c5c; line-height: 1.65; max-width: 66ch; }
+
+.descAviso { background: #141414; padding: calc(var(--dr) * 3); border-radius: 17px; border: 1px solid #2a2a2a; margin-top: calc(var(--dr) * 2); }
+.descAviso strong { display: block; font-size: 15px; font-weight: 700; color: var(--bb-gold-light); margin-bottom: calc(var(--dr) * 1); line-height: 1.4; }
+.descAviso p { font-size: 13.5px; color: #c9c9c9; line-height: 1.6; max-width: 78ch; }
 
 /* ---------------- Avaliações ---------------- */
 .reviews { width: 100%; padding: 24px 0 10px; }
@@ -417,7 +434,7 @@
 
   .prod { flex: 1 1 100%; max-width: 100%; }
   .alertItem { max-width: 100%; flex: 1 1 100%; }
-  .nomeProduto { font-size: 19px; line-height: 24px; }
+  .nomeProduto { font-size: 22px; line-height: 27px; }
 
   /* --- comprar / frete --- */
   .comprarLinha { flex-wrap: wrap; }
@@ -531,3 +548,6 @@
 
 @media (max-width: 991px) { .destaquesLista { grid-template-columns: repeat(2, 1fr); } .destaquesLista > :nth-child(3) { display: none; } }
 @media (max-width: 767px) { .destaquesLista { grid-template-columns: 1fr; } .destaquesLista > :nth-child(3) { display: flex; } .destaqueTexto { font-size: 14px; line-height: 20px; } }
+
+/* imagem dentro do card de descrição */
+.descImagem { width: 100%; height: auto; border-radius: 16px; border: 1px solid #e8dfc7; margin-bottom: 28px; display: block; }

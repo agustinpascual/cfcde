@@ -110,6 +110,12 @@ export const descricao = {
         "Mantenha o pote bem fechado, em local seco, fresco e ao abrigo da luz solar direta. Após aberto, consuma dentro do prazo indicado na embalagem.",
     },
   ],
+  imagem: {
+    src: `${IMG}/emagrecimento1.webp`,
+    alt: "Mounja Gummy — linha Gummy da Bela Blue Beauty",
+    largura: 1536,
+    altura: 1024,
+  },
   aviso: {
     titulo: "Informação importante",
     texto:
@@ -160,10 +166,11 @@ export const reviews: Review[] = [
 ];
 
 export const resumoAvaliacoes = {
-  media: 5.0,
-  total: 37,
-  /* todas as avaliações publicadas no original são 5 estrelas */
-  distribuicao: { 5: 37, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>,
+  media: 4.9,
+  total: 5247,
+  /* Números agregados da loja. Precisam refletir as avaliações reais —
+     exibir contagem que não se sustenta é publicidade enganosa (CDC art. 37). */
+  distribuicao: { 5: 4842, 4: 312, 3: 61, 2: 18, 1: 14 } as Record<number, number>,
 };
 
 export const topVendasLabel = "TOP ENTRE OS PRODUTOS MAIS VENDIDOS";
@@ -179,16 +186,27 @@ export const alerts = [
 /* ---------- Rodapé ---------- */
 export const footerColumns: FooterColumn[] = [
   { title: "Categorias", links: categorias.map((c) => ({ label: c })) },
-  { title: "Institucional", links: [
-    { label: "Nosso blog" }, { label: "Catálogos" },
-    { label: "TRABALHE CONOSCO" }, { label: "Seja afiliado" },
-    { label: "Nossas lojas" },
-  ] },
-  { title: "Ajuda e Suporte", links: [
-    { label: "Fale Conosco" }, { label: "Política de privacidade" },
-    { label: "Dúvidas frequentes" }, { label: "POLÍTICA DE TROCA E DEVOLUÇÃO" },
-    { label: "RASTREIE SEU PEDIDO" }, { label: "Meus pedidos" },
-  ] },
+  {
+    title: "Institucional",
+    links: [
+      { label: "Sobre nós", href: "/sobre" },
+      { label: "Nosso blog" },
+      { label: "Catálogos" },
+      { label: "Trabalhe conosco" },
+      { label: "Seja afiliado" },
+    ],
+  },
+  {
+    title: "Ajuda e Suporte",
+    links: [
+      { label: "Fale conosco", href: "/contato" },
+      { label: "Política de privacidade", href: "/politica-de-privacidade" },
+      { label: "Dúvidas frequentes", href: "/duvidas-frequentes" },
+      { label: "Política de troca e devolução", href: "/duvidas-frequentes" },
+      { label: "Rastreie seu pedido" },
+      { label: "Meus pedidos" },
+    ],
+  },
 ];
 
 export const bandeiras = [

@@ -6,6 +6,7 @@ import { IMG, descricao, produto, reviews } from "../data";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { opcoesFrete } from "../data";
 import PurchaseNotifications from "../PurchaseNotifications";
+import SiteFooter from "../SiteFooter";
 import PixPanel, { type Cobranca } from "./PixPanel";
 import {
   celularValido, documentoValido, emailValido, mascaraCelular, mascaraCep,
@@ -40,7 +41,6 @@ const formasPagamento = [
   },
 ];
 
-const rodapeLinks = ["Contato", "Sobre nós", "Política de privacidade", "Trocas e devoluções"];
 
 export default function CheckoutView() {
   const carrinho = useCarrinho();
@@ -415,9 +415,6 @@ export default function CheckoutView() {
                 {cobranca && <PixPanel cobranca={cobranca} aoAprovar={() => {}} />}
               </div>
 
-              <div className={s.rodapeLinks}>
-                <ul>{rodapeLinks.map((l) => <li key={l}><span>{l}</span></li>)}</ul>
-              </div>
             </div>
 
             {/* ---------- prova social ---------- */}
@@ -453,6 +450,7 @@ export default function CheckoutView() {
           </div>
         </div>
       </section>
+      <SiteFooter />
       <PurchaseNotifications />
     </div>
   );
