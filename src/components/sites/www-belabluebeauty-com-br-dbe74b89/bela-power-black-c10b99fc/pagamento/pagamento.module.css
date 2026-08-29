@@ -48,7 +48,6 @@
 .pulso { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: #12a742; animation: pgPulso 1.4s ease-in-out infinite; }
 @keyframes pgPulso { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.8); } }
 
-.expirado { background: #fdeceb; border: 1px solid #f6cfcd; color: #c0272d; border-radius: 12px; padding: 18px 20px; font-size: 14px; line-height: 1.5; }
 
 /* ---- resumo ---- */
 .resumo { flex: 0 0 360px; background: #fff; border: 1px solid #e6e8ec; border-radius: 16px; padding: 26px 24px; }
@@ -96,3 +95,40 @@
   .selo { font-size: 12px; }
   .resumo { padding: 22px 18px; }
 }
+
+/* prazo encerrado — avisa sem tirar o código da tela */
+.avisoPrazo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border: 1px solid #fcd9a4;
+  border-radius: 10px;
+  background: #fffaf0;
+}
+.avisoPrazo p { font-size: 13px; line-height: 1.55; color: #8a5a12; max-width: 62ch; }
+.avisoPrazo strong { font-weight: 700; }
+.avisoLink {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid #d9ae6a;
+  border-radius: 8px;
+  background: transparent;
+  color: #8a5a12;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color .18s, border-color .18s;
+}
+.avisoLink:hover { background: #fdf1dc; border-color: #c9974a; }
+.avisoLink:focus-visible { outline: 2px solid #8a5a12; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { .avisoLink { transition: none; } }
+
+.processador { display: flex; justify-content: center; margin-top: 20px; }

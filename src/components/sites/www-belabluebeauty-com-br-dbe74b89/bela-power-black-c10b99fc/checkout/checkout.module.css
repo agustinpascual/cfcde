@@ -242,3 +242,6 @@
   .pixTopo { gap: 12px; }
 }
 .pixQrVazio { width: 210px; min-height: 210px; border: 1px dashed #ced4da; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; font-size: 13px; color: #6c757d; line-height: 19px; }
+
+/* selo do processador, logo abaixo do botão de finalizar */
+.processadorPag { display: flex; justify-content: center; margin-top: 16px; }

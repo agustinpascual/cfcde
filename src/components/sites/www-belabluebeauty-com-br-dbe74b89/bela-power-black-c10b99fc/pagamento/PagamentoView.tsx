@@ -6,6 +6,7 @@ import { lerCobranca, type Cobranca } from "../checkout/cobranca";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { IMG, produto } from "../data";
 import PurchaseNotifications from "../PurchaseNotifications";
+import SeloStone from "../SeloStone";
 import { registrar } from "../Rastreador";
 import SiteFooter from "../SiteFooter";
 import s from "./pagamento.module.css";
@@ -23,7 +24,11 @@ const PASSOS = [
 export default function PagamentoView({ id }: { id: string }) {
   const [cobranca, setCobranca] = useState<Cobranca | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [status, setStatus] = useState<"pending" | "approved" | "expired">("pending");
+  const [status, setStatus] = useState<"pending" | "approved">("pending");
+  /* O prazo é separado do status: quando acaba, o código continua na tela.
+     Sumir com o QR no minuto 15 fazia quem estava com o app do banco aberto
+     perder a compra. */
+  const [tempoEsgotado, setTempoEsgotado] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [restante, setRestante] = useState(JANELA);
   const aprovado = useRef(false);
@@ -67,7 +72,7 @@ export default function PagamentoView({ id }: { id: string }) {
         const d = await res.json();
         if (d.status === "approved" && !aprovado.current) {
           aprovado.current = true; setStatus("approved"); registrar("compra", { id }); clearInterval(t);
-        } else if (d.status === "expired") { setStatus("expired"); clearInterval(t); }
+        } else if (d.status === "expired") { setTempoEsgotado(true); }
       } catch { /* tenta de novo no próximo ciclo */ }
     }, 4000);
     return () => clearInterval(t);
@@ -79,7 +84,7 @@ export default function PagamentoView({ id }: { id: string }) {
     const tick = () => {
       const seg = Math.max(0, Math.floor((alvo - Date.now()) / 1000));
       setRestante(seg);
-      if (seg === 0) setStatus((v) => (v === "pending" ? "expired" : v));
+      if (seg === 0) setTempoEsgotado(true);
     };
     tick();
     const t = setInterval(tick, 1000);
@@ -150,55 +155,61 @@ export default function PagamentoView({ id }: { id: string }) {
                   <h1 className={s.titulo}>Pague com PIX para concluir</h1>
                   {cobranca.pedido && <p className={s.pedido}>Pedido {cobranca.pedido}</p>}
                 </div>
-                <div className={`${s.relogio} ${acabando ? s.relogioAlerta : ""}`}>
-                  <span className={s.relogioLabel}>{status === "expired" ? "expirado" : "expira em"}</span>
+                <div className={`${s.relogio} ${acabando || tempoEsgotado ? s.relogioAlerta : ""}`}>
+                  <span className={s.relogioLabel}>{tempoEsgotado ? "prazo encerrado" : "expira em"}</span>
                   <span className={s.relogioTempo} suppressHydrationWarning>{mm}:{ss}</span>
                 </div>
               </div>
 
-              {status === "expired" ? (
-                <p className={s.expirado}>
-                  O tempo para pagar este código acabou. Volte à loja e refaça o pedido para gerar um novo PIX.
-                </p>
-              ) : (
-                <>
-                  <div className={s.corpo}>
-                    <div className={s.qrBox}>
-                      {cobranca.qr_code_url ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img className={s.qr} src={cobranca.qr_code_url} alt="QR Code para pagamento PIX" width={230} height={230} />
-                      ) : (
-                        <div className={s.qrVazio}>QR indisponível — use o código copia e cola</div>
-                      )}
-                      <span className={s.qrDica}>Aponte a câmera do app do banco</span>
-                    </div>
-
-                    <ol className={s.passos}>
-                      {PASSOS.map((t, i) => (
-                        <li key={i}><span className={s.passoNum}>{i + 1}</span>{t}</li>
-                      ))}
-                    </ol>
-                  </div>
-
-                  <div className={s.copiaBloco}>
-                    <p className={s.copiaLabel}>Código copia e cola</p>
-                    <input id="pix-codigo" className={s.copiaInput} value={cobranca.qr_code} readOnly
-                      onFocus={(e) => e.currentTarget.select()} aria-label="Código PIX copia e cola" />
-                    <button type="button" className={`${s.btnCopiar} ${copiado ? s.btnCopiado : ""}`} onClick={copiar}>
-                      {copiado ? (
-                        <><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>Código copiado</>
-                      ) : (
-                        <><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>Copiar código PIX</>
-                      )}
-                    </button>
-                  </div>
-
-                  <p className={s.espera} aria-live="polite">
-                    <span className={s.pulso} aria-hidden />
-                    Assim que o banco confirmar, esta página muda sozinha. Pode deixar aberta.
+              {tempoEsgotado && (
+                <div className={s.avisoPrazo} role="status">
+                  <p>
+                    <strong>O prazo sugerido acabou.</strong> O código continua aí embaixo —
+                    tente pagar normalmente. Se o seu banco recusar, refaça o pedido para gerar um novo.
                   </p>
-                </>
+                  <Link href="/checkout" className={s.avisoLink}>Refazer o pedido</Link>
+                </div>
               )}
+
+                <div className={s.corpo}>
+                  <div className={s.qrBox}>
+                    {cobranca.qr_code_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img className={s.qr} src={cobranca.qr_code_url} alt="QR Code para pagamento PIX" width={230} height={230} />
+                    ) : (
+                      <div className={s.qrVazio}>QR indisponível — use o código copia e cola</div>
+                    )}
+                    <span className={s.qrDica}>Aponte a câmera do app do banco</span>
+                  </div>
+
+                  <ol className={s.passos}>
+                    {PASSOS.map((t, i) => (
+                      <li key={i}><span className={s.passoNum}>{i + 1}</span>{t}</li>
+                    ))}
+                  </ol>
+                </div>
+
+                <div className={s.copiaBloco}>
+                  <p className={s.copiaLabel}>Código copia e cola</p>
+                  <input id="pix-codigo" className={s.copiaInput} value={cobranca.qr_code} readOnly
+                    onFocus={(e) => e.currentTarget.select()} aria-label="Código PIX copia e cola" />
+                  <button type="button" className={`${s.btnCopiar} ${copiado ? s.btnCopiado : ""}`} onClick={copiar}>
+                    {copiado ? (
+                      <><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>Código copiado</>
+                    ) : (
+                      <><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>Copiar código PIX</>
+                    )}
+                  </button>
+                </div>
+
+                <p className={s.espera} aria-live="polite">
+                  <span className={s.pulso} aria-hidden />
+                  Assim que o banco confirmar, esta página muda sozinha. Pode deixar aberta.
+                </p>
+
+                <div className={s.processador}>
+                  <SeloStone />
+                </div>
             </section>
 
             {/* ---- resumo ---- */}

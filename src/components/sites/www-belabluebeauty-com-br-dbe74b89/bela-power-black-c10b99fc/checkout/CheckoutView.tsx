@@ -7,6 +7,7 @@ import { IMG, descricao, produto, reviews } from "../data";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { opcoesFrete } from "../data";
 import PurchaseNotifications from "../PurchaseNotifications";
+import SeloStone from "../SeloStone";
 import SiteFooter from "../SiteFooter";
 import { guardarCobranca } from "./cobranca";
 import {
@@ -418,6 +419,10 @@ export default function CheckoutView() {
                   {gerando ? "Gerando PIX…" : "Finalizar compra"}
                 </button>
                 {erroPix && <p className={s.erro} role="alert">{erroPix}</p>}
+
+                <div className={s.processadorPag}>
+                  <SeloStone compacto />
+                </div>
               </div>
 
             </div>
