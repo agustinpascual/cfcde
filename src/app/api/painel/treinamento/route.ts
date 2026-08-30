@@ -35,6 +35,7 @@ export async function POST(req: Request) {
     nao_pode: texto(c.nao_pode),
     escalar_quando: texto(c.escalar_quando, 2000),
     escalar_mensagem: texto(c.escalar_mensagem, 600),
+    atendente_nome: texto(c.atendente_nome, 60),
     exemplos,
     atualizado_em: new Date().toISOString(),
   }).eq("id", 1);

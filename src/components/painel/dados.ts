@@ -181,7 +181,7 @@ export type EstadoTabela = { nome: string; para: string; existe: boolean; coluna
    criada, e nada na tela indicava isso. */
 const COLUNAS: Record<string, string[]> = {
   conversas: ["saudou_em"],
-  treinamento: ["escalar_mensagem", "saudacao_ativa", "saudacao_mensagem"],
+  treinamento: ["escalar_mensagem", "saudacao_ativa", "saudacao_mensagem", "atendente_nome"],
 };
 
 /** Consulta cada tabela de verdade — `head:true` devolve 204 até para tabela

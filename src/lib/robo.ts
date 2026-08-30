@@ -20,12 +20,18 @@ export type Treinamento = {
   escalar_mensagem: string;
   saudacao_ativa: boolean;
   saudacao_mensagem: string;
+  atendente_nome: string;
 };
 
 /* Texto padrão quando o robô não sabe. Editável no painel. */
+export const ATENDENTE_PADRAO = "Renata";
+
+/* Saudação que já pede a dúvida: perguntar "como posso ajudar?" devolve a bola
+   vazia, perguntar "qual a sua principal dúvida sobre X" começa a conversa. */
 export const SAUDACAO_PADRAO =
-  "Bem-vindo à Bela Blue Beauty! 💚 Eu sou do atendimento e estou aqui para tirar " +
-  "suas dúvidas. Como posso te ajudar?";
+  "Oi! 😊 Seja muito bem-vindo(a) à *Bela Blue Beauty*!\n\n" +
+  "Eu sou a Renata, do atendimento, e vou te ajudar por aqui.\n\n" +
+  "Qual seria a sua principal dúvida sobre o Gummy?";
 
 export const ENCAMINHAR_PADRAO =
   "Vou te encaminhar para outro setor, que vai estar conseguindo te informar sobre esses assuntos.";
@@ -34,6 +40,7 @@ export const TREINAMENTO_VAZIO: Treinamento = {
   ativo: false, tom: "", sobre_produto: "", regras: "", nao_pode: "",
   exemplos: [], escalar_quando: "", escalar_mensagem: ENCAMINHAR_PADRAO,
   saudacao_ativa: true, saudacao_mensagem: SAUDACAO_PADRAO,
+  atendente_nome: ATENDENTE_PADRAO,
 };
 
 export async function lerTreinamento(): Promise<Treinamento> {
@@ -52,6 +59,7 @@ export async function lerTreinamento(): Promise<Treinamento> {
     escalar_mensagem: data.escalar_mensagem?.trim() || ENCAMINHAR_PADRAO,
     saudacao_ativa: data.saudacao_ativa ?? true,
     saudacao_mensagem: data.saudacao_mensagem?.trim() || SAUDACAO_PADRAO,
+    atendente_nome: data.atendente_nome?.trim() || ATENDENTE_PADRAO,
   };
 }
 
@@ -85,12 +93,18 @@ export const POLITICA_SANITARIA =
 
 export function montarPrompt(t: Treinamento) {
   let p =
-    "Você atende clientes da Bela Blue Beauty pelo WhatsApp. " +
-    "Escreve como uma pessoa real do time, não como robô: sem saudação protocolar, " +
-    "sem repetir o nome do cliente, sem 'estou à disposição'. Respostas curtas — " +
-    "duas ou três frases na maioria das vezes, porque é WhatsApp. " +
-    "Seu objetivo não é convencer ninguém a comprar: é informar, esclarecer e " +
-    "encaminhar quando for o caso.";
+    `Você é ${t.atendente_nome}, do atendimento da Bela Blue Beauty, no WhatsApp.\n\n` +
+    "## Como você escreve\n" +
+    "- Calorosa e profissional, nunca seca. Comece reconhecendo a pergunta: " +
+    "\"Claro!\", \"Ótima pergunta\", \"Entendo a dúvida\".\n" +
+    "- Um emoji por mensagem, no máximo, e só quando couber (😊 no acolhimento).\n" +
+    "- Quando a resposta tiver mais de dois itens, use lista com • , uma por linha.\n" +
+    "- Negrito do WhatsApp é *asterisco simples*, não markdown.\n" +
+    "- Duas a cinco linhas. É WhatsApp, não e-mail.\n" +
+    "- Termine com uma pergunta curta que ajude a pessoa a continuar, quando fizer " +
+    "sentido — nunca com \"estou à disposição\".\n" +
+    "- Não assine o nome no fim: o cliente já sabe com quem fala.\n\n" +
+    "Seu objetivo é informar e esclarecer com precisão, não convencer ninguém a comprar.";
 
   p += POLITICA_SANITARIA;
 

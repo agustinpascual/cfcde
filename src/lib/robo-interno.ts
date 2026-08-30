@@ -88,8 +88,8 @@ export type Intencao = {
 
 /* Frase única de encaminhamento, para o robô não improvisar despedida. */
 const ENCAMINHA =
-  "Sobre isso eu vou te encaminhar para outro setor, que consegue te informar " +
-  "corretamente. Só um instante.";
+  "Entendo! 🙏 Esse assunto é tratado diretamente pelo setor responsável.\n\n" +
+  "Vou te encaminhar agora para alguém que pode te informar corretamente.";
 
 const INTERNAS: Intencao[] = [
   /* --- SAÚDE PRIMEIRO ---
@@ -117,52 +117,68 @@ const INTERNAS: Intencao[] = [
       "posso tomar", "posso usar", "faz mal se", "ataca",
     ],
     resposta: () =>
-      "Essa é uma questão que precisa ser avaliada por um profissional de saúde. Não quero " +
-      "te passar uma orientação incorreta. Vou te encaminhar para o time.",
+      "Entendo a sua preocupação, e ela é super válida. 🙏\n\n" +
+      "Justamente por envolver saúde, essa é uma resposta que precisa vir de um " +
+      "profissional — eu não quero te passar nada impreciso sobre isso.\n\n" +
+      "Vou te encaminhar agora para o setor responsável, tudo bem?",
     escalar: true,
     critico: true,
   },
   {
     id: "sabor",
     gatilhos: ["sabor", "gosto", "sabores", "tangerina", "limao", "doce", "azedo"],
-    resposta: () => "O sabor é tangerina com limão.",
+    resposta: () => "Claro! 😊 O sabor é *tangerina com limão* — bem cítrico e leve.\n\n" +
+      "Quer saber mais alguma coisa sobre o produto?",
   },
   {
     id: "restricoes",
     gatilhos: ["gluten", "lactose", "vegano", "vegetariano", "acucar", "zero acucar", "celiaco", "restricao"],
     resposta: () =>
-      "A embalagem informa \"sem glúten\". Sobre qualquer outra restrição alimentar eu " +
-      "prefiro não afirmar sem a documentação — posso te encaminhar para o time confirmar.",
+      "Ótima pergunta! A embalagem traz a informação *sem glúten*.\n\n" +
+      "Sobre qualquer outra restrição alimentar, prefiro não afirmar sem a " +
+      "documentação em mãos — você merece a informação exata, não um palpite.\n\n" +
+      "Quer que eu confirme isso com o setor responsável?",
   },
   {
     id: "unidades",
     gatilhos: ["quantas unidades", "quantas vem", "quantidade no pote", "tamanho do pote", "dura quanto"],
-    resposta: () => "Cada pote vem com 30 unidades.",
+    resposta: () => "Claro! Cada pote vem com *30 unidades*. 😊\n\n" +
+      "Posso ajudar com mais alguma dúvida?",
   },
 
   /* --- identificação do produto: só o que está na embalagem --- */
   {
     id: "composicao",
-    gatilhos: ["composicao", "ingrediente", "formula", "contem", "substancia", "tabela nutricional"],
+    gatilhos: ["composicao", "componente", "componentes", "ingrediente", "formula",
+      "contem", "substancia", "tabela nutricional", "ativos", "o que tem dentro",
+      "do que e feito", "principio ativo", "rotulo"],
     resposta: () =>
-      "Composição é informação que eu só passo com o documento na mão — não quero te " +
-      "dizer algo errado sobre o que você vai consumir. Vou te encaminhar para o time, " +
-      "que tem a ficha completa.",
+      "Ótima pergunta — e é justamente uma que eu prefiro não responder de cabeça. 🙏\n\n" +
+      "Composição é informação que eu só passo com a documentação oficial em mãos. " +
+      "Circula muita lista de ingrediente na internet que não confere, e quando o " +
+      "assunto é o que você vai consumir, chute não serve.\n\n" +
+      "Vou te encaminhar para o setor que tem a ficha técnica completa. Pode ser?",
   },
   {
     id: "o_que_e",
     gatilhos: ["que e", "produto", "goma", "gummy", "mounja", "sobre", "informacao", "conhecer"],
     resposta: () =>
-      "O Mounja Gummy é uma goma mastigável, em pote com 30 unidades, sabor tangerina " +
-      "e limão. Se tiver outra dúvida sobre o produto, é só me dizer.",
+      "Claro! 😊 O Mounja Gummy é uma *goma mastigável*:\n\n" +
+      "• Pote com 30 unidades\n" +
+      "• Sabor tangerina com limão\n" +
+      "• Embalagem informa \"sem glúten\"\n" +
+      "• Não precisa de água nem preparo\n\n" +
+      "Qual parte você gostaria de entender melhor?",
   },
   {
     id: "para_que_serve",
     gatilhos: ["serve", "finalidade", "funciona", "beneficio", "utilidade", "objetivo"],
     resposta: () =>
-      "Ele é divulgado com relação ao controle de peso. Eficácia é uma coisa que eu não " +
-      "posso afirmar por conta própria — quem fala sobre isso é o time. Quer que eu " +
-      "encaminhe?",
+      "Entendo a dúvida! O produto foi divulgado com relação ao controle de peso.\n\n" +
+      "Agora, sendo transparente com você: eu não posso afirmar eficácia nem " +
+      "recomendar o uso por conta própria — isso é conversa para quem tem a " +
+      "documentação e a formação certa.\n\n" +
+      "Quer que eu te encaminhe para o setor responsável?",
   },
 
   /* --- promessas de resultado: sempre negadas --- */
@@ -172,26 +188,29 @@ const INTERNAS: Intencao[] = [
       "gordura", "barriga", "bom mesmo", "funciona mesmo", "vale a pena", "realmente funciona",
       "fome", "apetite", "saciedade", "ansiedade", "metabolismo", "inchaco"],
     resposta: () =>
-      "Entendo a dúvida, é o que todo mundo quer saber antes de decidir. Sendo sincero " +
-      "com você: resultado varia muito de pessoa para pessoa, e eu não tenho como te " +
-      "prometer número nem prazo. Quer que eu chame alguém do time para conversar sobre " +
-      "o seu caso?",
+      "Entendo perfeitamente — é o que todo mundo quer saber antes de decidir. 😊\n\n" +
+      "Sendo sincera com você: resultado varia bastante de pessoa para pessoa, " +
+      "porque depende de metabolismo, alimentação e rotina de cada um. Por isso eu " +
+      "não vou te prometer número nem prazo que eu não posso garantir.\n\n" +
+      "Quer conversar com alguém do time sobre o seu caso?",
   },
   {
     id: "tempo_resultado",
     gatilhos: ["quanto tempo", "faz efeito", "demora", "resultado", "primeiros resultados", "tres dias", "semana"],
     resposta: () =>
-      "Prazo é a parte que eu não consigo te garantir — cada organismo responde no seu " +
-      "tempo, e qualquer número que eu desse seria chute. Prefiro não inventar. Posso te " +
-      "passar para alguém do time se quiser conversar melhor.",
+      "Boa pergunta! Prazo é exatamente a parte que eu não consigo garantir. 🙏\n\n" +
+      "Cada organismo responde no seu tempo, e qualquer número que eu desse aqui " +
+      "seria chute — prefiro ser honesta com você.\n\n" +
+      "Posso te passar para alguém do time conversar melhor?",
   },
   {
     id: "quantos_quilos",
     gatilhos: ["quantos quilos", "quantos kg", "perco", "vou perder", "quilo"],
     resposta: () =>
-      "Essa conta ninguém consegue fazer com honestidade, porque depende de metabolismo, " +
-      "rotina e alimentação de cada um. Não vou te dar um número que eu não posso " +
-      "sustentar. Se quiser, chamo alguém do time para te atender.",
+      "Entendo a expectativa! Mas essa conta ninguém consegue fazer com honestidade. 🙏\n\n" +
+      "Depende de metabolismo, rotina, alimentação — é muito individual. Não vou te " +
+      "dar um número que eu não posso sustentar.\n\n" +
+      "Quer falar com alguém do time sobre o seu caso?",
   },
 
   /* --- comparações e natureza do produto --- */
@@ -199,13 +218,18 @@ const INTERNAS: Intencao[] = [
     id: "mounjaro",
     gatilhos: ["mounjaro", "ozempic", "wegovy", "tirzepatida", "semaglutida", "caneta", "igual ao"],
     resposta: () =>
-      "Não. Não devo apresentar o produto como equivalente, substituto ou semelhante a " +
-      "medicamentos como Mounjaro, Ozempic ou Wegovy.",
+      "Ótima pergunta, e é importante deixar isso bem claro. 🙏\n\n" +
+      "*Não são a mesma coisa.* O Mounjaro, o Ozempic e o Wegovy são medicamentos, " +
+      "com prescrição e acompanhamento médico. Eu não apresento o Gummy como " +
+      "equivalente, substituto ou semelhante a nenhum deles.\n\n" +
+      "Posso ajudar com mais alguma dúvida?",
   },
   {
     id: "medicamento",
     gatilhos: ["medicamento", "remedio", "farmaco", "tarja"],
-    resposta: () => "Não devo apresentar o produto como medicamento.",
+    resposta: () => "Boa pergunta! *Não*, eu não apresento o produto como medicamento. 🙏\n\n" +
+      "São categorias diferentes, com regras diferentes.\n\n" +
+      "Tem mais alguma coisa que eu possa esclarecer?",
   },
 
   /* --- situação sanitária --- */
@@ -227,16 +251,19 @@ const INTERNAS: Intencao[] = [
     id: "seguro",
     gatilhos: ["seguro", "faz mal", "confiavel", "risco", "perigoso", "efeito colateral", "contraindicacao"],
     resposta: () =>
-      "Essa é uma questão que precisa ser avaliada por um profissional de saúde, e não " +
-      "quero te passar uma orientação incorreta. Vou te encaminhar para o time.",
+      "Entendo totalmente a preocupação. 🙏\n\n" +
+      "Essa é uma pergunta que precisa ser avaliada por um profissional de saúde, " +
+      "e eu não quero te passar uma orientação incorreta sobre algo assim.\n\n" +
+      "Vou te encaminhar para o setor responsável agora.",
     escalar: true,
   },
   {
     id: "modo_uso",
     gatilhos: ["como tomar", "como usar", "modo de uso", "posologia", "dose", "quantas gomas por dia", "quantas unidades", "horario", "tomo", "mastigar"],
     resposta: () =>
-      "A orientação de uso precisa vir de um profissional ou do time — não quero te " +
-      "passar algo incorreto. Vou te encaminhar.",
+      "Entendo a dúvida! Mas orientação de uso é algo que precisa vir de um " +
+      "profissional ou do setor responsável — não quero te passar nada impreciso. 🙏\n\n" +
+      "Vou te encaminhar agora. Pode ser?",
     escalar: true,
   },
 
@@ -245,36 +272,44 @@ const INTERNAS: Intencao[] = [
     id: "preco",
     gatilhos: ["preco", "quanto custa", "valor", "custa", "quanto e", "comprar", "compra", "pedido novo"],
     resposta: () =>
-      "Sobre valores e condições eu vou te encaminhar para o time, que te atende " +
-      "certinho. Só um instante.",
+      "Claro! 😊 Sobre valores e condições, vou te encaminhar para o time comercial, " +
+      "que passa tudo certinho para você.\n\n" +
+      "Só um instante!",
     escalar: true,
   },
   {
     id: "frete",
     gatilhos: ["frete", "entrega", "envio", "chega", "correio", "sedex", "prazo de entrega", "cep"],
     resposta: () =>
-      "Sobre envio e prazo eu vou te encaminhar para o time. Só um instante.",
+      "Boa! 😊 O prazo e o valor de envio dependem bastante da sua região.\n\n" +
+      "Vou te encaminhar para o time, que consegue calcular direitinho para a sua " +
+      "cidade. Só um instante!",
     escalar: true,
   },
   {
     id: "pagamento",
     gatilhos: ["pagar", "pagamento", "pix", "cartao", "boleto", "parcelar", "parcela", "link"],
     resposta: () =>
-      "Sobre formas de pagamento eu vou te encaminhar para o time. Só um instante.",
+      "Claro! Sobre formas de pagamento, vou te encaminhar para o time comercial. 😊\n\n" +
+      "Só um instante!",
     escalar: true,
   },
   {
     id: "kits_promocao",
     gatilhos: ["kit", "desconto", "promocao", "oferta", "cupom", "frete gratis", "brinde", "combo"],
     resposta: () =>
-      "Sobre kits e condições eu vou te encaminhar para o time, que te atende certinho.",
+      "Ótima pergunta! 😊 Condições e kits são com o time comercial, que tem sempre a " +
+      "informação mais atual.\n\n" +
+      "Vou te encaminhar agora, pode ser?",
     escalar: true,
   },
   {
     id: "insiste_compra",
     gatilhos: ["mesmo assim quero", "quero comprar", "onde compro", "onde encontro", "tem em algum lugar", "outro site", "mercado livre", "shopee"],
     resposta: () =>
-      "Vou te encaminhar para o time, que consegue te orientar sobre isso. Só um instante.",
+      "Entendo! 😊 Vou te encaminhar para o time, que consegue te orientar sobre isso " +
+      "certinho.\n\n" +
+      "Só um instante!",
     escalar: true,
   },
   {
@@ -289,10 +324,11 @@ const INTERNAS: Intencao[] = [
     id: "reacao_adversa",
     gatilhos: ["passei mal", "passar mal", "reacao", "efeito ruim", "vomito", "nausea", "tontura", "dor", "alergia", "intoxicacao", "internado"],
     resposta: () =>
-      "Sinto muito que isso tenha acontecido. Como você relatou um problema de saúde, não " +
-      "vou tentar diagnosticar ou orientar seu tratamento. Recomendo procurar atendimento " +
-      "profissional e, se houver sinais de emergência, buscar atendimento de urgência. " +
-      "Vou te encaminhar para o time agora.",
+      "Sinto muito que isso tenha acontecido. 🙏\n\n" +
+      "Como você relatou um problema de saúde, eu não vou tentar diagnosticar nem " +
+      "orientar tratamento. Recomendo procurar atendimento profissional e, se " +
+      "houver qualquer sinal de urgência, buscar atendimento imediato.\n\n" +
+      "Estou te encaminhando para o time agora mesmo.",
     escalar: true,
     critico: true,
   },
@@ -301,8 +337,9 @@ const INTERNAS: Intencao[] = [
     gatilhos: ["reembolso", "estorno", "devolver dinheiro", "cancelar", "cobranca", "cobrado",
       "estornar", "devolucao", "trocar", "troca", "arrependi", "quero outro"],
     resposta: () =>
-      "Vou te encaminhar para outro setor, que consegue te informar direitinho sobre isso. " +
-      "Só um instante.",
+      "Claro, vou te ajudar com isso! 😊\n\n" +
+      "Vou te encaminhar para o setor que cuida de pedidos e pagamentos, que resolve " +
+      "isso com você. Só um instante!",
     escalar: true,
   },
   {
@@ -311,7 +348,8 @@ const INTERNAS: Intencao[] = [
       "nao chegou", "cade", "atrasado", "comprei", "fiz o pedido", "nao recebi",
       "nao rastreia", "chegou quebrado", "veio errado", "extravio"],
     resposta: () =>
-      "Vou te encaminhar para outro setor, que consegue verificar seu pedido. Só um instante.",
+      "Claro! Vou verificar isso para você. 😊\n\n" +
+      "Estou te encaminhando para o setor que acompanha os pedidos. Só um instante!",
     escalar: true,
   },
   {
@@ -319,7 +357,8 @@ const INTERNAS: Intencao[] = [
     gatilhos: ["reclamacao", "reclamar", "pessimo", "horrivel", "processo", "processar",
       "procon", "golpe", "enganado", "absurdo", "advogado", "denuncia", "justica",
       "acionar", "direito do consumidor"],
-    resposta: () => "Sinto muito por isso. Vou te encaminhar para o time agora.",
+    resposta: () => "Sinto muito por isso, e obrigada por me contar. 🙏\n\n" +
+      "Vou te encaminhar agora para o time resolver isso com você.",
     escalar: true,
     critico: true,
   },
@@ -327,8 +366,8 @@ const INTERNAS: Intencao[] = [
     id: "documentacao",
     gatilhos: ["documentacao", "laudo", "certificado", "nota fiscal", "comprovante", "resolucao", "documento sanitario"],
     resposta: () =>
-      "Vou te encaminhar para outro setor, que consegue te informar direitinho sobre isso. " +
-      "Só um instante.",
+      "Claro! 😊 Vou te encaminhar para o setor que tem essa documentação.\n\n" +
+      "Só um instante!",
     escalar: true,
   },
 
@@ -341,7 +380,9 @@ const INTERNAS: Intencao[] = [
     gatilhos: ["email", "telefone de contato", "falar com", "responsavel tecnico", "sac",
       "atendimento humano", "loja fisica", "endereco de vcs", "onde fica"],
     resposta: () =>
-      "Vou te encaminhar para o time, que passa os dados de contato certinho pra você.",
+      "Claro! 😊 Vou te encaminhar para o setor que passa os dados de contato " +
+      "certinho para você.\n\n" +
+      "Só um instante, tudo bem?",
     escalar: true,
   },
   {
@@ -349,24 +390,30 @@ const INTERNAS: Intencao[] = [
     gatilhos: ["cnpj", "razao social", "empresa", "fabricante", "quem fabrica",
       "onde e fabricado", "fabricado onde", "importado"],
     resposta: () =>
-      "O fabricante informado na embalagem é a Bela Blue Beauty Ltda. Qualquer outro dado " +
-      "cadastral eu prefiro que o time confirme com você.",
+      "Claro! O fabricante informado na embalagem é a *Bela Blue Beauty Ltda*. 😊\n\n" +
+      "Qualquer outro dado cadastral eu prefiro que o setor responsável confirme " +
+      "com você, para não te passar nada desatualizado.\n\n" +
+      "Quer que eu encaminhe?",
     escalar: true,
   },
   {
     id: "validade",
     gatilhos: ["validade", "vence", "vencimento", "lote", "fabricacao", "lacrado", "lacre"],
     resposta: () =>
-      "A validade e o lote vêm impressos na própria embalagem. Se o seu pote estiver sem " +
-      "essa informação ou com o lacre violado, me avisa que eu chamo o time.",
+      "Claro! A *validade* e o *lote* vêm impressos na própria embalagem do pote. 😊\n\n" +
+      "Se o seu chegou sem essa informação ou com o lacre violado, me avisa que eu " +
+      "aciono o time na hora.\n\n" +
+      "Está tudo certo com o seu?",
   },
   {
     id: "dieta_exercicio",
     gatilhos: ["dieta", "malhar", "academia", "exercicio", "treino", "reeducacao alimentar",
       "flacidez", "flacida", "efeito rebote", "rebote"],
     resposta: () =>
-      "Não posso afirmar resultado nem indicar rotina de dieta ou exercício — isso é " +
-      "orientação de profissional de saúde. Vou te encaminhar para o time.",
+      "Entendo a dúvida! 🙏\n\n" +
+      "Rotina de alimentação e exercício é orientação de profissional de saúde — " +
+      "nutricionista ou educador físico. Não é algo que eu deva indicar por aqui.\n\n" +
+      "Quer que eu te encaminhe para o time?",
     escalar: true,
   },
 
@@ -374,27 +421,30 @@ const INTERNAS: Intencao[] = [
   {
     id: "agradecimento",
     gatilhos: ["obrigado", "obrigada", "valeu", "agradecido", "brigado", "vlw"],
-    resposta: () => "Imagina! Se precisar de mais alguma coisa é só chamar.",
+    resposta: () => "Imagina, foi um prazer! 😊\n\n" +
+      "Se surgir qualquer outra dúvida, é só me chamar por aqui.",
   },
   {
     id: "despedida",
     gatilhos: ["tchau", "ate mais", "ate logo", "falou", "boa noite entao", "abraco"],
-    resposta: () => "Até mais! Qualquer dúvida, é só mandar mensagem.",
+    resposta: () => "Até mais! 😊 Qualquer dúvida, estou por aqui.",
   },
   {
     id: "quem_e_voce",
     gatilhos: ["seu nome", "qual seu nome", "voce e robo", "e um robo", "atendente", "humano",
       "falando com quem", "pessoa real", "bot"],
     resposta: () =>
-      "Sou o atendimento virtual da Bela Blue Beauty. Se preferir falar com uma pessoa do " +
-      "time, é só me dizer que eu chamo.",
+      "Eu sou a Renata, do atendimento da *Bela Blue Beauty*! 😊\n\n" +
+      "Se preferir falar com outra pessoa do time, é só me dizer que eu chamo.\n\n" +
+      "Como posso te ajudar?",
   },
   {
     id: "horario_atendimento",
     gatilhos: ["horario de atendimento", "que horas", "atendem", "funcionamento", "fim de semana", "domingo"],
     resposta: () =>
-      "Eu respondo por aqui a qualquer hora. Se precisar de alguém do time, o retorno é " +
-      "em horário comercial.",
+      "Por aqui eu respondo a qualquer hora! 😊\n\n" +
+      "Se precisar falar com alguém do time, o retorno acontece em horário comercial.\n\n" +
+      "Posso ajudar com mais alguma coisa?",
   },
 ];
 
