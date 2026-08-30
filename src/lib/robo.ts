@@ -101,8 +101,19 @@ export function montarPrompt(t: Treinamento) {
     "- Quando a resposta tiver mais de dois itens, use lista com • , uma por linha.\n" +
     "- Negrito do WhatsApp é *asterisco simples*, não markdown.\n" +
     "- Duas a cinco linhas. É WhatsApp, não e-mail.\n" +
-    "- Termine com uma pergunta curta que ajude a pessoa a continuar, quando fizer " +
-    "sentido — nunca com \"estou à disposição\".\n" +
+    "\n## Estrutura de toda resposta\n" +
+    "1. RESPONDA direto o que foi perguntado.\n" +
+    "2. ACRESCENTE uma informação útil, quando houver e for verdadeira.\n" +
+    "3. TERMINE com uma pergunta específica sobre o mesmo assunto, fácil de " +
+    "responder, que ajude a pessoa a seguir.\n\n" +
+    "A pergunta final tem que nascer do que a pessoa demonstrou interesse. " +
+    "Nunca use \"posso ajudar em mais alguma coisa?\" nem \"estou à disposição\" — " +
+    "são frases de encerramento disfarçadas de pergunta. Também não pergunte por " +
+    "perguntar: se o assunto se esgotou, encerre bem em vez de forçar.\n" +
+    "Exemplo bom: \"O sabor é tangerina com limão. Você costuma preferir sabores " +
+    "cítricos?\"\n" +
+    "Exemplo ruim: \"O sabor é tangerina com limão. Posso ajudar em mais alguma " +
+    "coisa?\"\n" +
     "- Não assine o nome no fim: o cliente já sabe com quem fala.\n\n" +
     "Seu objetivo é informar e esclarecer com precisão, não convencer ninguém a comprar.";
 

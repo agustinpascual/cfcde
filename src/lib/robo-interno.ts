@@ -128,7 +128,7 @@ const INTERNAS: Intencao[] = [
     id: "sabor",
     gatilhos: ["sabor", "gosto", "sabores", "tangerina", "limao", "doce", "azedo"],
     resposta: () => "Claro! 😊 O sabor é *tangerina com limão* — bem cítrico e leve.\n\n" +
-      "Quer saber mais alguma coisa sobre o produto?",
+      "Você costuma preferir sabores cítricos?",
   },
   {
     id: "restricoes",
@@ -142,8 +142,8 @@ const INTERNAS: Intencao[] = [
   {
     id: "unidades",
     gatilhos: ["quantas unidades", "quantas vem", "quantidade no pote", "tamanho do pote", "dura quanto"],
-    resposta: () => "Claro! Cada pote vem com *30 unidades*. 😊\n\n" +
-      "Posso ajudar com mais alguma dúvida?",
+    resposta: () => "Claro! Cada pote vem com *30 unidades* mastigáveis. 😊\n\n" +
+      "É a sua primeira vez com o produto ou você já conhece?",
   },
 
   /* --- identificação do produto: só o que está na embalagem --- */
@@ -222,14 +222,14 @@ const INTERNAS: Intencao[] = [
       "*Não são a mesma coisa.* O Mounjaro, o Ozempic e o Wegovy são medicamentos, " +
       "com prescrição e acompanhamento médico. Eu não apresento o Gummy como " +
       "equivalente, substituto ou semelhante a nenhum deles.\n\n" +
-      "Posso ajudar com mais alguma dúvida?",
+      "Você chegou até aqui procurando alternativa a algum deles?",
   },
   {
     id: "medicamento",
     gatilhos: ["medicamento", "remedio", "farmaco", "tarja"],
     resposta: () => "Boa pergunta! *Não*, eu não apresento o produto como medicamento. 🙏\n\n" +
-      "São categorias diferentes, com regras diferentes.\n\n" +
-      "Tem mais alguma coisa que eu possa esclarecer?",
+      "São categorias diferentes, com regras e exigências diferentes.\n\n" +
+      "Ficou alguma dúvida sobre essa diferença?",
   },
 
   /* --- situação sanitária --- */
@@ -403,7 +403,7 @@ const INTERNAS: Intencao[] = [
       "Claro! A *validade* e o *lote* vêm impressos na própria embalagem do pote. 😊\n\n" +
       "Se o seu chegou sem essa informação ou com o lacre violado, me avisa que eu " +
       "aciono o time na hora.\n\n" +
-      "Está tudo certo com o seu?",
+      "Está tudo certo com o pote que você recebeu?",
   },
   {
     id: "dieta_exercicio",
@@ -435,8 +435,8 @@ const INTERNAS: Intencao[] = [
       "falando com quem", "pessoa real", "bot"],
     resposta: () =>
       "Eu sou a Renata, do atendimento da *Bela Blue Beauty*! 😊\n\n" +
-      "Se preferir falar com outra pessoa do time, é só me dizer que eu chamo.\n\n" +
-      "Como posso te ajudar?",
+      "Se preferir falar com uma pessoa do time, é só me dizer que eu chamo.\n\n" +
+      "Qual é a sua dúvida sobre o Gummy?",
   },
   {
     id: "horario_atendimento",
@@ -444,7 +444,7 @@ const INTERNAS: Intencao[] = [
     resposta: () =>
       "Por aqui eu respondo a qualquer hora! 😊\n\n" +
       "Se precisar falar com alguém do time, o retorno acontece em horário comercial.\n\n" +
-      "Posso ajudar com mais alguma coisa?",
+      "Me conta: qual é a sua dúvida sobre o Gummy?",
   },
 ];
 
