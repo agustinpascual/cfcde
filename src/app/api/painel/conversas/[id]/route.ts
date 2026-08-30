@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { autenticado } from "@/lib/painel-auth";
-import { enviarWhatsApp } from "@/lib/robo";
+import { enviarMidiaWhatsApp, enviarWhatsApp } from "@/lib/robo";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
@@ -40,7 +40,10 @@ export async function POST(req: Request, { params }: Ctx) {
   const db = supabaseAdmin();
   if (!db) return NextResponse.json({ erro: "Supabase não configurado" }, { status: 500 });
 
-  let corpo: { texto?: unknown; robo_ativo?: unknown };
+  let corpo: {
+    texto?: unknown; robo_ativo?: unknown;
+    midia?: unknown; midiaTipo?: unknown; midiaNome?: unknown;
+  };
   try { corpo = await req.json(); } catch { return NextResponse.json({ erro: "JSON inválido" }, { status: 400 }); }
 
   const { data: conversa } = await db.from("conversas").select("telefone").eq("id", id).single();
@@ -53,16 +56,33 @@ export async function POST(req: Request, { params }: Ctx) {
   }
 
   const texto = typeof corpo.texto === "string" ? corpo.texto.trim().slice(0, 4000) : "";
-  if (!texto) return NextResponse.json({ erro: "mensagem vazia" }, { status: 400 });
+  const midia = typeof corpo.midia === "string" ? corpo.midia : "";
+  const midiaTipo = corpo.midiaTipo === "imagem" || corpo.midiaTipo === "audio" ? corpo.midiaTipo : "arquivo";
+  const midiaNome = typeof corpo.midiaNome === "string" ? corpo.midiaNome.slice(0, 120) : undefined;
+
+  if (!texto && !midia) return NextResponse.json({ erro: "mensagem vazia" }, { status: 400 });
+  // data URL grande estoura o limite do corpo na Vercel e da própria Z-API
+  if (midia && midia.length > 12_000_000) {
+    return NextResponse.json({ erro: "Arquivo muito grande (máx. ~8 MB)." }, { status: 413 });
+  }
+  if (midia && !midia.startsWith("data:")) {
+    return NextResponse.json({ erro: "mídia inválida" }, { status: 400 });
+  }
 
   /* Grava antes de enviar: se a Z-API falhar, a mensagem fica registrada com
      o erro em vez de sumir da tela do atendente. */
+  const rotulo = texto || (midiaTipo === "audio" ? "🎤 Áudio" : midiaTipo === "imagem" ? "📷 Imagem" : `📎 ${midiaNome ?? "Arquivo"}`);
+
   const { data: linha } = await db.from("mensagens")
-    .insert({ conversa: id, autor: "atendente", texto, enviada: false })
+    .insert({
+      conversa: id, autor: "atendente", texto: rotulo, enviada: false,
+      midia_url: midia || null, midia_tipo: midia ? midiaTipo : null,
+    })
     .select("id").single();
 
   try {
-    await enviarWhatsApp(conversa.telefone, texto);
+    if (midia) await enviarMidiaWhatsApp(conversa.telefone, midia, midiaTipo, midiaNome, texto || undefined);
+    else await enviarWhatsApp(conversa.telefone, texto);
     await db.from("mensagens").update({ enviada: true }).eq("id", linha?.id ?? 0);
   } catch (e) {
     const erro = (e as Error).message.slice(0, 300);
@@ -71,7 +91,7 @@ export async function POST(req: Request, { params }: Ctx) {
   }
 
   await db.from("conversas")
-    .update({ ultima_msg: texto, ultima_em: new Date().toISOString(), robo_ativo: false, status: "aberta" })
+    .update({ ultima_msg: rotulo, ultima_em: new Date().toISOString(), robo_ativo: false, status: "aberta" })
     .eq("id", id);
 
   return NextResponse.json({ ok: true });

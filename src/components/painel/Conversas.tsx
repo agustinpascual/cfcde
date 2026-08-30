@@ -51,6 +51,13 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
   const [busca, setBusca] = useState("");
   const [versao, setVersao] = useState(0);   // incrementar força reler a thread
   const [confirmando, setConfirmando] = useState(false);
+  const [anexo, setAnexo] = useState<{ dataUrl: string; nome: string; tipo: "imagem" | "audio" | "arquivo" } | null>(null);
+  const [gravando, setGravando] = useState(false);
+  const [segundos, setSegundos] = useState(0);
+
+  const arquivoRef = useRef<HTMLInputElement>(null);
+  const gravadorRef = useRef<MediaRecorder | null>(null);
+  const pedacosRef = useRef<Blob[]>([]);
 
   const fim = useRef<HTMLDivElement>(null);
   const ultimaId = useRef<number>(0);
@@ -99,6 +106,13 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
     return () => { vivo = false; clearInterval(t); };
   }, [aberta, versao]);
 
+  /* cronômetro da gravação */
+  useEffect(() => {
+    if (!gravando) return;
+    const t = setInterval(() => setSegundos((v) => v + 1), 1000);
+    return () => clearInterval(t);
+  }, [gravando]);
+
   /* rola para o fim só quando chega mensagem nova, não a cada ping */
   useEffect(() => {
     const ultima = mensagens[mensagens.length - 1];
@@ -108,21 +122,64 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
     }
   }, [mensagens]);
 
+  function lerArquivo(f: File) {
+    if (f.size > 8 * 1024 * 1024) { setErro("Arquivo muito grande (máx. 8 MB)."); return; }
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      const tipo = f.type.startsWith("image/") ? "imagem" : f.type.startsWith("audio/") ? "audio" : "arquivo";
+      setAnexo({ dataUrl: String(leitor.result), nome: f.name, tipo });
+      setErro(null);
+    };
+    leitor.readAsDataURL(f);
+  }
+
+  async function gravar() {
+    if (gravando) {   // parar
+      gravadorRef.current?.stop();
+      return;
+    }
+    try {
+      const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(fluxo);
+      pedacosRef.current = [];
+      rec.ondataavailable = (ev) => { if (ev.data.size) pedacosRef.current.push(ev.data); };
+      rec.onstop = () => {
+        fluxo.getTracks().forEach((t) => t.stop());   // solta o microfone
+        const blob = new Blob(pedacosRef.current, { type: rec.mimeType || "audio/webm" });
+        const leitor = new FileReader();
+        leitor.onload = () => setAnexo({ dataUrl: String(leitor.result), nome: "audio.ogg", tipo: "audio" });
+        leitor.readAsDataURL(blob);
+        setGravando(false);
+      };
+      rec.start();
+      gravadorRef.current = rec;
+      setSegundos(0);
+      setGravando(true);
+      setErro(null);
+    } catch {
+      setErro("Não consegui acessar o microfone. Verifique a permissão do navegador.");
+    }
+  }
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     const texto = rascunho.trim();
-    if (!texto || !aberta || enviando) return;
+    if ((!texto && !anexo) || !aberta || enviando) return;
     setEnviando(true);
     setErro(null);
     try {
       const r = await fetch(`/api/painel/conversas/${aberta}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto }),
+        body: JSON.stringify({
+          texto,
+          ...(anexo ? { midia: anexo.dataUrl, midiaTipo: anexo.tipo, midiaNome: anexo.nome } : {}),
+        }),
       });
       const d = await r.json();
       if (!r.ok) { setErro(d.erro ?? "Não foi possível enviar."); return; }
       setRascunho("");
+      setAnexo(null);
       setVersao((v) => v + 1);
       await recarregarLista();
     } catch {
@@ -284,6 +341,18 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
                       {novoDia && <p className={w.separadorDia}><span>{dia}</span></p>}
                       <div className={`${w.balao} ${meu ? w.balaoMeu : w.balaoDele}`}>
                         {m.autor === "robo" && <span className={w.etiquetaRobo}>robô</span>}
+                        {m.midia_url && m.midia_tipo === "imagem" && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img className={w.balaoMidia} src={m.midia_url} alt="Imagem enviada" />
+                        )}
+                        {m.midia_url && m.midia_tipo === "audio" && (
+                          <audio className={w.balaoAudio} src={m.midia_url} controls preload="none" />
+                        )}
+                        {m.midia_url && m.midia_tipo === "arquivo" && (
+                          <a className={w.balaoArquivo} href={m.midia_url} download target="_blank" rel="noreferrer">
+                            📎 Abrir arquivo
+                          </a>
+                        )}
                         <span className={w.balaoTexto}>{m.texto}</span>
                         <span className={w.balaoRodape}>
                           {hora(m.criado_em)}
@@ -298,7 +367,48 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
               <div ref={fim} />
             </div>
 
+            {gravando && (
+              <div className={w.barraGravando} role="status">
+                <span>Gravando… {String(Math.floor(segundos / 60)).padStart(2, "0")}:{String(segundos % 60).padStart(2, "0")}</span>
+                <button type="button" onClick={gravar}>Parar</button>
+              </div>
+            )}
+
+            {anexo && (
+              <div className={w.anexoPrevia}>
+                {anexo.tipo === "imagem" ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={anexo.dataUrl} alt="" />
+                ) : (
+                  <span aria-hidden>{anexo.tipo === "audio" ? "🎤" : "📎"}</span>
+                )}
+                <span>{anexo.tipo === "audio" ? "Áudio gravado" : anexo.nome}</span>
+                <button type="button" onClick={() => setAnexo(null)}>Remover</button>
+              </div>
+            )}
+
             <form className={w.escrever} onSubmit={enviar}>
+              <input
+                ref={arquivoRef}
+                type="file"
+                hidden
+                accept="image/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) lerArquivo(f); e.target.value = ""; }}
+              />
+              <span className={w.acoesEscrever}>
+                <button type="button" className={w.btnIcone} onClick={() => arquivoRef.current?.click()}
+                  disabled={gravando} aria-label="Anexar arquivo" title="Anexar imagem, PDF ou documento">
+                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.2a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.6-2.59l8.5-8.49" />
+                  </svg>
+                </button>
+                <button type="button" className={`${w.btnIcone} ${gravando ? w.gravando : ""}`} onClick={gravar}
+                  aria-label={gravando ? "Parar gravação" : "Gravar áudio"} title={gravando ? "Parar gravação" : "Gravar áudio"}>
+                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="2.5" width="6" height="11.5" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5" />
+                  </svg>
+                </button>
+              </span>
               <textarea
                 className={w.campo}
                 value={rascunho}
@@ -311,7 +421,7 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
                 rows={1}
                 aria-label="Mensagem"
               />
-              <button type="submit" className={w.btnEnviar} disabled={!rascunho.trim() || enviando}>
+              <button type="submit" className={w.btnEnviar} disabled={(!rascunho.trim() && !anexo) || enviando}>
                 {enviando ? "Enviando…" : "Enviar"}
               </button>
             </form>

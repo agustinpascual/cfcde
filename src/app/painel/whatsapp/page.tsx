@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
+import ConexaoZap from "@/components/painel/ConexaoZap";
 import Conversas, { type Conversa } from "@/components/painel/Conversas";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
@@ -64,6 +65,7 @@ export default async function Page() {
         </div>
       )}
 
+      <ConexaoZap />
       <Conversas inicial={conversas} />
 
     </Casca>

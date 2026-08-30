@@ -25,8 +25,8 @@
 .painelChat {
   display: grid;
   grid-template-columns: 340px 1fr;
-  height: calc(100vh - 210px);
-  min-height: 460px;
+  height: min(calc(100vh - 210px), 760px);
+  min-height: 440px;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
   overflow: hidden;
@@ -34,8 +34,8 @@
 }
 
 /* ---------- coluna esquerda ---------- */
-.coluna { display: flex; flex-direction: column; border-right: 1px solid #e5e7eb; background: #fff; min-width: 0; }
-.buscaBox { padding: 12px; border-bottom: 1px solid #f0f1f3; }
+.coluna { display: flex; flex-direction: column; border-right: 1px solid #e5e7eb; background: #fff; min-width: 0; min-height: 0; overflow: hidden; }
+.buscaBox { flex: 0 0 auto; padding: 12px; border-bottom: 1px solid #f0f1f3; }
 .busca {
   width: 100%; min-height: 40px; padding: 0 13px;
   border: 1px solid #e5e7eb; border-radius: 9px;
@@ -44,7 +44,7 @@
 .busca::placeholder { color: #9ca3af; }
 .busca:focus { outline: 2px solid #2563eb; outline-offset: -1px; background: #fff; }
 
-.lista { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 0; }
+.lista { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; list-style: none; margin: 0; padding: 0; }
 .listaVazia { padding: 26px 20px; font-size: 13px; color: #6b7280; line-height: 1.6; }
 
 .item {
@@ -71,7 +71,7 @@
 }
 
 /* ---------- coluna direita ---------- */
-.thread { display: flex; flex-direction: column; min-width: 0; background: #f6f7f9; }
+.thread { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: #f6f7f9; }
 
 .threadVazia {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -81,6 +81,7 @@
 .threadVazia p { font-size: 13px; color: #6b7280; max-width: 42ch; line-height: 1.6; }
 
 .threadTopo {
+  flex: 0 0 auto;
   display: flex; align-items: center; gap: 11px;
   padding: 11px 16px; background: #fff; border-bottom: 1px solid #e5e7eb;
 }
@@ -99,7 +100,7 @@
 .chaveRobo:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 
 /* ---------- balões ---------- */
-.baloes { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 7px; }
+.baloes { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 20px; display: flex; flex-direction: column; gap: 7px; }
 .carregando { font-size: 13px; color: #9ca3af; text-align: center; padding: 24px; }
 
 .separadorDia { text-align: center; margin: 14px 0 8px; }
@@ -127,7 +128,7 @@
 .falhou { color: #dc2626; font-weight: 600; }
 
 /* ---------- caixa de escrita ---------- */
-.escrever { display: flex; align-items: flex-end; gap: 9px; padding: 11px 14px; background: #fff; border-top: 1px solid #e5e7eb; }
+.escrever { flex: 0 0 auto; display: flex; align-items: flex-end; gap: 9px; padding: 11px 14px; background: #fff; border-top: 1px solid #e5e7eb; }
 .campo {
   flex: 1; min-height: 42px; max-height: 130px; padding: 11px 13px;
   border: 1px solid #e5e7eb; border-radius: 10px; background: #f6f7f9;
@@ -186,3 +187,74 @@
 .confirmarNao:focus-visible, .confirmarSim:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) { .btnApagar { transition: none; } }
+
+/* ---------- anexo, áudio e mídia nos balões ---------- */
+.acoesEscrever { display: flex; gap: 6px; flex: 0 0 auto; }
+.btnIcone {
+  width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; color: #6b7280;
+  cursor: pointer; transition: border-color .15s, color .15s, background-color .15s;
+}
+.btnIcone:hover:not(:disabled) { border-color: #9ca3af; color: #111827; background: #f9fafb; }
+.btnIcone:disabled { opacity: .45; cursor: default; }
+.btnIcone:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.gravando { border-color: #fca5a5; background: #fef2f2; color: #dc2626; }
+.gravando::after {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; background: #dc2626;
+  margin-left: 5px; animation: pulsa 1s ease-in-out infinite;
+}
+@keyframes pulsa { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.barraGravando {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; background: #fef2f2; border-top: 1px solid #fecaca;
+  font-size: 13px; color: #991b1b; font-variant-numeric: tabular-nums;
+}
+.barraGravando button {
+  min-height: 34px; padding: 0 13px; border-radius: 8px; border: 1px solid #fca5a5;
+  background: #fff; color: #991b1b; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+
+.anexoPrevia {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: #eef2ff; border-top: 1px solid #c7d2fe;
+  font-size: 13px; color: #3730a3;
+}
+.anexoPrevia img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
+.anexoPrevia button {
+  margin-left: auto; border: 0; background: none; color: #4338ca;
+  font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: underline;
+}
+
+.balaoMidia { display: block; max-width: 240px; border-radius: 7px; margin-bottom: 4px; }
+.balaoAudio { display: block; width: 230px; max-width: 100%; margin-bottom: 4px; }
+.balaoArquivo {
+  display: inline-flex; align-items: center; gap: 7px; margin-bottom: 4px;
+  padding: 7px 11px; border-radius: 7px; background: rgba(0, 0, 0, .05);
+  font-size: 12.5px; color: #1f2937; text-decoration: none;
+}
+.balaoArquivo:hover { background: rgba(0, 0, 0, .09); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btnIcone { transition: none; }
+  .gravando::after { animation: none; }
+}
+
+/* ---------- conexão caiu ---------- */
+.desconectado {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 18px;
+  padding: 18px 20px; margin-bottom: 20px;
+  border: 1px solid #fecaca; border-radius: 12px; background: #fef2f2;
+}
+.desconectadoTexto { flex: 1 1 320px; }
+.desconectadoTitulo { font-size: 14px; font-weight: 700; color: #991b1b; margin-bottom: 5px; }
+.desconectadoTexto p { font-size: 13px; color: #b91c1c; line-height: 1.6; max-width: 62ch; }
+.desconectadoTexto code { background: #fee2e2; border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+.btnReiniciar {
+  margin-top: 11px; min-height: 38px; padding: 0 17px;
+  border: 0; border-radius: 8px; background: #b91c1c; color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.btnReiniciar:hover:not(:disabled) { background: #991b1b; }
+.btnReiniciar:disabled { opacity: .6; cursor: default; }
+.qr { flex: 0 0 auto; border-radius: 8px; background: #fff; padding: 7px; border: 1px solid #fecaca; }

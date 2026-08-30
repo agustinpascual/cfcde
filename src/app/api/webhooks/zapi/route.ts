@@ -105,8 +105,13 @@ export async function POST(req: Request) {
     await db.from("conversas").update({
       ultima_msg: resposta.texto.slice(0, 200),
       ultima_em: new Date().toISOString(),
-      // o robô pediu ajuda: sai de cena e marca a conversa
-      ...(resposta.escalar ? { robo_ativo: false, status: "pendente" } : {}),
+      /* Encaminhar marca a conversa para o time ver, mas o robô continua
+         ligado: ele encaminhou UMA pergunta, não a conversa inteira, e
+         desligar aqui fazia ele emudecer para sempre no primeiro assunto que
+         não sabia. Só assunto crítico — saúde, reação adversa, reclamação —
+         tira ele de cena, porque aí quem responde tem que ser gente. */
+      ...(resposta.escalar ? { status: "pendente" } : {}),
+      ...(resposta.critico ? { robo_ativo: false } : {}),
     }).eq("id", conversa.id);
 
     return NextResponse.json({ ok: true, respondeu: true, escalou: resposta.escalar });

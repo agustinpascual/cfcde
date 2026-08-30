@@ -124,7 +124,9 @@ export function montarPrompt(t: Treinamento) {
 
 export type Historico = { autor: "cliente" | "robo" | "atendente"; texto: string }[];
 
-export type Resposta = { texto: string; escalar: boolean } | null;
+/* `critico` = saúde, reação adversa ou reclamação. Só nesses o robô sai de
+   cena; nos outros ele encaminha e continua atendendo o resto da conversa. */
+export type Resposta = { texto: string; escalar: boolean; critico?: boolean } | null;
 
 /** Tira a marcação [ESCALAR] que o prompt pede quando o modelo desiste. */
 function interpretar(texto: string, t: Treinamento): Resposta {
@@ -145,7 +147,7 @@ export async function responder(historico: Historico, t: Treinamento): Promise<R
      e escreve mais natural. Antes tudo que marcava `escalar` era interceptado,
      e por isso o robô parecia um roteador. */
   const local = responderLocal(ultima, t.exemplos);
-  if (local?.critico) return { texto: local.texto, escalar: true };
+  if (local?.critico) return { texto: local.texto, escalar: true, critico: true };
 
   /* Sem Claude, tenta o Gemini. Sem os dois, o motor interno assume: casa a
      pergunta com o treinamento do painel e com as intenções embutidas, e
@@ -205,6 +207,45 @@ async function tentarGemini(historico: Historico, t: Treinamento): Promise<Respo
 }
 
 /* ---------- envio pela Z-API ---------- */
+/* Envio de mídia. A Z-API aceita data URL direto no campo, então não
+   precisamos hospedar o arquivo em lugar nenhum. */
+export async function enviarMidiaWhatsApp(
+  telefone: string,
+  dataUrl: string,
+  tipo: "imagem" | "audio" | "arquivo",
+  nomeArquivo?: string,
+  legenda?: string
+) {
+  const [instancia, token, clientToken] = await Promise.all([
+    ler("ZAPI_INSTANCIA"), ler("ZAPI_TOKEN"), ler("ZAPI_CLIENT_TOKEN"),
+  ]);
+  if (!instancia || !token) throw new Error("Z-API não configurada");
+
+  const base = `https://api.z-api.io/instances/${instancia}/token/${token}`;
+  const extensao = (nomeArquivo?.split(".").pop() || "bin").toLowerCase();
+
+  const rota =
+    tipo === "imagem" ? "send-image" :
+    tipo === "audio" ? "send-audio" :
+    `send-document/${extensao}`;
+
+  const corpo =
+    tipo === "imagem" ? { phone: telefone, image: dataUrl, caption: legenda || undefined } :
+    tipo === "audio" ? { phone: telefone, audio: dataUrl } :
+    { phone: telefone, document: dataUrl, fileName: nomeArquivo || `arquivo.${extensao}` };
+
+  const res = await fetch(`${base}/${rota}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(clientToken ? { "Client-Token": clientToken } : {}),
+    },
+    body: JSON.stringify(corpo),
+  });
+  if (!res.ok) throw new Error(`Z-API respondeu ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return res.json();
+}
+
 export async function enviarWhatsApp(telefone: string, texto: string) {
   const [instancia, token, clientToken] = await Promise.all([
     ler("ZAPI_INSTANCIA"), ler("ZAPI_TOKEN"), ler("ZAPI_CLIENT_TOKEN"),
