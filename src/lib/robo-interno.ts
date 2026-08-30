@@ -218,6 +218,10 @@ const INTERNAS: Intencao[] = [
       "resolucao", "procede", "denuncia", "reportagem", "noticia"],
     resposta: () => ENCAMINHA,
     escalar: true,
+    /* Assunto regulatório sai do robô e não volta: ele encaminha, se desliga
+       nessa conversa e quem responde é uma pessoa. Nem o motor interno nem a
+       IA opinam sobre situação sanitária. */
+    critico: true,
   },
   {
     id: "seguro",
