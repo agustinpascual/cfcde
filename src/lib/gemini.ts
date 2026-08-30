@@ -5,7 +5,7 @@ import { ler } from "./config-integracoes";
    chamada só numa rota de servidor. A chave sai do cofre (painel) ou do
    ambiente, igual às outras integrações. */
 
-const MODELO = "gemini-2.5-flash";
+const MODELO = "gemini-3.6-flash";
 const URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`;
 
 export type Turno = { papel: "user" | "model"; texto: string };
@@ -52,7 +52,14 @@ export async function perguntarGemini(
     });
 
     if (!res.ok) {
-      console.error(`[gemini] HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      const corpo = await res.text();
+      /* 403 SERVICE_DISABLED não é chave errada: é a Gemini API desligada no
+         projeto do Google Cloud. Vale distinguir, senão a pessoa fica trocando
+         a chave sem resolver. */
+      const dica = corpo.includes("SERVICE_DISABLED")
+        ? " — habilite a Gemini API no projeto em console.cloud.google.com"
+        : "";
+      console.error(`[gemini] HTTP ${res.status}${dica}: ${corpo.slice(0, 200)}`);
       return null;
     }
 
@@ -64,7 +71,11 @@ export async function perguntarGemini(
       return null;
     }
 
+    /* O 3.6 é modelo de raciocínio: além do texto, as partes trazem blocos de
+       pensamento e thoughtSignature. Só o texto visível interessa — mandar o
+       raciocínio para o cliente no WhatsApp seria constrangedor. */
     const texto = (candidato?.content?.parts ?? [])
+      .filter((p: { thought?: boolean }) => !p.thought)
       .map((p: { text?: string }) => p.text ?? "")
       .join("")
       .trim();
