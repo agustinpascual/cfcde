@@ -126,7 +126,7 @@ const INTERNAS: Intencao[] = [
   },
   {
     id: "sabor",
-    gatilhos: ["sabor", "gosto", "sabores", "tangerina", "limao", "doce", "azedo"],
+    gatilhos: ["sabor", "sabores", "tangerina", "limao", "doce", "azedo", "gostoso"],
     resposta: () => "Claro! 😊 O sabor é *tangerina com limão* — bem cítrico e leve.\n\n" +
       "Você costuma preferir sabores cítricos?",
   },
@@ -151,7 +151,8 @@ const INTERNAS: Intencao[] = [
     id: "composicao",
     gatilhos: ["composicao", "componente", "componentes", "ingrediente", "formula",
       "contem", "substancia", "tabela nutricional", "ativos", "o que tem dentro",
-      "do que e feito", "principio ativo", "rotulo"],
+      "do que e feito", "principio ativo", "rotulo", "quantos mg", "miligrama",
+      "dosagem", "concentracao"],
     resposta: () =>
       "Ótima pergunta — e é justamente uma que eu prefiro não responder de cabeça. 🙏\n\n" +
       "Composição é informação que eu só passo com a documentação oficial em mãos. " +
@@ -426,7 +427,7 @@ const INTERNAS: Intencao[] = [
   },
   {
     id: "despedida",
-    gatilhos: ["tchau", "ate mais", "ate logo", "falou", "boa noite entao", "abraco"],
+    gatilhos: ["tchau", "ate mais", "ate logo", "abraco", "ate breve"],
     resposta: () => "Até mais! 😊 Qualquer dúvida, estou por aqui.",
   },
   {
@@ -493,14 +494,27 @@ function distancia(a: string, b: string, limite = 1): number {
 }
 
 /** Casa por prefixo (conjugação) e por 1 letra de diferença (digitação). */
+/** Mesmas letras em ordem trocada — "sabro" e "sabor". */
+function anagrama(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return [...a].sort().join("") === [...b].sort().join("");
+}
+
 function casa(palavra: string, vocab: Set<string>): boolean {
   if (vocab.has(palavra)) return true;
   for (const v of vocab) {
     const menor = Math.min(palavra.length, v.length);
     if (menor > 4 && (palavra.startsWith(v) || v.startsWith(palavra))) return true;
-    // só em palavra longa: em palavra curta uma letra muda o sentido
-    // ("dose" e "dor", "kit" e "kg")
-    if (menor >= 5 && distancia(palavra, v) <= 1) return true;
+
+    /* Substituição só a partir de 6 letras. Com 5, o português tem pares
+       legítimos separados por uma letra — "corta"/"carta", "gosta"/"gosto" —
+       e aceitar isso fazia "corta a fome" cair em pagamento e "vc gosta de
+       futebol" cair em sabor. */
+    if (menor >= 6 && distancia(palavra, v) <= 1) return true;
+
+    /* Transposição é segura mais cedo: trocar letras de lugar preserva o
+       conjunto, então "sabro"/"sabor" casa sem abrir a porta para "corta". */
+    if (menor >= 5 && anagrama(palavra, v) && distancia(palavra, v) <= 1) return true;
   }
   return false;
 }
