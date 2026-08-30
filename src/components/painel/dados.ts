@@ -170,7 +170,15 @@ export const TABELAS = [
   { nome: "treinamento", para: "Robô do WhatsApp" },
 ] as const;
 
-export type EstadoTabela = { nome: string; para: string; existe: boolean };
+export type EstadoTabela = { nome: string; para: string; existe: boolean; colunasFaltando: string[] };
+
+/* Colunas adicionadas por migrations posteriores. Tabela existir não basta:
+   o webhook do WhatsApp morria inteiro porque `saudou_em` não tinha sido
+   criada, e nada na tela indicava isso. */
+const COLUNAS: Record<string, string[]> = {
+  conversas: ["saudou_em"],
+  treinamento: ["escalar_mensagem", "saudacao_ativa", "saudacao_mensagem"],
+};
 
 /** Consulta cada tabela de verdade — `head:true` devolve 204 até para tabela
     inexistente, então o SELECT precisa pedir uma linha. */
@@ -182,6 +190,15 @@ export async function estadoInstalacao(): Promise<EstadoTabela[] | null> {
     // PGRST205 = tabela ausente do cache do schema. Outros erros (RLS, etc.)
     // significam que a tabela existe.
     const existe = !error || (error as { code?: string }).code !== "PGRST205";
-    return { nome, para, existe };
+
+    const colunasFaltando: string[] = [];
+    if (existe) {
+      for (const coluna of COLUNAS[nome] ?? []) {
+        const r = await db.from(nome).select(coluna).limit(1);
+        // 42703 = coluna não existe
+        if ((r.error as { code?: string } | null)?.code === "42703") colunasFaltando.push(coluna);
+      }
+    }
+    return { nome, para, existe, colunasFaltando };
   }));
 }

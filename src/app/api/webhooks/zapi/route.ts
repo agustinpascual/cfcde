@@ -13,6 +13,33 @@ export const dynamic = "force-dynamic";
 /* Webhook de mensagens recebidas da Z-API.
    Grava a mensagem, decide se o robô responde e devolve 200 rápido —
    a Z-API reenvia se demorar. */
+/** Manda as boas-vindas se for o primeiro contato. `false` = não saudou. */
+async function saudar(
+  db: NonNullable<ReturnType<typeof supabaseAdmin>>,
+  conversaId: string,
+  telefone: string,
+  mensagem: string
+): Promise<boolean> {
+  try {
+    const { data, error } = await db
+      .from("conversas").select("saudou_em").eq("id", conversaId).single();
+    // 42703 = coluna não existe; a migration ainda não rodou
+    if (error || data?.saudou_em) return false;
+
+    await enviarWhatsApp(telefone, mensagem);
+    await db.from("mensagens").insert({ conversa: conversaId, autor: "robo", texto: mensagem });
+    await db.from("conversas").update({
+      saudou_em: new Date().toISOString(),
+      ultima_msg: mensagem.slice(0, 200),
+      ultima_em: new Date().toISOString(),
+    }).eq("id", conversaId);
+    return true;
+  } catch (e) {
+    console.error("[zapi] saudação pulada:", (e as Error).message);
+    return false;
+  }
+}
+
 export async function POST(req: Request) {
   const db = supabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, motivo: "sem_supabase" }, { status: 202 });
@@ -38,7 +65,7 @@ export async function POST(req: Request) {
         ultima_msg: texto.slice(0, 200),
         ultima_em: new Date().toISOString(),
       }, { onConflict: "telefone" })
-      .select("id,robo_ativo,nao_lidas,saudou_em")
+      .select("id,robo_ativo,nao_lidas")
       .single();
 
     if (!conversa) return NextResponse.json({ ok: false }, { status: 202 });
@@ -57,23 +84,11 @@ export async function POST(req: Request) {
     const treinamento = await lerTreinamento();
     if (!treinamento.ativo) return NextResponse.json({ ok: true, robo: "inativo" });
 
-    /* Primeiro contato deste número: manda as boas-vindas antes de responder.
-       `saudou_em` guarda a marca para não repetir a cada mensagem. */
-    if (treinamento.saudacao_ativa && !conversa.saudou_em) {
-      const boasVindas = treinamento.saudacao_mensagem;
-      await enviarWhatsApp(telefone, boasVindas);
-      await db.from("mensagens").insert({ conversa: conversa.id, autor: "robo", texto: boasVindas });
-      await db.from("conversas").update({
-        saudou_em: new Date().toISOString(),
-        ultima_msg: boasVindas.slice(0, 200),
-        ultima_em: new Date().toISOString(),
-      }).eq("id", conversa.id);
-
-      /* Se a primeira mensagem foi só "oi", a saudação já responde tudo —
-         mandar as duas seguidas soa robótico. */
-      if (ehSoSaudacao(texto)) {
-        return NextResponse.json({ ok: true, saudou: true });
-      }
+    /* Boas-vindas no primeiro contato. Fica isolado de propósito: depende da
+       coluna `saudou_em`, e se a migration não tiver rodado o atendimento não
+       pode parar junto — era o que derrubava o robô inteiro. */
+    if (treinamento.saudacao_ativa && (await saudar(db, conversa.id, telefone, treinamento.saudacao_mensagem))) {
+      if (ehSoSaudacao(texto)) return NextResponse.json({ ok: true, saudou: true });
     }
 
     // últimas mensagens como contexto
@@ -96,7 +111,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, respondeu: true, escalou: resposta.escalar });
   } catch (e) {
-    console.error("[zapi] falha:", (e as Error).message);
-    return NextResponse.json({ ok: false }, { status: 202 });
+    console.error("[zapi] falha ao processar:", (e as Error).message);
+    return NextResponse.json({ ok: false, motivo: (e as Error).message.slice(0, 120) }, { status: 202 });
   }
 }

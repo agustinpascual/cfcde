@@ -49,7 +49,7 @@ export default async function Page({ searchParams }: {
 
   const _inst = await estadoInstalacao();
 
-  const _faltam = _inst?.filter((t) => !t.existe).length ?? 0;
+  const _faltam = _inst?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
 
 
   return (

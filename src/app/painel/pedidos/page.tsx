@@ -33,7 +33,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const [{ linhas: pedidos, total }, vivos, _inst] = await Promise.all([
     lerPaginaPedidos(pagina), lerAoVivo(), estadoInstalacao(),
   ]);
-  const _faltam = _inst?.filter((t) => !t.existe).length ?? 0;
+  const _faltam = _inst?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   return (

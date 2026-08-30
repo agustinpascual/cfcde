@@ -24,7 +24,8 @@ export default async function Page() {
 
   const estado = await estadoInstalacao();
   const faltam = estado?.filter((t) => !t.existe) ?? [];
-  const pronto = Boolean(estado) && faltam.length === 0;
+  const incompletas = estado?.filter((t) => t.existe && t.colunasFaltando.length) ?? [];
+  const pronto = Boolean(estado) && faltam.length === 0 && incompletas.length === 0;
 
   return (
     <Casca atual="/painel/instalar" titulo="Instalação do banco">
@@ -32,6 +33,16 @@ export default async function Page() {
         <div className={s.aviso}>
           <p className={s.avisoTitulo}>Supabase não configurado</p>
           <p>Falta <code>SUPABASE_SERVICE_ROLE_KEY</code> nas variáveis de ambiente.</p>
+        </div>
+      ) : faltam.length === 0 && incompletas.length ? (
+        <div className={s.aviso}>
+          <p className={s.avisoTitulo}>Faltam colunas novas</p>
+          <p>
+            As tabelas existem, mas migrations mais recentes não foram aplicadas. É por
+            isso que o robô do WhatsApp pode parar de responder: ele consulta uma coluna
+            que ainda não existe. Rode o SQL abaixo — ele é todo <code>if not exists</code>,
+            então não desfaz nada do que já está lá.
+          </p>
         </div>
       ) : pronto ? (
         <div className={s.avisoOk}>
@@ -56,11 +67,13 @@ export default async function Page() {
 
       <ul className={s.listaTabelas}>
         {(estado ?? []).map((t) => (
-          <li key={t.nome} className={t.existe ? s.tabelaOk : s.tabelaFalta}>
-            <span className={s.tabelaMarca} aria-hidden>{t.existe ? "✓" : "•"}</span>
+          <li key={t.nome} className={t.existe && !t.colunasFaltando.length ? s.tabelaOk : s.tabelaFalta}>
+            <span className={s.tabelaMarca} aria-hidden>{t.existe && !t.colunasFaltando.length ? "✓" : "•"}</span>
             <code>{t.nome}</code>
             <span className={s.tabelaPara}>{t.para}</span>
-            <span className={s.tabelaEstado}>{t.existe ? "criada" : "faltando"}</span>
+            <span className={s.tabelaEstado}>
+              {!t.existe ? "faltando" : t.colunasFaltando.length ? `${t.colunasFaltando.length} coluna(s)` : "criada"}
+            </span>
           </li>
         ))}
       </ul>
