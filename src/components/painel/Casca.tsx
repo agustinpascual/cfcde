@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconeBanco, IconeChat, IconePedidos, IconePlug, IconeVendas, IconeVivo } from "./Icones";
+import { IconeBanco, IconeChat, IconeEmail, IconePedidos, IconePlug, IconeVendas, IconeVivo } from "./Icones";
 import s from "./painel.module.css";
 
 const ITENS = [
@@ -11,6 +11,7 @@ const ITENS = [
   { grupo: "Configuração", links: [
     { href: "/painel/integracoes", rotulo: "Integrações", Icone: IconePlug },
     { href: "/painel/whatsapp", rotulo: "WhatsApp", Icone: IconeChat },
+    { href: "/painel/emails", rotulo: "E-mails", Icone: IconeEmail },
     { href: "/painel/instalar", rotulo: "Instalação", Icone: IconeBanco },
   ]},
 ];

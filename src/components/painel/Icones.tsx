@@ -16,3 +16,11 @@ export const IconeBanco = (p: React.SVGProps<SVGSVGElement>) => (
     <path d="M4.5 11.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6" />
   </svg>
 );
+
+export const IconeEmail = (p: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden {...p}>
+    <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+    <path d="m3 7 8.2 5.6a1.5 1.5 0 0 0 1.6 0L21 7" />
+  </svg>
+);

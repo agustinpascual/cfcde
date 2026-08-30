@@ -168,6 +168,9 @@ export const TABELAS = [
   { nome: "conversas", para: "WhatsApp" },
   { nome: "mensagens", para: "WhatsApp" },
   { nome: "treinamento", para: "Robô do WhatsApp" },
+  { nome: "contatos", para: "Lista de e-mails" },
+  { nome: "campanhas", para: "Disparos de e-mail" },
+  { nome: "envios", para: "Status de entrega dos e-mails" },
 ] as const;
 
 export type EstadoTabela = { nome: string; para: string; existe: boolean; colunasFaltando: string[] };
