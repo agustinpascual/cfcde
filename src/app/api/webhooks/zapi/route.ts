@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { enviarWhatsApp, lerTreinamento, responder, type Historico } from "@/lib/robo";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
+/* "oi", "bom dia" e afins: a saudação de boas-vindas já cobre. */
+const SO_SAUDACAO = /^(oi+|ol[aá]+|opa+|e a[ií]|eae|salve|hey|oii+|bom dia|boa tarde|boa noite|tudo bem|tudo bom|blz|beleza)[\s!,.?]*$/i;
+const ehSoSaudacao = (t: string) =>
+  SO_SAUDACAO.test(t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -33,7 +38,7 @@ export async function POST(req: Request) {
         ultima_msg: texto.slice(0, 200),
         ultima_em: new Date().toISOString(),
       }, { onConflict: "telefone" })
-      .select("id,robo_ativo,nao_lidas")
+      .select("id,robo_ativo,nao_lidas,saudou_em")
       .single();
 
     if (!conversa) return NextResponse.json({ ok: false }, { status: 202 });
@@ -51,6 +56,25 @@ export async function POST(req: Request) {
 
     const treinamento = await lerTreinamento();
     if (!treinamento.ativo) return NextResponse.json({ ok: true, robo: "inativo" });
+
+    /* Primeiro contato deste número: manda as boas-vindas antes de responder.
+       `saudou_em` guarda a marca para não repetir a cada mensagem. */
+    if (treinamento.saudacao_ativa && !conversa.saudou_em) {
+      const boasVindas = treinamento.saudacao_mensagem;
+      await enviarWhatsApp(telefone, boasVindas);
+      await db.from("mensagens").insert({ conversa: conversa.id, autor: "robo", texto: boasVindas });
+      await db.from("conversas").update({
+        saudou_em: new Date().toISOString(),
+        ultima_msg: boasVindas.slice(0, 200),
+        ultima_em: new Date().toISOString(),
+      }).eq("id", conversa.id);
+
+      /* Se a primeira mensagem foi só "oi", a saudação já responde tudo —
+         mandar as duas seguidas soa robótico. */
+      if (ehSoSaudacao(texto)) {
+        return NextResponse.json({ ok: true, saudou: true });
+      }
+    }
 
     // últimas mensagens como contexto
     const { data: anteriores } = await db.from("mensagens")

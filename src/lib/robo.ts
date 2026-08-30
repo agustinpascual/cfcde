@@ -17,15 +17,22 @@ export type Treinamento = {
   exemplos: { pergunta: string; resposta: string }[];
   escalar_quando: string;
   escalar_mensagem: string;
+  saudacao_ativa: boolean;
+  saudacao_mensagem: string;
 };
 
 /* Texto padrão quando o robô não sabe. Editável no painel. */
+export const SAUDACAO_PADRAO =
+  "Bem-vindo à Bela Blue Beauty! 💚 Eu sou do atendimento e estou aqui para tirar " +
+  "suas dúvidas. Como posso te ajudar?";
+
 export const ENCAMINHAR_PADRAO =
   "Vou te encaminhar para outro setor, que vai estar conseguindo te informar sobre esses assuntos.";
 
 export const TREINAMENTO_VAZIO: Treinamento = {
   ativo: false, tom: "", sobre_produto: "", regras: "", nao_pode: "",
   exemplos: [], escalar_quando: "", escalar_mensagem: ENCAMINHAR_PADRAO,
+  saudacao_ativa: true, saudacao_mensagem: SAUDACAO_PADRAO,
 };
 
 export async function lerTreinamento(): Promise<Treinamento> {
@@ -42,6 +49,8 @@ export async function lerTreinamento(): Promise<Treinamento> {
     exemplos: Array.isArray(data.exemplos) ? data.exemplos : [],
     escalar_quando: data.escalar_quando ?? "",
     escalar_mensagem: data.escalar_mensagem?.trim() || ENCAMINHAR_PADRAO,
+    saudacao_ativa: data.saudacao_ativa ?? true,
+    saudacao_mensagem: data.saudacao_mensagem?.trim() || SAUDACAO_PADRAO,
   };
 }
 

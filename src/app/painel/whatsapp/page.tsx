@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
+import Conversas, { type Conversa } from "@/components/painel/Conversas";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { lerTreinamento } from "@/lib/robo";
@@ -13,21 +14,6 @@ import w from "@/components/painel/whatsapp.module.css";
 
 export const metadata: Metadata = { title: "WhatsApp", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
-
-type Conversa = {
-  id: string; telefone: string; nome: string | null; status: string;
-  robo_ativo: boolean; ultima_msg: string | null; ultima_em: string; nao_lidas: number;
-};
-
-const quando = (iso: string) => {
-  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `${min}min`;
-  if (min < 1440) return `${Math.floor(min / 60)}h`;
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-};
-const formataTel = (t: string) =>
-  t.length >= 12 ? `(${t.slice(2, 4)}) ${t.slice(4, 9)}-${t.slice(9)}` : t;
 
 export default async function Page() {
   if (!painelConfigurado()) redirect("/painel");
@@ -78,35 +64,8 @@ export default async function Page() {
         </div>
       )}
 
-      <section className={s.cartao}>
-        {conversas.length === 0 ? (
-          <p className={s.vazio}>
-            Nenhuma conversa ainda. Elas aparecem aqui assim que a Z-API entregar a primeira mensagem.
-          </p>
-        ) : (
-          <ul className={w.lista}>
-            {conversas.map((c) => (
-              <li key={c.id} className={w.item}>
-                <span className={w.avatar} aria-hidden>
-                  {(c.nome ?? c.telefone).trim().charAt(0).toUpperCase()}
-                </span>
-                <span className={w.corpo}>
-                  <span className={w.linhaTopo}>
-                    <strong className={w.nome}>{c.nome || formataTel(c.telefone)}</strong>
-                    <span className={w.hora}>{quando(c.ultima_em)}</span>
-                  </span>
-                  <span className={w.previa}>{c.ultima_msg ?? "—"}</span>
-                </span>
-                <span className={w.marcas}>
-                  {c.nao_lidas > 0 && <span className={w.naoLidas}>{c.nao_lidas}</span>}
-                  {!c.robo_ativo && <span className={w.humano}>humano</span>}
-                  {c.status === "pendente" && <span className={w.pendente}>pendente</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <Conversas inicial={conversas} />
+
     </Casca>
   );
 }
