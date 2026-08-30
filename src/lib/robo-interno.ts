@@ -54,12 +54,24 @@ const conjunto = (t: string) => new Set(fichas(t).map(radical));
 /* "oi" e "olá" caem fora do matcher: têm 2 letras e estão entre as palavras
    vazias, então a mensagem chega sem nenhum token e vira encaminhamento.
    Uma saudação curta e sozinha é resolvida antes da pontuação. */
-const SAUDACOES = /^(oi+|ol[aá]+|opa+|e a[ií]|eae|salve|hey|hi|hello|bom dia|boa tarde|boa noite|tudo bem|tudo bom|blz|beleza)\b/;
+const SAUDACOES =
+  /^(oi+|ol[aá]+|opa+|e a[ií]|eae|salve|hey|hi|hello|bom dia|boa tarde|boa noite|tudo bem|tudo bom|blz|beleza|bao)[\s,!.?]*/;
 
+/** Tira a saudação do começo e devolve o que sobrou de assunto. */
+function semSaudacao(mensagem: string): string {
+  let t = SEM_ACENTO(mensagem.toLowerCase()).replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+  // "oi, boa tarde, qual o sabor" tem duas saudações antes do assunto
+  for (let i = 0; i < 3 && SAUDACOES.test(t); i++) t = t.replace(SAUDACOES, "").trim();
+  return t;
+}
+
+/* Só é saudação pura quando NADA sobra depois de tirá-la. Antes bastava
+   começar com "oi" e ter até 4 palavras, e "oi, qual o sabor?" era respondido
+   com "Olá! Em que posso ajudar?" em vez do sabor. */
 function ehSaudacaoPura(mensagem: string): boolean {
   const limpo = SEM_ACENTO(mensagem.toLowerCase()).replace(/[^\w\s]/g, " ").trim();
-  if (!limpo || limpo.split(/\s+/).length > 4) return false;   // frase longa tem outro assunto
-  return SAUDACOES.test(limpo);
+  if (!limpo) return false;
+  return SAUDACOES.test(limpo) && semSaudacao(mensagem).length === 0;
 }
 
 /* ---------- intenções embutidas ---------- */
@@ -373,7 +385,10 @@ export function responderLocal(
     if (s) return { texto: s.resposta(), escalar: false, critico: false, intencao: "saudacao", confianca: 1 };
   }
 
-  const palavras = [...conjunto(mensagem)];
+  /* "oi, qual o sabor?" pontua como "qual o sabor": a saudação na frente não
+     deve competir com o assunto de verdade. */
+  const assunto = semSaudacao(mensagem) || mensagem;
+  const palavras = [...conjunto(assunto)];
   if (palavras.length === 0) return null;
 
   const vocabs = montarVocabularios(exemplos);

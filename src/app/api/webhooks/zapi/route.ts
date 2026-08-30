@@ -53,6 +53,27 @@ export async function POST(req: Request) {
   const telefone = String(corpo.phone ?? "").replace(/\D/g, "");
   const texto = String(corpo.text?.message ?? corpo.message ?? "").trim();
   const zapId = corpo.messageId ? String(corpo.messageId) : null;
+
+  /* Grupo, lista de transmissão, status e canal ficam de fora: o robô é
+     atendimento um-a-um. Responder num grupo expõe a conversa a todo mundo
+     e vira spam.
+
+     A Z-API manda `isGroup`, mas nem sempre — em alguns eventos o único
+     indício é o formato do id. Id de grupo é o telefone do criador seguido
+     de timestamp, então passa de 15 dígitos, enquanto telefone brasileiro
+     com DDI tem 12 ou 13. */
+  const ehGrupo =
+    corpo.isGroup === true ||
+    corpo.isNewsletter === true ||
+    corpo.broadcast === true ||
+    Boolean(corpo.participantPhone) ||
+    /@g\.us|@broadcast|@newsletter/i.test(String(corpo.phone ?? "")) ||
+    telefone.length > 15;
+
+  if (ehGrupo) {
+    return NextResponse.json({ ok: true, ignorado: "grupo" });
+  }
+
   if (!telefone || !texto) return NextResponse.json({ ok: true, ignorado: "sem_texto" });
 
   try {
