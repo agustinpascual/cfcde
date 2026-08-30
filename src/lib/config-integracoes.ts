@@ -11,6 +11,7 @@ export const CHAVES = [
   "PINPAY_TOKEN", "PINPAY_WEBHOOK_SECRET",
   "RESEND_API_KEY", "RESEND_REMETENTE",
   "ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN",
+  "GEMINI_API_KEY",
 ] as const;
 export type ChaveConfig = (typeof CHAVES)[number];
 

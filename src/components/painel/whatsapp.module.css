@@ -158,3 +158,31 @@
 @media (prefers-reduced-motion: reduce) {
   .item, .chaveRobo, .btnEnviar { transition: none; }
 }
+
+/* ---------- apagar conversa ---------- */
+.btnApagar {
+  flex: 0 0 auto; min-height: 32px; padding: 0 12px;
+  border: 1px solid #e5e7eb; border-radius: 999px; background: #fff;
+  color: #6b7280; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: border-color .15s, color .15s, background-color .15s;
+}
+.btnApagar:hover { border-color: #fca5a5; color: #b91c1c; background: #fef2f2; }
+.btnApagar:focus-visible { outline: 2px solid #dc2626; outline-offset: 2px; }
+
+.confirmar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 16px; background: #fef2f2; border-bottom: 1px solid #fecaca;
+}
+.confirmar p { font-size: 13px; color: #991b1b; line-height: 1.5; max-width: 56ch; }
+.confirmarBotoes { display: flex; gap: 8px; flex: 0 0 auto; }
+.confirmarNao, .confirmarSim {
+  min-height: 36px; padding: 0 15px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.confirmarNao { border: 1px solid #d1d5db; background: #fff; color: #374151; }
+.confirmarNao:hover { background: #f9fafb; }
+.confirmarSim { border: 0; background: #b91c1c; color: #fff; }
+.confirmarSim:hover { background: #991b1b; }
+.confirmarNao:focus-visible, .confirmarSim:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { .btnApagar { transition: none; } }

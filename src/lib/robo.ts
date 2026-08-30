@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { ler } from "./config-integracoes";
+import { perguntarGemini, type Turno } from "./gemini";
 import { responderLocal } from "./robo-interno";
 import { supabaseAdmin } from "./supabase/servidor";
 
@@ -125,25 +126,34 @@ export type Historico = { autor: "cliente" | "robo" | "atendente"; texto: string
 
 export type Resposta = { texto: string; escalar: boolean } | null;
 
+/** Tira a marcação [ESCALAR] que o prompt pede quando o modelo desiste. */
+function interpretar(texto: string, t: Treinamento): Resposta {
+  const limpo = texto.replace(/\[ESCALAR\]/g, "").trim();
+  if (!limpo) return { texto: t.escalar_mensagem || ENCAMINHAR_PADRAO, escalar: true };
+  return { texto: limpo, escalar: texto.includes("[ESCALAR]") };
+}
+
 export async function responder(historico: Historico, t: Treinamento): Promise<Resposta> {
   if (!t.ativo) return null;
 
   const ultima = [...historico].reverse().find((m) => m.autor === "cliente")?.texto ?? "";
   const chave = process.env.ANTHROPIC_API_KEY;
 
-  /* Sem chave da Anthropic o robô continua funcionando pelo motor interno:
-     casa a pergunta com o que você escreveu no treinamento e com as
-     intenções embutidas. Não inventa nada — se não reconhece, escala. */
+  /* O motor interno resolve primeiro os casos de segurança (saúde, reclamação,
+     regulatório) mesmo com IA disponível — resposta previsível vale mais que
+     criativa quando o assunto é sensível. */
+  const local = responderLocal(ultima, t.exemplos);
+  if (local?.escalar) return { texto: local.texto, escalar: true };
+
+  /* Sem Claude, tenta o Gemini. Sem os dois, o motor interno assume: casa a
+     pergunta com o treinamento do painel e com as intenções embutidas, e
+     escala quando não reconhece — nunca inventa. */
   if (!chave) {
-    const local = responderLocal(ultima, t.exemplos);
+    const viaGemini = await tentarGemini(historico, t);
+    if (viaGemini) return viaGemini;
     if (local) return { texto: local.texto, escalar: local.escalar };
     return { texto: t.escalar_mensagem || ENCAMINHAR_PADRAO, escalar: true };
   }
-
-  /* Com chave: o motor interno resolve primeiro os casos de segurança
-     (saúde, reclamação, troca) — resposta previsível vale mais que criativa. */
-  const local = responderLocal(ultima, t.exemplos);
-  if (local?.escalar) return { texto: local.texto, escalar: true };
 
   const client = new Anthropic({ apiKey: chave });
 
@@ -169,17 +179,27 @@ export async function responder(historico: Historico, t: Treinamento): Promise<R
       .join("\n")
       .trim();
 
-    if (!texto) return null;
-    const escalar = texto.includes("[ESCALAR]");
-    return { texto: texto.replace(/\[ESCALAR\]/g, "").trim(), escalar };
+    if (texto) return interpretar(texto, t);
   } catch (e) {
-    console.error("[robo] Claude falhou, caindo no motor interno:", (e as Error).message);
-    // a API caiu ou estourou cota — o atendimento não pode parar junto
-    const reserva = responderLocal(ultima, t.exemplos);
-    return reserva
-      ? { texto: reserva.texto, escalar: reserva.escalar }
-      : { texto: t.escalar_mensagem || ENCAMINHAR_PADRAO, escalar: true };
+    console.error("[robo] Claude falhou:", (e as Error).message);
   }
+
+  /* Claude caiu ou veio vazio: Gemini, depois motor interno. O atendimento
+     não pode parar junto com uma API. */
+  const viaGemini = await tentarGemini(historico, t);
+  if (viaGemini) return viaGemini;
+  return local
+    ? { texto: local.texto, escalar: local.escalar }
+    : { texto: t.escalar_mensagem || ENCAMINHAR_PADRAO, escalar: true };
+}
+
+async function tentarGemini(historico: Historico, t: Treinamento): Promise<Resposta> {
+  const turnos: Turno[] = historico.map((m) => ({
+    papel: m.autor === "cliente" ? ("user" as const) : ("model" as const),
+    texto: m.texto,
+  }));
+  const texto = await perguntarGemini(montarPrompt(t), turnos);
+  return texto ? interpretar(texto, t) : null;
 }
 
 /* ---------- envio pela Z-API ---------- */

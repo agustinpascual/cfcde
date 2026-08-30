@@ -50,6 +50,7 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [versao, setVersao] = useState(0);   // incrementar força reler a thread
+  const [confirmando, setConfirmando] = useState(false);
 
   const fim = useRef<HTMLDivElement>(null);
   const ultimaId = useRef<number>(0);
@@ -129,6 +130,18 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
     } finally {
       setEnviando(false);
     }
+  }
+
+  async function apagar() {
+    if (!atual) return;
+    const id = atual.id;
+    // some da tela na hora; se o servidor recusar, a lista volta no próximo ping
+    setConversas((a) => a.filter((c) => c.id !== id));
+    setAberta(null);
+    setMensagens([]);
+    setConfirmando(false);
+    const r = await fetch(`/api/painel/conversas/${id}`, { method: "DELETE" });
+    if (!r.ok) { setErro("Não foi possível apagar a conversa."); await recarregarLista(); }
   }
 
   async function alternarRobo() {
@@ -227,7 +240,33 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
               >
                 Robô {atual.robo_ativo ? "ligado" : "desligado"}
               </button>
+              <button
+                type="button"
+                className={w.btnApagar}
+                onClick={() => setConfirmando(true)}
+                aria-label="Apagar conversa"
+                title="Apagar conversa"
+              >
+                Apagar
+              </button>
             </header>
+
+            {confirmando && (
+              <div className={w.confirmar} role="alertdialog" aria-label="Confirmar exclusão">
+                <p>
+                  Apagar a conversa com <strong>{atual.nome || formataTel(atual.telefone)}</strong>?
+                  As mensagens somem junto e isso não tem volta.
+                </p>
+                <span className={w.confirmarBotoes}>
+                  <button type="button" className={w.confirmarNao} onClick={() => setConfirmando(false)}>
+                    Cancelar
+                  </button>
+                  <button type="button" className={w.confirmarSim} onClick={apagar}>
+                    Apagar
+                  </button>
+                </span>
+              </div>
+            )}
 
             <div className={w.baloes}>
               {!carregado ? (

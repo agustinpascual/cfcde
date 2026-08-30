@@ -21,6 +21,7 @@ const NOTAS: Record<ChaveConfig, string> = {
   ZAPI_INSTANCIA: "ID da instância na Z-API",
   ZAPI_TOKEN: "Token da instância",
   ZAPI_CLIENT_TOKEN: "Token de segurança da conta Z-API",
+  GEMINI_API_KEY: "Chave do Google AI Studio — dá ao robô compreensão de linguagem",
 };
 
 const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: string[] }[] = [
@@ -38,6 +39,15 @@ const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: st
     nome: "Z-API (WhatsApp)", papel: "Atendimento e disparos pelo WhatsApp",
     chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN"],
     passos: ["Conectar o número na Z-API", "Apontar o webhook de mensagens para /api/webhooks/zapi"],
+  },
+  {
+    nome: "Gemini", papel: "Cérebro do robô do WhatsApp — entende pergunta fora do previsto",
+    chaves: ["GEMINI_API_KEY"],
+    passos: [
+      "Gerar a chave em aistudio.google.com/apikey (tem cota gratuita)",
+      "Sem chave o robô continua respondendo pelo motor interno, só que limitado a pergunta prevista",
+      "O treinamento do painel vale para os dois — a chave muda quem interpreta, não a política",
+    ],
   },
 ];
 

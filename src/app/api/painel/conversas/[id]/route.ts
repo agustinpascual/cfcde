@@ -76,3 +76,17 @@ export async function POST(req: Request, { params }: Ctx) {
 
   return NextResponse.json({ ok: true });
 }
+
+/** Apaga a conversa. As mensagens saem junto pelo on delete cascade. */
+export async function DELETE(_req: Request, { params }: Ctx) {
+  if (!(await autenticado())) return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
+  const { id } = await params;
+
+  const db = supabaseAdmin();
+  if (!db) return NextResponse.json({ erro: "Supabase não configurado" }, { status: 500 });
+
+  const { error } = await db.from("conversas").delete().eq("id", id);
+  if (error) return NextResponse.json({ erro: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}
