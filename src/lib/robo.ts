@@ -139,11 +139,13 @@ export async function responder(historico: Historico, t: Treinamento): Promise<R
   const ultima = [...historico].reverse().find((m) => m.autor === "cliente")?.texto ?? "";
   const chave = process.env.ANTHROPIC_API_KEY;
 
-  /* O motor interno resolve primeiro os casos de segurança (saúde, reclamação,
-     regulatório) mesmo com IA disponível — resposta previsível vale mais que
-     criativa quando o assunto é sensível. */
+  /* Só o que é crítico (saúde, reação adversa, reclamação) fura a IA: nesses
+     a resposta tem que ser idêntica toda vez. O resto — inclusive assunto que
+     acaba encaminhado — passa pela IA primeiro, que entende a pergunta melhor
+     e escreve mais natural. Antes tudo que marcava `escalar` era interceptado,
+     e por isso o robô parecia um roteador. */
   const local = responderLocal(ultima, t.exemplos);
-  if (local?.escalar) return { texto: local.texto, escalar: true };
+  if (local?.critico) return { texto: local.texto, escalar: true };
 
   /* Sem Claude, tenta o Gemini. Sem os dois, o motor interno assume: casa a
      pergunta com o treinamento do painel e com as intenções embutidas, e

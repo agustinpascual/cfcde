@@ -68,6 +68,10 @@ export type Intencao = {
   gatilhos: string[];      // frases/palavras que apontam para esta intenção
   resposta: () => string;
   escalar?: boolean;
+  /* `critico` nunca chega na IA: a resposta tem que ser sempre a mesma,
+     palavra por palavra. Saúde e reclamação não são lugar para criatividade.
+     Um `escalar` sem `critico` a IA ainda pode tentar responder melhor. */
+  critico?: boolean;
 };
 
 /* Frase única de encaminhamento, para o robô não improvisar despedida. */
@@ -239,6 +243,7 @@ const INTERNAS: Intencao[] = [
       "profissional e, se houver sinais de emergência, buscar atendimento de urgência. " +
       "Vou te encaminhar para o time agora.",
     escalar: true,
+    critico: true,
   },
   {
     id: "saude",
@@ -248,6 +253,7 @@ const INTERNAS: Intencao[] = [
       "Essa é uma questão que precisa ser avaliada por um profissional de saúde. Não quero " +
       "te passar uma orientação incorreta. Vou te encaminhar para o time.",
     escalar: true,
+    critico: true,
   },
   {
     id: "reembolso",
@@ -269,6 +275,7 @@ const INTERNAS: Intencao[] = [
     gatilhos: ["reclamacao", "reclamar", "pessimo", "horrivel", "processo", "procon", "golpe", "enganado", "absurdo", "advogado", "denuncia", "justica"],
     resposta: () => "Sinto muito por isso. Vou te encaminhar para o time agora.",
     escalar: true,
+    critico: true,
   },
   {
     id: "documentacao",
@@ -320,7 +327,7 @@ const INTERNAS: Intencao[] = [
 const LIMIAR = 0.55;
 const K = 1.6; // quanto de evidência é preciso para chegar perto de 1
 
-type Vocabulario = { id: string; palavras: Set<string>; escalar: boolean; texto: () => string; bonus: number };
+type Vocabulario = { id: string; palavras: Set<string>; escalar: boolean; critico: boolean; texto: () => string; bonus: number };
 
 /** Casa por prefixo para tolerar conjugação: "entrega" ↔ "entregar". */
 function casa(palavra: string, vocab: Set<string>): boolean {
@@ -337,6 +344,7 @@ function montarVocabularios(exemplos: { pergunta: string; resposta: string }[]):
     id: i.id,
     palavras: new Set(i.gatilhos.flatMap((g) => [...conjunto(g)])),
     escalar: Boolean(i.escalar),
+    critico: Boolean(i.critico),
     texto: i.resposta,
     bonus: 0,
   }));
@@ -345,12 +353,12 @@ function montarVocabularios(exemplos: { pergunta: string; resposta: string }[]):
     const resposta = ex.resposta?.trim();
     if (!pergunta || !resposta) continue;
     // o que você escreveu no painel vale mais que a intenção embutida
-    lista.push({ id: "treinamento", palavras: conjunto(pergunta), escalar: false, texto: () => resposta, bonus: 0.12 });
+    lista.push({ id: "treinamento", palavras: conjunto(pergunta), escalar: false, critico: false, texto: () => resposta, bonus: 0.12 });
   }
   return lista.filter((v) => v.palavras.size > 0);
 }
 
-export type Casamento = { texto: string; escalar: boolean; intencao: string; confianca: number };
+export type Casamento = { texto: string; escalar: boolean; critico: boolean; intencao: string; confianca: number };
 /**
  * Procura a melhor resposta local. Devolve `null` quando nenhuma intenção
  * reúne evidência suficiente — aí quem chama encaminha para um humano.
@@ -362,7 +370,7 @@ export function responderLocal(
   /* saudação curta resolve antes: sem isso, "oi" vira encaminhamento */
   if (ehSaudacaoPura(mensagem)) {
     const s = INTERNAS.find((i) => i.id === "saudacao");
-    if (s) return { texto: s.resposta(), escalar: false, intencao: "saudacao", confianca: 1 };
+    if (s) return { texto: s.resposta(), escalar: false, critico: false, intencao: "saudacao", confianca: 1 };
   }
 
   const palavras = [...conjunto(mensagem)];
@@ -394,7 +402,7 @@ export function responderLocal(
     // empate vai para quem passa a conversa adiante — errar calado é pior
     const ganha = !melhor || confianca > melhor.confianca + 1e-9 ||
       (Math.abs(confianca - melhor.confianca) < 1e-9 && v.escalar && !melhor.escalar);
-    if (ganha) melhor = { texto: v.texto(), escalar: v.escalar, intencao: v.id, confianca };
+    if (ganha) melhor = { texto: v.texto(), escalar: v.escalar, critico: v.critico, intencao: v.id, confianca };
   }
 
   return melhor;

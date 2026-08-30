@@ -22,11 +22,32 @@ export async function temGemini(): Promise<boolean> {
 export async function perguntarGemini(
   sistema: string,
   turnos: Turno[],
-  maxTokens = 512
+  /* O 3.6 raciocina antes de responder e o pensamento sai do MESMO orçamento.
+     Com 512 a resposta vinha cortada no meio (finishReason MAX_TOKENS com 7
+     tokens de saída). Uma pergunta simples gasta ~300 pensando. */
+  maxTokens = 2048
 ): Promise<string | null> {
   const chave = await ler("GEMINI_API_KEY");
   if (!chave || turnos.length === 0) return null;
 
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    const r = await chamar(chave, sistema, turnos, maxTokens);
+    if (r.texto !== undefined) return r.texto;
+    if (!r.repetir || tentativa === 3) return null;
+    // 503 de sobrecarga é temporário e comum nesse modelo
+    await new Promise((ok) => setTimeout(ok, tentativa * 700));
+  }
+  return null;
+}
+
+type Saida = { texto?: string | null; repetir?: boolean };
+
+async function chamar(
+  chave: string,
+  sistema: string,
+  turnos: Turno[],
+  maxTokens: number
+): Promise<Saida> {
   try {
     const res = await fetch(`${URL}?key=${encodeURIComponent(chave)}`, {
       method: "POST",
@@ -38,6 +59,8 @@ export async function perguntarGemini(
           maxOutputTokens: maxTokens,
           temperature: 0.4,       // atendimento: previsível vale mais que criativo
           topP: 0.9,
+          // atendimento simples não precisa raciocinar muito; corta custo e espera
+          thinkingConfig: { thinkingLevel: "low" },
         },
         /* O produto é suplemento e as perguntas falam de saúde e peso; com os
            filtros no padrão o Gemini bloqueia respostas que só recusam a fazer
@@ -60,7 +83,7 @@ export async function perguntarGemini(
         ? " — habilite a Gemini API no projeto em console.cloud.google.com"
         : "";
       console.error(`[gemini] HTTP ${res.status}${dica}: ${corpo.slice(0, 200)}`);
-      return null;
+      return { repetir: res.status === 503 || res.status === 429 };
     }
 
     const d = await res.json();
@@ -68,7 +91,7 @@ export async function perguntarGemini(
     // SAFETY / RECITATION: a resposta veio cortada, não dá para usar
     if (candidato?.finishReason && !["STOP", "MAX_TOKENS"].includes(candidato.finishReason)) {
       console.error(`[gemini] interrompido: ${candidato.finishReason}`);
-      return null;
+      return { texto: null };
     }
 
     /* O 3.6 é modelo de raciocínio: além do texto, as partes trazem blocos de
@@ -80,9 +103,9 @@ export async function perguntarGemini(
       .join("")
       .trim();
 
-    return texto || null;
+    return { texto: texto || null };
   } catch (e) {
     console.error("[gemini] falhou:", (e as Error).message);
-    return null;
+    return { repetir: true };   // rede instável merece outra chance
   }
 }
