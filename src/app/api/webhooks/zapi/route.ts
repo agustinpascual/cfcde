@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { enviarWhatsApp, lerTreinamento, responder, type Historico } from "@/lib/robo";
+import { registrarDuvida } from "@/lib/aprendizado";
+import { responderLocal } from "@/lib/robo-interno";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 /* "oi", "bom dia" e afins: a saudação de boas-vindas já cobre. */
@@ -142,6 +144,12 @@ export async function POST(req: Request) {
       .order("criado_em", { ascending: false }).limit(16);
 
     const historico = ((anteriores ?? []).reverse() as Historico);
+
+    /* Guarda o que o motor achou ANTES da IA entrar: é o sinal de qual
+       pergunta real está descoberta no treinamento. */
+    const casou = responderLocal(texto, treinamento.exemplos);
+    void registrarDuvida(texto, casou?.intencao ?? null, casou?.confianca ?? null);
+
     const resposta = await responder(historico, treinamento);
     if (!resposta?.texto) return NextResponse.json({ ok: true, robo: "sem_resposta" });
 

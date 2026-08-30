@@ -168,6 +168,7 @@ export const TABELAS = [
   { nome: "conversas", para: "WhatsApp" },
   { nome: "mensagens", para: "WhatsApp" },
   { nome: "treinamento", para: "Robô do WhatsApp" },
+  { nome: "aprendizado", para: "Perguntas sem resposta do robô" },
   { nome: "contatos", para: "Lista de e-mails" },
   { nome: "campanhas", para: "Disparos de e-mail" },
   { nome: "envios", para: "Status de entrega dos e-mails" },

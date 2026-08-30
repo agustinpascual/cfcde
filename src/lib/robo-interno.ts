@@ -410,12 +410,47 @@ const K = 1.6; // quanto de evidência é preciso para chegar perto de 1
 
 type Vocabulario = { id: string; palavras: Set<string>; escalar: boolean; critico: boolean; texto: () => string; bonus: number };
 
-/** Casa por prefixo para tolerar conjugação: "entrega" ↔ "entregar". */
+/* Distância de edição com corte: para em 2 e devolve 99. Cliente digita no
+   celular, com pressa — "emagrese", "gluten", "quanot" são o normal, e sem
+   isso cada erro de uma letra vira encaminhamento. */
+function distancia(a: string, b: string, limite = 1): number {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > limite) return 99;
+
+  /* Damerau: troca de letras vizinhas custa 1, não 2. "sabro" por "sabor" é o
+     erro mais comum de quem digita rápido, e em Levenshtein puro ele fica
+     fora do limite. */
+  let doisAtras: number[] = [];
+  let anterior = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const atual = [i];
+    let melhorDaLinha = i;
+    for (let j = 1; j <= b.length; j++) {
+      const custo = a[i - 1] === b[j - 1] ? 0 : 1;
+      let v = Math.min(atual[j - 1] + 1, anterior[j] + 1, anterior[j - 1] + custo);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        v = Math.min(v, doisAtras[j - 2] + 1);
+      }
+      atual[j] = v;
+      melhorDaLinha = Math.min(melhorDaLinha, v);
+    }
+    // linha inteira já passou do limite: não tem como melhorar
+    if (melhorDaLinha > limite) return 99;
+    doisAtras = anterior;
+    anterior = atual;
+  }
+  return anterior[b.length];
+}
+
+/** Casa por prefixo (conjugação) e por 1 letra de diferença (digitação). */
 function casa(palavra: string, vocab: Set<string>): boolean {
   if (vocab.has(palavra)) return true;
   for (const v of vocab) {
     const menor = Math.min(palavra.length, v.length);
     if (menor > 4 && (palavra.startsWith(v) || v.startsWith(palavra))) return true;
+    // só em palavra longa: em palavra curta uma letra muda o sentido
+    // ("dose" e "dor", "kit" e "kg")
+    if (menor >= 5 && distancia(palavra, v) <= 1) return true;
   }
   return false;
 }

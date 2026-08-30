@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
+import Aprendizado from "@/components/painel/Aprendizado";
 import FormTreinamento from "@/components/painel/FormTreinamento";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { lerTreinamento } from "@/lib/robo";
@@ -58,6 +59,16 @@ export default async function Page() {
             : "O motor interno resolve na hora os assuntos sensíveis (saúde, troca, reclamação) e o Claude cuida do resto. Se a API falhar, o motor interno assume sozinho."}
         </p>
       </div>
+
+      <section className={s.intencoes}>
+        <h2 className={s.intencoesTitulo}>Perguntas que ele não soube responder</h2>
+        <p className={s.intencoesNota}>
+          Vem das conversas reais, agrupadas e ordenadas pelas mais repetidas. Responder
+          aqui vira exemplo de treinamento na hora — é o jeito mais rápido de melhorar o
+          robô, porque parte do que os seus clientes perguntam de verdade.
+        </p>
+        <Aprendizado />
+      </section>
 
       <section className={s.intencoes}>
         <h2 className={s.intencoesTitulo}>Já respondidas sem você escrever nada</h2>
