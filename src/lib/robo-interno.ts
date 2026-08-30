@@ -92,7 +92,36 @@ const ENCAMINHA =
   "corretamente. Só um instante.";
 
 const INTERNAS: Intencao[] = [
-  /* --- fatos de embalagem: específicos primeiro, senão "produto" rouba o empate --- */
+  /* --- SAÚDE PRIMEIRO ---
+     Ordem importa: no empate vence quem vem antes. Condição, sintoma e nome de
+     medicamento têm que sair daqui, nunca de "modo de uso". */
+  {
+    id: "saude",
+    gatilhos: [
+      // estados e públicos
+      "gravida", "gravidez", "gestante", "amamentando", "amamenta", "lactante",
+      "crianca", "menor", "adolescente", "idoso",
+      // condições
+      "diabete", "diabetico", "pressao", "hipertenso", "hipertensao", "hipotireoidismo",
+      "tireoide", "tiroide", "refluxo", "gastrite", "renal", "figado", "hepatico",
+      "cardiaco", "coracao", "arritmia", "epilepsia", "depressao", "bariatrica",
+      "cirurgia", "anemia", "colesterol", "doenca", "condicao",
+      // sintomas
+      "insonia", "taquicardia", "palpitacao", "tontura", "enjoo", "azia",
+      "diarreia", "alergia", "alergico", "intolerancia",
+      // medicamentos e princípios ativos
+      "remedio", "medicamento", "anticoncepcional", "antidepressivo", "fluoxetina",
+      "sertralina", "sibutramina", "levotiroxina", "metformina", "insulina",
+      "losartana", "anticoagulante", "interacao",
+      // formulações comuns da pergunta
+      "posso tomar", "posso usar", "faz mal se", "ataca",
+    ],
+    resposta: () =>
+      "Essa é uma questão que precisa ser avaliada por um profissional de saúde. Não quero " +
+      "te passar uma orientação incorreta. Vou te encaminhar para o time.",
+    escalar: true,
+    critico: true,
+  },
   {
     id: "sabor",
     gatilhos: ["sabor", "gosto", "sabores", "tangerina", "limao", "doce", "azedo"],
@@ -258,18 +287,9 @@ const INTERNAS: Intencao[] = [
     critico: true,
   },
   {
-    id: "saude",
-    gatilhos: ["gravida", "gravidez", "amamentando", "amamenta", "diabete", "diabetico", "pressao",
-      "interacao", "anticoncepcional", "tireoide", "crianca", "menor", "cirurgia", "posso tomar", "doenca"],
-    resposta: () =>
-      "Essa é uma questão que precisa ser avaliada por um profissional de saúde. Não quero " +
-      "te passar uma orientação incorreta. Vou te encaminhar para o time.",
-    escalar: true,
-    critico: true,
-  },
-  {
     id: "reembolso",
-    gatilhos: ["reembolso", "estorno", "devolver dinheiro", "cancelar", "cobranca", "cobrado", "estornar", "devolucao", "trocar", "arrependi"],
+    gatilhos: ["reembolso", "estorno", "devolver dinheiro", "cancelar", "cobranca", "cobrado",
+      "estornar", "devolucao", "trocar", "troca", "arrependi", "quero outro"],
     resposta: () =>
       "Vou te encaminhar para outro setor, que consegue te informar direitinho sobre isso. " +
       "Só um instante.",
@@ -277,14 +297,18 @@ const INTERNAS: Intencao[] = [
   },
   {
     id: "rastreio",
-    gatilhos: ["rastrear", "rastreio", "codigo de rastreio", "onde esta", "meu pedido", "nao chegou", "cade", "atrasado"],
+    gatilhos: ["rastrear", "rastreio", "codigo de rastreio", "onde esta", "meu pedido",
+      "nao chegou", "cade", "atrasado", "comprei", "fiz o pedido", "nao recebi",
+      "nao rastreia", "chegou quebrado", "veio errado", "extravio"],
     resposta: () =>
       "Vou te encaminhar para outro setor, que consegue verificar seu pedido. Só um instante.",
     escalar: true,
   },
   {
     id: "reclamacao",
-    gatilhos: ["reclamacao", "reclamar", "pessimo", "horrivel", "processo", "procon", "golpe", "enganado", "absurdo", "advogado", "denuncia", "justica"],
+    gatilhos: ["reclamacao", "reclamar", "pessimo", "horrivel", "processo", "processar",
+      "procon", "golpe", "enganado", "absurdo", "advogado", "denuncia", "justica",
+      "acionar", "direito do consumidor"],
     resposta: () => "Sinto muito por isso. Vou te encaminhar para o time agora.",
     escalar: true,
     critico: true,
@@ -298,8 +322,43 @@ const INTERNAS: Intencao[] = [
     escalar: true,
   },
 
-  { id: "saudacao", gatilhos: ["bom dia", "boa tarde", "boa noite", "tudo bem", "opa"],
+  { id: "saudacao", gatilhos: ["bom dia sozinho", "opa"],
     resposta: () => "Olá! Em que posso ajudar?" },
+
+  /* --- dados da empresa e do rótulo: buracos achados em teste --- */
+  {
+    id: "contato",
+    gatilhos: ["email", "telefone de contato", "falar com", "responsavel tecnico", "sac",
+      "atendimento humano", "loja fisica", "endereco de vcs", "onde fica"],
+    resposta: () =>
+      "Vou te encaminhar para o time, que passa os dados de contato certinho pra você.",
+    escalar: true,
+  },
+  {
+    id: "empresa",
+    gatilhos: ["cnpj", "razao social", "empresa", "fabricante", "quem fabrica",
+      "onde e fabricado", "fabricado onde", "importado"],
+    resposta: () =>
+      "O fabricante informado na embalagem é a Bela Blue Beauty Ltda. Qualquer outro dado " +
+      "cadastral eu prefiro que o time confirme com você.",
+    escalar: true,
+  },
+  {
+    id: "validade",
+    gatilhos: ["validade", "vence", "vencimento", "lote", "fabricacao", "lacrado", "lacre"],
+    resposta: () =>
+      "A validade e o lote vêm impressos na própria embalagem. Se o seu pote estiver sem " +
+      "essa informação ou com o lacre violado, me avisa que eu chamo o time.",
+  },
+  {
+    id: "dieta_exercicio",
+    gatilhos: ["dieta", "malhar", "academia", "exercicio", "treino", "reeducacao alimentar",
+      "flacidez", "flacida", "efeito rebote", "rebote"],
+    resposta: () =>
+      "Não posso afirmar resultado nem indicar rotina de dieta ou exercício — isso é " +
+      "orientação de profissional de saúde. Vou te encaminhar para o time.",
+    escalar: true,
+  },
 
   /* --- conversa solta: responder aqui evita encaminhamento à toa --- */
   {
