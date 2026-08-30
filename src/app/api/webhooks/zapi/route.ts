@@ -9,6 +9,13 @@ const ehSoSaudacao = (t: string) =>
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// a rota espera o cliente parar de digitar antes de responder
+export const maxDuration = 60;
+
+/* Quanto tempo de silêncio esperar antes de responder. Quem manda três
+   mensagens seguidas quer UMA resposta que entenda as três, não três
+   respostas soltas. */
+const ESPERA_MS = 9000;
 
 /* Webhook de mensagens recebidas da Z-API.
    Grava a mensagem, decide se o robô responde e devolve 200 rápido —
@@ -105,6 +112,23 @@ export async function POST(req: Request) {
     const treinamento = await lerTreinamento();
     if (!treinamento.ativo) return NextResponse.json({ ok: true, robo: "inativo" });
 
+    /* Janela de silêncio. Se durante a espera chegar outra mensagem do cliente,
+       esta execução desiste: quem responde é a última, que já enxerga o texto
+       inteiro. Sem isso o robô respondia cada linha separada com a mesma
+       frase, três vezes seguidas. */
+    await new Promise((ok) => setTimeout(ok, ESPERA_MS));
+
+    const { data: maisNova } = await db.from("mensagens")
+      .select("id").eq("conversa", conversa.id).eq("autor", "cliente")
+      .order("criado_em", { ascending: false }).limit(1).single();
+
+    const { data: minha } = await db.from("mensagens")
+      .select("id").eq("conversa", conversa.id).eq("zap_id", zapId ?? "").maybeSingle();
+
+    if (minha && maisNova && maisNova.id !== minha.id) {
+      return NextResponse.json({ ok: true, ignorado: "mensagem_mais_nova" });
+    }
+
     /* Boas-vindas no primeiro contato. Fica isolado de propósito: depende da
        coluna `saudou_em`, e se a migration não tiver rodado o atendimento não
        pode parar junto — era o que derrubava o robô inteiro. */
@@ -120,6 +144,21 @@ export async function POST(req: Request) {
     const historico = ((anteriores ?? []).reverse() as Historico);
     const resposta = await responder(historico, treinamento);
     if (!resposta?.texto) return NextResponse.json({ ok: true, robo: "sem_resposta" });
+
+    /* Repetir a frase idêntica soa quebrado e faz o cliente desistir. Se a
+       última coisa que o robô disse foi exatamente isso, ele passa a bola em
+       vez de repetir. */
+    const ultimaDoRobo = [...historico].reverse().find((m) => m.autor === "robo")?.texto;
+    if (ultimaDoRobo && ultimaDoRobo.trim() === resposta.texto.trim()) {
+      const desvio = treinamento.escalar_mensagem;
+      await enviarWhatsApp(telefone, desvio);
+      await db.from("mensagens").insert({ conversa: conversa.id, autor: "robo", texto: desvio });
+      await db.from("conversas").update({
+        ultima_msg: desvio.slice(0, 200), ultima_em: new Date().toISOString(),
+        status: "pendente", robo_ativo: false,
+      }).eq("id", conversa.id);
+      return NextResponse.json({ ok: true, respondeu: true, motivo: "repeticao" });
+    }
 
     await enviarWhatsApp(telefone, resposta.texto);
     await db.from("mensagens").insert({ conversa: conversa.id, autor: "robo", texto: resposta.texto });

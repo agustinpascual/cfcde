@@ -145,8 +145,9 @@ const INTERNAS: Intencao[] = [
     id: "composicao",
     gatilhos: ["composicao", "ingrediente", "formula", "contem", "substancia", "tabela nutricional"],
     resposta: () =>
-      "Para evitar te passar uma informação incorreta, não vou confirmar uma composição " +
-      "que não esteja respaldada por documentação oficial.",
+      "Composição é informação que eu só passo com o documento na mão — não quero te " +
+      "dizer algo errado sobre o que você vai consumir. Vou te encaminhar para o time, " +
+      "que tem a ficha completa.",
   },
   {
     id: "o_que_e",
@@ -159,8 +160,9 @@ const INTERNAS: Intencao[] = [
     id: "para_que_serve",
     gatilhos: ["serve", "finalidade", "funciona", "beneficio", "utilidade", "objetivo"],
     resposta: () =>
-      "O produto foi divulgado com relação ao controle de peso, mas eu não posso " +
-      "afirmar que ele seja eficaz para isso nem recomendar seu uso.",
+      "Ele é divulgado com relação ao controle de peso. Eficácia é uma coisa que eu não " +
+      "posso afirmar por conta própria — quem fala sobre isso é o time. Quer que eu " +
+      "encaminhe?",
   },
 
   /* --- promessas de resultado: sempre negadas --- */
@@ -170,22 +172,26 @@ const INTERNAS: Intencao[] = [
       "gordura", "barriga", "bom mesmo", "funciona mesmo", "vale a pena", "realmente funciona",
       "fome", "apetite", "saciedade", "ansiedade", "metabolismo", "inchaco"],
     resposta: () =>
-      "Não posso afirmar que o produto provoque emagrecimento nem garantir qualquer " +
-      "resultado.",
+      "Entendo a dúvida, é o que todo mundo quer saber antes de decidir. Sendo sincero " +
+      "com você: resultado varia muito de pessoa para pessoa, e eu não tenho como te " +
+      "prometer número nem prazo. Quer que eu chame alguém do time para conversar sobre " +
+      "o seu caso?",
   },
   {
     id: "tempo_resultado",
     gatilhos: ["quanto tempo", "faz efeito", "demora", "resultado", "primeiros resultados", "tres dias", "semana"],
     resposta: () =>
-      "Não existe um prazo de resultado que eu possa garantir. Não é correto afirmar que " +
-      "o produto produz resultados em 3 dias ou em qualquer outro período específico.",
+      "Prazo é a parte que eu não consigo te garantir — cada organismo responde no seu " +
+      "tempo, e qualquer número que eu desse seria chute. Prefiro não inventar. Posso te " +
+      "passar para alguém do time se quiser conversar melhor.",
   },
   {
     id: "quantos_quilos",
     gatilhos: ["quantos quilos", "quantos kg", "perco", "vou perder", "quilo"],
     resposta: () =>
-      "Não é possível determinar ou garantir quantos quilos uma pessoa perderia. Não devo " +
-      "fornecer uma estimativa individual de emagrecimento.",
+      "Essa conta ninguém consegue fazer com honestidade, porque depende de metabolismo, " +
+      "rotina e alimentação de cada um. Não vou te dar um número que eu não posso " +
+      "sustentar. Se quiser, chamo alguém do time para te atender.",
   },
 
   /* --- comparações e natureza do produto --- */
