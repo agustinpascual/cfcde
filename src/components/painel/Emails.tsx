@@ -17,9 +17,10 @@ const MODELO = `<table role="presentation" width="100%" cellpadding="0" cellspac
   <tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-radius:14px;overflow:hidden">
 
-      <!-- cabeçalho -->
-      <tr><td align="center" style="background:#0b2860;padding:26px 24px">
-        <img src="${LOGO}" width="150" alt="Bela Blue Beauty" style="display:block;border:0;width:150px;height:auto">
+      <!-- cabeçalho: a faixa navy está assada na imagem, porque cliente de
+           e-mail não tem filter e alguns invertem fundo no tema escuro -->
+      <tr><td align="center" style="background:#0b2860;font-size:0;line-height:0">
+        <img src="${LOGO}" width="600" alt="Bela Blue Beauty" style="display:block;border:0;width:100%;max-width:600px;height:auto">
       </td></tr>
 
       <!-- faixa dourada -->
