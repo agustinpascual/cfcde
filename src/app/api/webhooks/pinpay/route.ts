@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { entregarAcessoApp } from "@/lib/entrega-app";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
@@ -74,6 +75,11 @@ export async function POST(req: Request) {
     case "payment_approved":
       await marcar("aprovado", true);
       console.info("[pinpay] pagamento aprovado:", referencia);
+      // entrega o acesso ao app por e-mail; não bloqueia a resposta do webhook
+      if (referencia) {
+        const r = await entregarAcessoApp(referencia);
+        if (!r.ok) console.error("[pinpay] entrega do app falhou:", r.motivo);
+      }
       break;
     case "payment_failed":
       await marcar("falhou");
