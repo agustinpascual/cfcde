@@ -5,6 +5,7 @@ import AvisoConfig from "@/components/painel/AvisoConfig";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import Paginacao from "@/components/painel/Paginacao";
+import BotaoReconciliar from "@/components/painel/BotaoReconciliar";
 import { estadoInstalacao, configurado, lerAoVivo, lerPaginaPedidos, moeda, POR_PAGINA } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
@@ -42,6 +43,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
         : `${total} ${total === 1 ? "pedido" : "pedidos"}${paginas > 1 ? ` · página ${pagina} de ${paginas}` : ""} · clique para ver os detalhes`}
       aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
+      <BotaoReconciliar />
       <AvisoConfig faltando={configurado() ? [] : ["SUPABASE_SERVICE_ROLE_KEY"]} />
 
       <section className={s.cartao}>

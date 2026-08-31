@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { ler } from "@/lib/config-integracoes";
 import { entregarAcessoApp } from "@/lib/entrega-app";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
@@ -22,9 +23,10 @@ function assinaturaConfere(bruto: string, recebida: string | null, segredo: stri
 }
 
 export async function POST(req: Request) {
-  const segredo = process.env.PINPAY_WEBHOOK_SECRET;
+  // cofre primeiro, ambiente como fallback — igual às outras integrações
+  const segredo = await ler("PINPAY_WEBHOOK_SECRET");
   if (!segredo) {
-    console.error("[pinpay] PINPAY_WEBHOOK_SECRET não configurado");
+    console.error("[pinpay] PINPAY_WEBHOOK_SECRET não configurado (cofre nem ambiente)");
     return new NextResponse(null, { status: 503 });
   }
 
