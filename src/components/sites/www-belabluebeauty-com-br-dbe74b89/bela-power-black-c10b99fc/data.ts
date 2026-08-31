@@ -20,7 +20,7 @@ export const categorias = [
 
 /* ---------- Produto ---------- */
 export const produto = {
-  nome: "Bela Gummy",
+  nome: "Mounja Gummy - Suplemento em gomas",
   nota: "5.0",
   avaliacoes: 39,
   de: "R$149,90",
