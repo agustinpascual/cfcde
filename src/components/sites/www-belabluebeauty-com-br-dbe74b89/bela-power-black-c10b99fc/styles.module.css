@@ -16,8 +16,9 @@
 
 /* ---------------- Header ---------------- */
 .header { position: sticky; top: 0; z-index: 12; height: 90px; background: #fff; transition: .3s; max-width: 100%; }
-.headerInner { display: flex; justify-content: space-between; align-items: center; height: 90px; }
-.logo { flex: 0 0 auto; width: 113.672px; }
+.headerInner { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 90px; }
+.logo { justify-self: center; width: 113.672px; }
+.headerVazio { min-width: 0; }
 .logo img { width: 113.641px; height: 66.89px; object-fit: contain; }
 .nav { padding: 0 60px; display: flex; height: 90px; flex: 1 1 auto; }
 .navList { display: flex; justify-content: flex-start; gap: 35px; height: 90px; align-items: center; }
