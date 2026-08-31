@@ -71,14 +71,19 @@ export async function enviarLote(
 }
 
 /** Envio avulso, usado no teste antes do disparo real. */
-export async function enviarUm(para: string, assunto: string, html: string) {
+export type Anexo = { filename: string; content: string; content_id?: string };
+
+export async function enviarUm(para: string, assunto: string, html: string, anexos?: Anexo[]) {
   const [chave, remetente] = await Promise.all([ler("RESEND_API_KEY"), ler("RESEND_REMETENTE")]);
   if (!chave || !remetente) throw new Error("Resend não configurada");
 
   const res = await fetch(API, {
     method: "POST",
     headers: { Authorization: `Bearer ${chave}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: remetente, to: [para], subject: assunto, html }),
+    body: JSON.stringify({
+      from: remetente, to: [para], subject: assunto, html,
+      ...(anexos?.length ? { attachments: anexos } : {}),
+    }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return res.json();

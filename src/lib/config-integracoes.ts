@@ -12,11 +12,12 @@ export const CHAVES = [
   "RESEND_API_KEY", "RESEND_REMETENTE",
   "ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN",
   "GEMINI_API_KEY",
+  "BBF_PROVISIONAMENTO_TOKEN", "BBF_PROVISIONAMENTO_URL",
 ] as const;
 export type ChaveConfig = (typeof CHAVES)[number];
 
 /* Estes não são segredos — podem ir e voltar em texto puro. */
-const PUBLICOS: ChaveConfig[] = ["RESEND_REMETENTE", "ZAPI_INSTANCIA"];
+const PUBLICOS: ChaveConfig[] = ["RESEND_REMETENTE", "ZAPI_INSTANCIA", "BBF_PROVISIONAMENTO_URL"];
 
 let cache: { em: number; valores: Map<string, string> } | null = null;
 const TTL = 30_000;

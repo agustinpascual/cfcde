@@ -22,6 +22,8 @@ const NOTAS: Record<ChaveConfig, string> = {
   ZAPI_TOKEN: "Token da instância",
   ZAPI_CLIENT_TOKEN: "Token de segurança da conta Z-API",
   GEMINI_API_KEY: "Chave do Google AI Studio — dá ao robô compreensão de linguagem",
+  BBF_PROVISIONAMENTO_URL: "URL do endpoint que cria a conta no app (app-bella-two)",
+  BBF_PROVISIONAMENTO_TOKEN: "Token x-bbf-token que autoriza a criação de acesso",
 };
 
 const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: string[] }[] = [
@@ -39,6 +41,14 @@ const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: st
     nome: "Z-API (WhatsApp)", papel: "Atendimento e disparos pelo WhatsApp",
     chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN"],
     passos: ["Conectar o número na Z-API", "Apontar o webhook de mensagens para /api/webhooks/zapi"],
+  },
+  {
+    nome: "App fitness", papel: "Cria a conta no app quando o pagamento é aprovado",
+    chaves: ["BBF_PROVISIONAMENTO_URL", "BBF_PROVISIONAMENTO_TOKEN"],
+    passos: [
+      "O endpoint recebe { referencia } e cria a conta buscando e-mail e nome no pedido",
+      "Para o e-mail com a senha chegar, o Resend precisa estar configurado no lado do app",
+    ],
   },
   {
     nome: "Gemini", papel: "Cérebro do robô do WhatsApp — entende pergunta fora do previsto",
