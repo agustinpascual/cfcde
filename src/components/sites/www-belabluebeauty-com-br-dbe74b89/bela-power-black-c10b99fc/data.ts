@@ -225,7 +225,7 @@ export const bandeiras = [
 ];
 
 export const whatsapp = {
-  href: "https://api.whatsapp.com/send?phone=5547997036656&text=Olá, vim do site da Bela Blue Beauty, e gostaria de tirar dúvidas!",
+  href: "https://api.whatsapp.com/send?phone=5541920055212&text=Olá, vim do site da Bela Blue Beauty, e gostaria de tirar dúvidas!",
   img: `${IMG}/64-estou-online-no-whatsapp.png`,
 };
 
