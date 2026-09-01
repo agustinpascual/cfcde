@@ -20,7 +20,7 @@ export const categorias = [
 
 /* ---------- Produto ---------- */
 export const produto = {
-  nome: "Mounja Gummy - Suplemento em gomas",
+  nome: "Amplificador para bloqueio de sinal Bluetooth",
   nota: "5.0",
   avaliacoes: 39,
   de: "R$149,90",
@@ -267,7 +267,7 @@ export const cidades = [
 ];
 
 /* variações de kit que aparecem na notificação */
-export const kitsCompra = ["1 pote", "2 potes", "3 potes"];
+export const kitsCompra = ["Alcance: 15 Metros", "Alcance: 25 Metros", "Alcance: 50 Metros"];
 
 /* ---------- Frete ---------- */
 /* Valores fixos para todo o Brasil — não variam por região. */

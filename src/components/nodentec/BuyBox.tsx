@@ -64,8 +64,11 @@ const KITS: Kit[] = [
 
 const money = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const LOTE_TOTAL = 20;
+const UNIDADES_RESTANTES = 3;
+
 function useOfferCountdown() {
-  const durationMs = (2 * 3600 + 29 * 60 + 48) * 1000;
+  const durationMs = 27 * 60 * 1000;
   const [remaining, setRemaining] = useState(durationMs);
   useEffect(() => {
     const saved = Number(window.localStorage.getItem("nodentec:offer-ends"));
@@ -206,8 +209,8 @@ export function BuyBox({ selected, onSelect }: BuyBoxProps) {
       </div>
 
       <div className="nodentec-offer-status">
-        <div className="nodentec-stock-copy"><span>Lote promocional</span><strong>8 unidades disponíveis</strong></div>
-        <div className="nodentec-stock-track" role="progressbar" aria-label="Disponibilidade do lote promocional" aria-valuemin={0} aria-valuemax={8} aria-valuenow={8}><span /></div>
+        <div className="nodentec-stock-copy"><span><i />Lote promocional quase esgotado</span><strong>Restam {UNIDADES_RESTANTES} unidades</strong></div>
+        <div className="nodentec-stock-track" role="progressbar" aria-label="Disponibilidade do lote promocional" aria-valuemin={0} aria-valuemax={LOTE_TOTAL} aria-valuenow={UNIDADES_RESTANTES}><span style={{ width: `${(UNIDADES_RESTANTES / LOTE_TOTAL) * 100}%` }} /></div>
         <div className="nodentec-offer-time"><span>⏱ Oferta termina em</span><strong>{timeLeft}</strong></div>
       </div>
 
@@ -299,8 +302,10 @@ export function BuyBox({ selected, onSelect }: BuyBoxProps) {
         </button>
       </div>
 
-      <div className="rounded-xl border border-[var(--bb-border)] p-3">
-        <p className="mb-2 text-[13px] font-semibold text-[var(--bb-black)]">Calcular frete e prazo</p>
+      <div className="rounded-2xl border border-[var(--bb-border)] bg-[var(--bb-gray-bg)] p-4">
+        <p className="mb-2.5 flex items-center gap-1.5 text-[13px] font-bold text-[var(--bb-black)]">
+          <Truck className="h-4 w-4 text-[var(--bb-muted)]" aria-hidden="true" /> Calcular frete e prazo
+        </p>
         <form className="nodentec-shipping-form flex gap-2" onSubmit={handleCepSubmit}>
           <input
             value={cep}
@@ -309,14 +314,14 @@ export function BuyBox({ selected, onSelect }: BuyBoxProps) {
             inputMode="numeric"
             autoComplete="postal-code"
             aria-label="CEP"
-            className="h-9 flex-1 rounded-lg border border-[var(--bb-border)] px-3 text-sm outline-none focus:border-[var(--bb-orange)]"
+            className="h-11 flex-1 min-w-0 rounded-lg border border-[var(--bb-border)] bg-white px-3.5 text-sm outline-none transition-colors focus:border-[var(--bb-orange)]"
           />
           <button
             type="submit"
             disabled={isCheckingCep}
-            className="nodentec-shipping-button h-9 rounded-lg px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
+            className="nodentec-shipping-button h-11 shrink-0 rounded-lg px-5 text-sm font-bold tracking-wide disabled:cursor-wait disabled:opacity-60"
           >
-            {isCheckingCep ? "Consultando..." : "Calcular"}
+            {isCheckingCep ? "Consultando…" : "Calcular"}
           </button>
         </form>
         <div aria-live="polite">

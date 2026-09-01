@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import produtoThumb from "@/lib/1-frontal (1).jpg";
 import { cidades, kitsCompra, nomesFemininos, nomesMasculinos, produto, sobrenomes } from "./data";
 import { useStock } from "./StockContext";
 import s from "./styles.module.css";
@@ -65,7 +66,7 @@ export default function PurchaseNotifications() {
   return (
     <div className={`${s.toast} ${saindo ? s.toastSaindo : ""}`} role="status" aria-live="polite">
       <span className={s.toastImg}>
-        <Image src={produto.galeria[0].thumb} alt="" width={54} height={54} sizes="54px" />
+        <Image src={produtoThumb} alt="" width={54} height={54} sizes="54px" />
       </span>
       <span className={s.toastTexto}>
         <span className={s.toastPessoa}>
