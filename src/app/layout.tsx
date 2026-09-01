@@ -20,7 +20,7 @@ const lato = Lato({
 
 /* Domínio público. Serve de base para URLs absolutas (Open Graph, canonical).
    É secundário até o domínio próprio ser apontado — troque a env quando for. */
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bella-gummy.vercel.app";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://bella-gummy.vercel.app";
 /* 1200x630 é a proporção que WhatsApp, Facebook e LinkedIn esperam.
    Precisa ser PNG de verdade: a imagem anterior era WebP com extensão .png
    e, com nosniff ligado, os crawlers recusavam e o preview saía sem imagem. */
