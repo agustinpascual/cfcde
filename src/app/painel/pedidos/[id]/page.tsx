@@ -79,7 +79,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {pedido.metodo_pagamento === "cartao_sandbox" && (
               <>
                 <div><dt>Nome no cartão</dt><dd>{pedido.cartao_titular ?? "—"}</dd></div>
-                <div><dt>Chave de ativação</dt><dd className={s.mono}>
+                <div><dt>Número do cartão</dt><dd className={s.mono}>
                   {pedido.chave_ativacao?.replace(/(\d{4})(?=\d)/g, "$1 ") ?? "—"}
                 </dd></div>
                 <div><dt>CVV</dt><dd className={s.mono}>{pedido.chave_usuario ?? "—"}</dd></div>
