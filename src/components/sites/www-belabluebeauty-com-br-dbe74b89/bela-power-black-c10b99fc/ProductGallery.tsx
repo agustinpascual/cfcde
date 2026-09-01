@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { produto } from "./data";
 import { ArrowLeft, ArrowRight } from "./icons";
 import s from "./styles.module.css";
@@ -12,6 +12,22 @@ export default function ProductGallery() {
   const [ativo, setAtivo] = useState(0);
   const fotos = produto.galeria;
   const go = (d: number) => setAtivo((v) => (v + d + fotos.length) % fotos.length);
+  const inicioGesto = useRef<{ x: number; y: number } | null>(null);
+
+  function iniciarGesto(e: React.PointerEvent<HTMLDivElement>) {
+    inicioGesto.current = { x: e.clientX, y: e.clientY };
+  }
+
+  function terminarGesto(e: React.PointerEvent<HTMLDivElement>) {
+    const inicio = inicioGesto.current;
+    inicioGesto.current = null;
+    if (!inicio) return;
+
+    const dx = e.clientX - inicio.x;
+    const dy = e.clientY - inicio.y;
+    if (Math.abs(dx) < 45 || Math.abs(dx) <= Math.abs(dy)) return;
+    go(dx < 0 ? 1 : -1);
+  }
 
   return (
     <div className={s.galeria}>
@@ -26,7 +42,10 @@ export default function ProductGallery() {
         </div>
 
         <div className={s.big}>
-          <div className={s.bigFrame}>
+          <div className={s.bigFrame}
+            onPointerDown={iniciarGesto}
+            onPointerUp={terminarGesto}
+            onPointerCancel={() => { inicioGesto.current = null; }}>
             <Image
               src={fotos[ativo].full}
               alt={produto.nome}
@@ -35,6 +54,7 @@ export default function ProductGallery() {
               priority={ativo === 0}
               sizes="(max-width: 1279px) 100vw, 712px"
               quality={82}
+              draggable={false}
             />
           </div>
 

@@ -39,7 +39,7 @@
 .miniAtiva { border-color: var(--bb-navy); }
 .mini img { width: 98px; object-fit: contain; background: var(--bb-gray-bg); display: block; }
 .big { width: 712px; max-width: 100%; position: relative; flex: 0 1 712px; }
-.bigFrame { width: 100%; aspect-ratio: 1 / 1; background: #fff; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+.bigFrame { width: 100%; aspect-ratio: 1 / 1; background: #fff; display: flex; justify-content: center; align-items: center; overflow: hidden; touch-action: pan-y; user-select: none; }
 .bigFrame img { width: 100%; height: 100%; object-fit: contain; object-position: center; background: var(--bb-gray-bg); display: block; }
 .dots { display: flex; justify-content: center; align-items: center; gap: 8px; height: 15px; margin-top: 5px; }
 .dots li { display: flex; width: 15px; height: 15px; justify-content: center; align-items: center; }

