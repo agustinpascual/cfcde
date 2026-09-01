@@ -19,6 +19,7 @@ export type Sessao = {
 };
 export type Pedido = {
   id: string; referencia: string; status: string; valor_centavos: number;
+  metodo_pagamento: string;
   kit: string | null; quantidade: number; cliente_nome: string | null;
   cliente_email: string | null; criado_em: string; pago_em: string | null;
 };
@@ -33,6 +34,8 @@ export type PedidoDetalhe = Pedido & {
   subtotal_centavos: number; desconto_centavos: number; frete_centavos: number;
   frete_tipo: string | null;
   cliente_documento: string | null; cliente_telefone: string | null;
+  cartao_titular: string | null;
+  cartao_inicio: string | null; cartao_final: string | null; cartao_bandeira: string | null;
   endereco: Endereco | null;
 };
 
@@ -139,7 +142,7 @@ export async function lerPaginaPedidos(pagina: number): Promise<{ linhas: Pedido
   const de = (Math.max(1, pagina) - 1) * POR_PAGINA;
   try {
     const { data, error, count } = await db.from("pedidos")
-      .select("id,referencia,status,valor_centavos,kit,quantidade,cliente_nome,cliente_email,criado_em,pago_em",
+      .select("id,referencia,status,metodo_pagamento,valor_centavos,kit,quantidade,cliente_nome,cliente_email,criado_em,pago_em",
         { count: "exact" })
       .order("criado_em", { ascending: false })
       .range(de, de + POR_PAGINA - 1);
@@ -181,6 +184,7 @@ export type EstadoTabela = { nome: string; para: string; existe: boolean; coluna
    o webhook do WhatsApp morria inteiro porque `saudou_em` não tinha sido
    criada, e nada na tela indicava isso. */
 const COLUNAS: Record<string, string[]> = {
+  pedidos: ["metodo_pagamento", "cartao_titular", "cartao_inicio", "cartao_final", "cartao_bandeira"],
   conversas: ["saudou_em"],
   treinamento: ["escalar_mensagem", "saudacao_ativa", "saudacao_mensagem", "atendente_nome"],
 };

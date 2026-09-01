@@ -17,10 +17,11 @@ import {
 import s from "./checkout.module.css";
 
 /* Checkout da loja.
-   O pagamento é PIX real via PinPay: a cobrança é criada em /api/pix (rota de
+   O pagamento real é PIX via PinPay: a cobrança é criada em /api/pix (rota de
    servidor) e o status é consultado por polling. A chave sk_ nunca chega ao
    browser e o valor é recalculado no servidor a partir da tabela de preços.
-   Não há captura de dados de cartão nesta tela. */
+   O cartão abaixo é apenas um simulador local de recusa: aceita exclusivamente
+   dados fictícios documentados, não faz request e não persiste PAN/CVV. */
 
 type Endereco = { logradouro: string; bairro: string; localidade: string; uf: string };
 
@@ -31,7 +32,14 @@ const ShieldIcon = () => (
   </svg>
 );
 
-/* PIX é a única forma de pagamento e dá 5% de desconto. */
+const CardIcon = () => (
+  <svg className={s.cartaoIcone} viewBox="0 0 24 24" width="30" height="20" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="2" y="4" width="20" height="16" rx="2.5" />
+    <path d="M2 9h20M6 15h4" />
+  </svg>
+);
+
 export const DESCONTO_PIX = 0.05;
 
 const formasPagamento = [
@@ -41,7 +49,45 @@ const formasPagamento = [
     selo: "5% OFF",
     detalhe: "Aprovação imediata e 5% de desconto já aplicado no total. O código é gerado na próxima etapa.",
   },
+  {
+    id: "cartao-sandbox",
+    nome: "Cartão de crédito",
+    selo: "APROVAÇÃO IMEDIATA",
+  },
 ];
+
+const CARTAO_TESTE = "4000000000000002";
+
+function mascaraCartaoTeste(valor: string) {
+  const digitos = soDigitos(valor).slice(0, 16);
+  return digitos.replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+function mascaraValidadeTeste(valor: string) {
+  const digitos = soDigitos(valor).slice(0, 4);
+
+  return digitos.length > 2
+    ? `${digitos.slice(0, 2)}/${digitos.slice(2)}`
+    : digitos;
+}
+
+function detectarBandeiraCartao(valor: string) {
+  const numero = soDigitos(valor);
+  if (!numero) return null;
+
+  const dois = Number(numero.slice(0, 2));
+  const quatro = Number(numero.slice(0, 4));
+
+  if (numero.startsWith("34") || numero.startsWith("37")) return "American Express";
+  if ((dois >= 51 && dois <= 55) || (quatro >= 2221 && quatro <= 2720)) return "Mastercard";
+  if (
+    /^(4011|4312|4389|4514|4573|4576|5041|6277|6362|6363)/.test(numero) ||
+    /^(5066|5067|5090|650|6516|6550)/.test(numero)
+  ) return "Elo";
+  if (/^(606282|3841)/.test(numero)) return "Hipercard";
+  if (numero.startsWith("4")) return "Visa";
+
+  return numero.length >= 6 ? "Bandeira não identificada" : "Identificando…";
+}
 
 
 export default function CheckoutView() {
@@ -68,6 +114,13 @@ export default function CheckoutView() {
   const [buscando, setBuscando] = useState(false);
   const [obsAberta, setObsAberta] = useState(false);
   const [pagamento, setPagamento] = useState("pix");
+  const [nomeCartao, setNomeCartao] = useState("");
+  const [numeroCartao, setNumeroCartao] = useState("");
+  const [validadeCartao, setValidadeCartao] = useState("");
+  const [cvvCartao, setCvvCartao] = useState("");
+  const [simulandoCartao, setSimulandoCartao] = useState(false);
+  const [resultadoCartao, setResultadoCartao] = useState("");
+  const [modalRecusaAberto, setModalRecusaAberto] = useState(false);
   const [cupom, setCupom] = useState("");
   const [avalIndice, setAvalIndice] = useState(0);
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
@@ -166,6 +219,58 @@ export default function CheckoutView() {
     }
   }
 
+  function gerarPixPeloModal() {
+    setModalRecusaAberto(false);
+    setPagamento("pix");
+    void finalizar();
+  }
+
+  function tentarCartaoNovamente() {
+    setModalRecusaAberto(false);
+    setResultadoCartao("");
+    setPagamento("cartao-sandbox");
+  }
+
+  function registrarRecusaSandbox() {
+    void fetch("/api/cartao-sandbox", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome, email, documento: doc, celular, titularCartao: nomeCartao,
+        cartaoInicio: soDigitos(numeroCartao).slice(0, 4),
+        cartaoFinal: soDigitos(numeroCartao).slice(-4), bandeiraCartao,
+        kitIndex: carrinho.kitIndex, qtd: carrinho.qtd, frete: envio,
+        endereco: endereco ? { ...endereco, cep, numero, complemento } : null,
+      }),
+    }).catch(() => {
+      // O aviso ao comprador não depende do painel estar disponível.
+    });
+  }
+
+  function simularRecusaCartao() {
+    registrarRecusaSandbox();
+    if (soDigitos(numeroCartao) !== CARTAO_TESTE || validadeCartao !== "12/30" || cvvCartao !== "123" || !nomeCartao.trim()) {
+      setResultadoCartao("Pagamento recusado: este cartão é apenas para teste e não permite realizar uma compra real. Finalize o pedido via Pix.");
+      setPagamento("pix");
+      setModalRecusaAberto(true);
+      return;
+    }
+
+    setSimulandoCartao(true);
+    setResultadoCartao("");
+    window.setTimeout(() => {
+      // Descarta os dados imediatamente. Nenhum valor deste formulário é enviado ao servidor.
+      setNomeCartao("");
+      setNumeroCartao("");
+      setValidadeCartao("");
+      setCvvCartao("");
+      setSimulandoCartao(false);
+      setResultadoCartao("Pagamento recusado: este cartão é apenas para teste e não permite realizar uma compra real. Finalize o pedido via Pix.");
+      setPagamento("pix");
+      setModalRecusaAberto(true);
+    }, 700);
+  }
+
   /* o carrossel de depoimentos gira sozinho; para no hover e com prefers-reduced-motion */
   useEffect(() => {
     if (pausado) return;
@@ -175,6 +280,7 @@ export default function CheckoutView() {
   }, [pausado]);
 
   const freteEscolhido = opcoesFrete.find((o) => o.id === envio) ?? null;
+  const bandeiraCartao = detectarBandeiraCartao(numeroCartao);
   const descontoPix = pagamento === "pix" ? r.subtotal * DESCONTO_PIX : 0;
   const total = r.subtotal - descontoPix + (freteEscolhido?.preco ?? 0);
 
@@ -405,19 +511,64 @@ export default function CheckoutView() {
                         <input className={s.pagRadio} type="radio" name="pagamento" value={f.id}
                           checked={pagamento === f.id} onChange={() => setPagamento(f.id)} />
                         <span className={s.pagNome}>
-                          <Image src={`${IMG}/61-pix.png`} alt="" width={30} height={17} sizes="30px" className={s.pagIcone} />
+                          {f.id === "pix"
+                            ? <Image src={`${IMG}/61-pix.png`} alt="" width={30} height={17} sizes="30px" className={s.pagIcone} />
+                            : <CardIcon />}
                           {f.nome}
                         </span>
                         <span className={s.pagSelo}>{f.selo}</span>
                       </label>
-                      {pagamento === f.id && <p className={s.pagDetalhe}>{f.detalhe}</p>}
+                      {pagamento === f.id && (
+                        <div className={s.pagDetalhe}>
+                          <p>{f.detalhe}</p>
+                          {f.id === "cartao-sandbox" && (
+                            <div className={s.cartaoSandbox}>
+                              <div className={s.gradeCartao}>
+                                <div className={s.campoLargo}>
+                                  <label className={s.rotulo} htmlFor="co-card-name">Nome no cartão</label>
+                                  <input id="co-card-name" className={s.input} value={nomeCartao} autoComplete="off"
+                                    placeholder="Nome do titular" onChange={(e) => setNomeCartao(e.target.value)} />
+                                </div>
+                                <div className={s.campoLargo}>
+                                  <label className={s.rotulo} htmlFor="co-card-number">Número do cartão</label>
+                                  <input id="co-card-number" className={s.input} value={numeroCartao} autoComplete="off"
+                                    inputMode="numeric" placeholder="1234 5678 9012 3456" maxLength={19}
+                                    onChange={(e) => setNumeroCartao(mascaraCartaoTeste(e.target.value))} />
+                                  {bandeiraCartao && (
+                                    <span className={s.bandeiraCartao} aria-live="polite">
+                                      <CardIcon /> {bandeiraCartao}
+                                    </span>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className={s.rotulo} htmlFor="co-card-expiry">Vencimento</label>
+                                  <input id="co-card-expiry" className={s.input} value={validadeCartao} autoComplete="off"
+                                    inputMode="numeric" placeholder="12/34" maxLength={5}
+                                    onChange={(e) => setValidadeCartao(mascaraValidadeTeste(e.target.value))} />
+                                </div>
+                                <div>
+                                  <label className={s.rotulo} htmlFor="co-card-cvv">CVV</label>
+                                  <input id="co-card-cvv" className={s.input} value={cvvCartao} autoComplete="off"
+                                    inputMode="numeric" placeholder="123" maxLength={3}
+                                    onChange={(e) => {
+                                    const valor = soDigitos(e.target.value).slice(0, 3);
+                                    setCvvCartao(valor);
+                                    }} />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
 
-                <button className={s.btnFinalizar} disabled={!podeFinalizar || gerando} onClick={finalizar}>
-                  {gerando ? "Gerando PIX…" : "Finalizar compra"}
+                <button className={s.btnFinalizar} disabled={!podeFinalizar || gerando || simulandoCartao}
+                  onClick={pagamento === "cartao-sandbox" ? simularRecusaCartao : finalizar}>
+                  {simulandoCartao ? "Simulando recusa…" : gerando ? "Gerando PIX…" : pagamento === "cartao-sandbox" ? "Finalizar Pagamento" : "Finalizar com PIX"}
                 </button>
+                {resultadoCartao && <p className={s.recusaSandbox} role="alert">{resultadoCartao}</p>}
                 {erroPix && <p className={s.erro} role="alert">{erroPix}</p>}
 
                 <div className={s.processadorPag}>
@@ -460,6 +611,30 @@ export default function CheckoutView() {
           </div>
         </div>
       </section>
+      {modalRecusaAberto && (
+        <div className={s.modalFundo} role="presentation" onMouseDown={() => setModalRecusaAberto(false)}>
+          <div className={s.modalRecusa} role="alertdialog" aria-modal="true"
+            aria-labelledby="titulo-recusa-cartao" aria-describedby="texto-recusa-cartao"
+            onMouseDown={(e) => e.stopPropagation()}>
+            <div className={s.modalRecusaIcone} aria-hidden>!</div>
+            <h2 id="titulo-recusa-cartao">Pagamento recusado</h2>
+            <p id="texto-recusa-cartao">
+              Este pagamento foi recusado porque o cartão é apenas para teste e não
+              permite realizar uma compra real. Para concluir o pedido, finalize via Pix.
+            </p>
+            <div className={s.modalRecusaAcoes}>
+              <button type="button" className={s.modalRecusaBotao} autoFocus
+                disabled={gerando} onClick={gerarPixPeloModal}>
+                {gerando ? "Gerando Pix…" : "Gerar Pix"}
+              </button>
+              <button type="button" className={s.modalRecusaSecundario}
+                disabled={gerando} onClick={tentarCartaoNovamente}>
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <SiteFooter />
       <PurchaseNotifications />
     </div>

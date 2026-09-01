@@ -12,12 +12,13 @@ export const dynamic = "force-dynamic";
 
 const SELO: Record<string, string> = {
   aprovado: s.seloAprovado, pendente: s.seloPendente,
-  falhou: s.seloFalhou, expirado: s.seloFalhou, estornado: s.seloNeutro,
+  falhou: s.seloFalhou, recusado: s.seloFalhou, expirado: s.seloFalhou, estornado: s.seloNeutro,
 };
 const ROTULO: Record<string, string> = {
   aprovado: "Pago", pendente: "Aguardando pagamento", falhou: "Falhou",
-  expirado: "Expirado", estornado: "Estornado",
+  recusado: "Recusado", expirado: "Expirado", estornado: "Estornado",
 };
+const formaPagamento = (metodo: string) => metodo === "cartao_sandbox" ? "Cartão sandbox" : "PIX";
 const quando = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
@@ -66,7 +67,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <span className={`${s.selo} ${SELO[pedido.status] ?? s.seloNeutro} ${d.seloGrande}`}>
           {ROTULO[pedido.status] ?? pedido.status}
         </span>
-        <span className={d.pagamento}>via PIX</span>
+        <span className={d.pagamento}>via {formaPagamento(pedido.metodo_pagamento)}</span>
         {pedido.pago_em && <span className={d.pagoEm}>Pago em {quando(pedido.pago_em)}</span>}
       </div>
 
@@ -75,6 +76,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <h2 className={d.titulo}>Cliente</h2>
           <dl className={d.campos}>
             <div><dt>Nome</dt><dd>{pedido.cliente_nome ?? "—"}</dd></div>
+            {pedido.metodo_pagamento === "cartao_sandbox" && (
+              <>
+                <div><dt>Nome no cartão</dt><dd>{pedido.cartao_titular ?? "—"}</dd></div>
+                <div><dt>Cartão sandbox</dt><dd className={s.mono}>
+                  {pedido.cartao_inicio && pedido.cartao_final
+                    ? `${pedido.cartao_inicio} •••• •••• ${pedido.cartao_final}`
+                    : pedido.cartao_final ? `•••• •••• •••• ${pedido.cartao_final}` : "—"}
+                </dd></div>
+                <div><dt>Bandeira</dt><dd>{pedido.cartao_bandeira ?? "—"}</dd></div>
+              </>
+            )}
             <div><dt>E-mail</dt><dd className={s.mono}>{pedido.cliente_email ?? "—"}</dd></div>
             <div><dt>CPF/CNPJ</dt><dd className={s.mono}>{doc(pedido.cliente_documento)}</dd></div>
             <div><dt>Celular</dt><dd className={s.mono}>{tel(pedido.cliente_telefone)}</dd></div>

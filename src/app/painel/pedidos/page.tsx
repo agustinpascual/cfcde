@@ -15,12 +15,13 @@ export const dynamic = "force-dynamic";
 
 const SELO: Record<string, string> = {
   aprovado: s.seloAprovado, pendente: s.seloPendente,
-  falhou: s.seloFalhou, expirado: s.seloFalhou, estornado: s.seloNeutro,
+  falhou: s.seloFalhou, recusado: s.seloFalhou, expirado: s.seloFalhou, estornado: s.seloNeutro,
 };
 const ROTULO: Record<string, string> = {
   aprovado: "Pago", pendente: "Aguardando", falhou: "Falhou",
-  expirado: "Expirado", estornado: "Estornado",
+  recusado: "Recusado", expirado: "Expirado", estornado: "Estornado",
 };
+const formaPagamento = (metodo: string) => metodo === "cartao_sandbox" ? "Cartão sandbox" : "PIX";
 const quando = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
@@ -76,7 +77,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
                       <span className={`${s.selo} ${SELO[p.status] ?? s.seloNeutro}`}>
                         {ROTULO[p.status] ?? p.status}
                       </span>
-                      <span className={s.formaPgto}>PIX</span>
+                      <span className={s.formaPgto}>{formaPagamento(p.metodo_pagamento)}</span>
                     </td>
                     <td className={s.dir}><strong>{moeda(p.valor_centavos)}</strong></td>
                     <td className={s.mono}>{quando(p.criado_em)}</td>

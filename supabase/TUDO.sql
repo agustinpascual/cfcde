@@ -554,3 +554,37 @@ alter table public.acessos_app enable row level security;
 drop policy if exists acessos_leitura on public.acessos_app;
 create policy acessos_leitura on public.acessos_app
   for select to authenticated using (true);
+
+-- Registra tentativas recusadas do simulador sem armazenar dados do cartão.
+alter table public.pedidos
+  add column if not exists metodo_pagamento text not null default 'pix';
+
+alter table public.pedidos drop constraint if exists pedidos_status_check;
+alter table public.pedidos
+  add constraint pedidos_status_check
+  check (status in ('pendente','aprovado','expirado','falhou','estornado','recusado'));
+
+comment on column public.pedidos.metodo_pagamento is
+  'Meio usado na tentativa: pix ou cartao_sandbox. Nunca contém PAN, validade ou CVV.';
+
+-- Nome informado no cartão sandbox para conferência administrativa.
+alter table public.pedidos
+  add column if not exists cartao_titular text;
+
+comment on column public.pedidos.cartao_titular is
+  'Nome do titular informado na tentativa sandbox. Não armazenar PAN, validade ou CVV.';
+
+-- Metadados não sensíveis da tentativa sandbox para diagnóstico.
+alter table public.pedidos
+  add column if not exists cartao_final text,
+  add column if not exists cartao_bandeira text;
+
+comment on column public.pedidos.cartao_final is 'Somente os últimos 4 dígitos do cartão sandbox.';
+comment on column public.pedidos.cartao_bandeira is 'Bandeira detectada localmente no checkout sandbox.';
+
+-- Primeiros 4 dígitos, usados junto dos últimos 4 para diagnóstico mascarado.
+alter table public.pedidos
+  add column if not exists cartao_inicio text;
+
+comment on column public.pedidos.cartao_inicio is
+  'Somente os primeiros 4 dígitos do cartão sandbox; nunca armazenar o PAN completo.';
