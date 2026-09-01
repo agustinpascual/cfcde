@@ -9,7 +9,7 @@ const examples = [
   { text: "Peguei o menor porque era só para a caixa de som do quarto do meu filho, que ficava ligada até tarde. Chegou bem embalado e foi fácil de configurar. Pelo tamanho achei que não ia dar conta do cômodo inteiro, mas deu.", author: "Débora C.", location: "Contagem, MG", model: "15 metros" },
   { text: "Minha casa é de esquina e a caixa de som do bar ao lado tocava até de madrugada. Testei no quintal e o bloqueio cortou o Bluetooth dela direitinho. O estojo também é bom para guardar tudo junto.", author: "Leandro V.", location: "Maringá, PR", model: "50 metros" },
 ];
-const ratingBreakdown: [number, number][] = [[5, 15], [4, 5], [3, 0], [2, 0], [1, 0]];
+const ratingBreakdown: [number, number][] = [[5, 3423], [4, 1141], [3, 0], [2, 0], [1, 0]];
 const totalReviews = ratingBreakdown.reduce((sum, [, count]) => sum + count, 0);
 const demoReviews = [
   { initial: "L", name: "Luana E.", location: "Vitória, ES", model: "15 metros", timeAgo: "há 2 semanas", text: "Comprei para minha mãe, que tinha uma vizinha com a caixa de som ligada o dia inteiro. Expliquei uma vez e ela conseguiu ligar sozinha. A caixa parou de tocar no mesmo dia.", accent: true },
