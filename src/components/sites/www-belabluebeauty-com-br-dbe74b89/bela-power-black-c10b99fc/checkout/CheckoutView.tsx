@@ -1,14 +1,17 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IMG, descricao, produto, reviews } from "../data";
+import nodentecLogo from "@/lib/nodentec-logo.png";
+import nodentec15 from "@/lib/1-frontal.jpg";
+import nodentec25 from "@/lib/1-frontal (1).jpg";
+import nodentec50 from "@/lib/1-frontal (2).jpg";
+import { IMG, produto, reviews } from "../data";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { opcoesFrete } from "../data";
 import PurchaseNotifications from "../PurchaseNotifications";
 import SeloStone from "../SeloStone";
-import SiteFooter from "../SiteFooter";
 import { guardarCobranca } from "./cobranca";
 import {
   celularValido, documentoValido, emailValido, mascaraCelular, mascaraCep,
@@ -70,8 +73,13 @@ function mascaraMesAno(valor: string) {
 
 export default function CheckoutView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const carrinho = useCarrinho();
   const r = useMemo(() => resumo(carrinho), [carrinho]);
+  const modelo = searchParams.get("model");
+  const imagemSelecionada = modelo === "2" ? nodentec25 : modelo === "3" ? nodentec50 : nodentec15;
+  const modeloMetragem = modelo === "2" ? "25 metros" : modelo === "3" ? "50 metros" : "15 metros";
+  const modeloBeneficio = modelo === "2" ? "+ Carregador" : modelo === "3" ? "+ Carregador + Estojo" : "Aparelho";
 
   const [email, setEmail] = useState("");
   const [emailOk, setEmailOk] = useState(false);
@@ -272,7 +280,7 @@ export default function CheckoutView() {
       <header className={s.topo}>
         <div className={`bb-container ${s.topoInner}`}>
           <Link href="/" className={s.topoLogo}>
-            <Image src={`${IMG}/00-comprar-bela-power-black-prazo-e.png`} alt="Bela Blue Beauty" width={75} height={44} priority sizes="75px" />
+            <Image src={nodentecLogo} alt="Nodentec" width={160} height={96} priority sizes="(max-width: 600px) 120px, 150px" />
           </Link>
           <div className={s.security}>
             <ShieldIcon />
@@ -311,14 +319,14 @@ export default function CheckoutView() {
             <div id="co-carrinho" className={s.carrinhoCorpo} hidden={!carrinhoAberto}>
               <div className={s.itemLinha}>
                 <span className={s.thumb}>
-                  <Image src={r.imagem} alt={produto.nome} width={72} height={72} sizes="72px" />
+                  <Image src={imagemSelecionada} alt={`Nodentec — modelo ${modelo === "2" ? "25" : modelo === "3" ? "50" : "15"} metros`} width={72} height={72} sizes="72px" />
                   <span className={s.badge}>{r.qtd}</span>
                 </span>
                 <span className={s.det}>
                   <span>
-                    <span className={s.produtoNome}>{r.titulo}</span>
-                    <span className={s.produtoVariacao}>{r.kit.nome} · {r.kit.duracao.toLowerCase()}</span>
-                    <span className={s.produtoDesc}>{descricao.subtitulo}</span>
+                    <span className={s.produtoNome}>Amplificador para bloqueio de sinal Bluetooth</span>
+                    <span className={s.produtoVariacao}>Alcance: {modeloMetragem}</span>
+                    <span className={s.produtoDesc}>{modeloBeneficio}</span>
                   </span>
                   <span className={s.valores}>
                     <span className={s.valorOriginal}>{moeda(r.original)}</span>
@@ -607,7 +615,13 @@ export default function CheckoutView() {
           </div>
         </div>
       )}
-      <SiteFooter />
+      <footer className={s.checkoutFooter}>
+        <Link href="/" className={s.checkoutFooterLogo} aria-label="Voltar para a página inicial">
+          <Image src={nodentecLogo} alt="Nodentec" width={160} height={96} sizes="130px" />
+        </Link>
+        <p>Compra protegida e atendimento especializado.</p>
+        <small>© 2026 Nodentec. Todos os direitos reservados.</small>
+      </footer>
       <PurchaseNotifications />
     </div>
   );

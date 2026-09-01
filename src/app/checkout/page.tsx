@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import CheckoutView from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/checkout/CheckoutView";
 
 export const metadata: Metadata = {
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function CheckoutPage() {
-  return <CheckoutView />;
+  return <Suspense fallback={null}><CheckoutView /></Suspense>;
 }

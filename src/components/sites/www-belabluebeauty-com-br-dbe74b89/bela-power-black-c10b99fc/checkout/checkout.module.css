@@ -2,13 +2,29 @@
    Checkout — valores de getComputedStyle() de
    https://www.belabluebeauty.com.br/checkout/ em 1440px
    ========================================================================== */
-.pagina { width: 100%; max-width: 100%; min-height: 100vh; overflow-x: hidden; background: #f2f3f8; }
+.pagina {
+  --bb-navy: #f05a00;
+  --bb-navy-mid: #c84900;
+  --bb-navy-btn: #f05a00;
+  --bb-navy-input: #f05a00;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #fff7f2;
+}
 .pagina :global(.bb-container) { min-width: 0; max-width: 100%; }
 
 /* ---- barra do topo ---- */
 .topo { background: #fff; }
 .topoInner { display: flex; justify-content: space-between; align-items: center; padding: 22px 20px; }
-.topoLogo img { width: 75px; height: 44px; object-fit: contain; }
+.topoLogo img { width: 150px; height: 72px; object-fit: contain; }
+@media (max-width: 600px) { .topoLogo img { width: 120px; height: 62px; } }
+.checkoutFooter { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 38px 20px 24px; border-top: 1px solid #f0e4dc; background: #fff; text-align: center; }
+.checkoutFooterLogo { display: inline-flex; align-items: center; justify-content: center; }
+.checkoutFooterLogo img { width: 130px; height: 68px; object-fit: contain; }
+.checkoutFooter p { margin-top: 6px; color: #59514c; font-size: 13px; }
+.checkoutFooter small { margin-top: 18px; color: #9a918b; font-size: 11px; }
 .security { display: flex; align-items: center; gap: 4px; }
 .securityIcon { width: 34px; height: 34px; color: var(--bb-navy); flex: 0 0 34px; }
 .securityT { font-size: 12px; color: var(--bb-text); line-height: 17.16px; }
@@ -27,7 +43,7 @@
 .linha { display: flex; gap: 14px; }
 .campo { flex: 1 1 auto; position: relative; min-width: 0; }
 .input { width: 100%; height: 50px; padding: 18px; border-radius: 8px; border: 1px solid #ced4da; background: #fff; color: var(--bb-text-2); font-size: 15px; outline: none; }
-.input:focus { border-color: var(--bb-text-2); }
+.input:focus { border-color: var(--bb-navy); box-shadow: 0 0 0 3px rgb(240 90 0 / 12%); }
 .inputErro { border-color: #f1aeb5; background: #fdf2f3; }
 .rotulo { position: absolute; top: -8px; left: 12px; background: #fff; padding: 0 5px; font-size: 12px; color: #6c757d; }
 .rotulo em { color: #dc3545; font-style: normal; }
@@ -38,7 +54,7 @@
 .ok { font-size: 13px; color: #198754; margin-top: 8px; }
 
 .checkbox { display: flex; gap: 7px; align-items: center; font-size: 13px; color: var(--bb-text-2); cursor: pointer; }
-.checkbox input { width: 18px; height: 18px; accent-color: var(--bb-text-2); }
+.checkbox input { width: 18px; height: 18px; accent-color: var(--bb-navy); }
 .obs { width: 100%; margin-top: 10px; min-height: 80px; padding: 14px; border-radius: 8px; border: 1px solid #ced4da; font-size: 14px; resize: vertical; outline: none; font-family: inherit; }
 
 /* ---- pagamento ---- */
@@ -47,14 +63,14 @@
 .pagItem { display: flex; align-items: center; gap: 12px; padding: 18px 20px; cursor: pointer; background: #fff; }
 .pagItem + .pagItem { border-top: 1px solid #dee2e6; }
 .pagItemAtivo { background: #fbfbfc; }
-.pagRadio { width: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--bb-text-2); }
+.pagRadio { width: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--bb-navy); }
 .pagNome { flex: 1 1 auto; font-size: 15px; color: var(--bb-text-2); }
 .pagBandeiras { display: flex; align-items: center; gap: 6px; }
 .pagBandeiras img { width: 36px; height: 22px; object-fit: contain; border-radius: 3px; }
 .pagMais { font-size: 12px; color: var(--bb-text-2); border: 1px solid #dee2e6; border-radius: 4px; padding: 4px 8px; background: #fff; }
 .pagDetalhe { padding: 0 20px 18px 52px; font-size: 13px; color: #6c757d; line-height: 19px; background: #fbfbfc; }
 
-.btnFinalizar { width: 100%; height: 54px; background: var(--bb-navy); color: #fff; font-size: 16px; font-weight: 700; border-radius: 8px; margin-top: 24px; }
+.btnFinalizar { width: 100%; height: 54px; background: linear-gradient(135deg, #ff6908, var(--bb-navy)); color: #fff; font-size: 16px; font-weight: 700; border-radius: 10px; margin-top: 24px; box-shadow: 0 12px 24px -12px rgb(240 90 0 / 75%); }
 .btnFinalizar:hover { background: var(--bb-navy-mid); }
 .btnFinalizar:disabled { opacity: .5; cursor: default; }
 .aviso { font-size: 12px; color: #6c757d; margin-top: 12px; text-align: center; line-height: 17px; }
@@ -68,7 +84,7 @@
 .dropList { padding: 0 5px 20px 0; }
 .itemLinha { display: flex; padding-top: 5px; gap: 0; }
 .thumb { position: relative; width: 60px; height: 60px; flex: 0 0 60px; }
-.thumb img { width: 60px; height: 60px; border-radius: 8px; border: 1px solid #eee; object-fit: cover; }
+.thumb img { width: 72px; height: 72px; padding: 5px; border-radius: 10px; border: 1px solid #eee; background: #fffaf6; object-fit: contain; object-position: center; }
 .badge { position: absolute; top: -5px; right: -9px; width: 18px; height: 18px; background: var(--bb-text-2); color: #fff; font-size: 11px; border-radius: 9px; border: 1px solid var(--bb-gray-bg); display: flex; justify-content: center; align-items: center; }
 .det { flex: 1 1 auto; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-left: 15px; }
 .produtoNome { display: block; font-size: 15px; font-weight: 500; color: var(--bb-text-2); line-height: 18px; overflow-wrap: anywhere; }
