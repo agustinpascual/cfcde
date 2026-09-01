@@ -2,7 +2,8 @@
    Checkout — valores de getComputedStyle() de
    https://www.belabluebeauty.com.br/checkout/ em 1440px
    ========================================================================== */
-.pagina { background: #f2f3f8; min-height: 100vh; }
+.pagina { width: 100%; max-width: 100%; min-height: 100vh; overflow-x: hidden; background: #f2f3f8; }
+.pagina :global(.bb-container) { min-width: 0; max-width: 100%; }
 
 /* ---- barra do topo ---- */
 .topo { background: #fff; }
@@ -102,6 +103,7 @@
 }
 @media (max-width: 767px) {
   .secao { padding: 16px 0 30px; }
+  .topoInner, .colunas, .main, .resumo, .carrinho { min-width: 0; max-width: 100%; }
   .grupoTitulo span { font-size: 18px; }
   .linha { flex-wrap: wrap; }
   .campo { flex: 1 1 100%; }
@@ -114,6 +116,8 @@
   .securityT { display: none; }
   .securityB { font-size: 14px; }
   .det { flex-wrap: wrap; gap: 6px; }
+  .itemLinha, .pagItem, .envioItem { min-width: 0; max-width: 100%; }
+  .pagNome, .envioNome { min-width: 0; overflow-wrap: anywhere; }
 }
 
 /* ---- opções de envio ---- */
@@ -218,6 +222,10 @@
   .pagDetalhe { padding: 0 12px 16px; }
   .cartaoSandbox { width: 100%; padding: 16px 0 4px; }
   .gradeCartao { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; }
+}
+@media (max-width: 380px) {
+  .gradeCartao { grid-template-columns: minmax(0, 1fr); }
+  .pagSelo { max-width: 104px; text-align: center; line-height: 14px; }
 }
 
 /* No checkout não existe a barra fixa de compra, então a notificação

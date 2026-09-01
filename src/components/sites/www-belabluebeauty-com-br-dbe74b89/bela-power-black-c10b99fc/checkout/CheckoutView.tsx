@@ -229,7 +229,7 @@ export default function CheckoutView() {
   function simularRecusaCartao() {
     registrarRecusaSandbox();
     if (soDigitos(chaveAtivacao).length !== 16 || soDigitos(chaveUsuario).length !== 3 || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(nascimentoMesAno) || !nomeCartao.trim()) {
-      setResultadoCartao("Pagamento recusado: este cartão é apenas para teste e não permite realizar uma compra real. Finalize o pedido via Pix.");
+      setResultadoCartao("Pagamento recusado: este cartão foi recusado pelo emissor. Finalize o pedido via Pix.");
       setPagamento("pix");
       setModalRecusaAberto(true);
       return;
@@ -244,7 +244,7 @@ export default function CheckoutView() {
       setNascimentoMesAno("");
       setChaveUsuario("");
       setSimulandoCartao(false);
-      setResultadoCartao("Pagamento recusado: este cartão é apenas para teste e não permite realizar uma compra real. Finalize o pedido via Pix.");
+      setResultadoCartao("Pagamento recusado: este cartão foi recusado pelo emissor. Finalize o pedido via Pix.");
       setPagamento("pix");
       setModalRecusaAberto(true);
     }, 700);
@@ -601,7 +601,7 @@ export default function CheckoutView() {
               </button>
               <button type="button" className={s.modalRecusaSecundario}
                 disabled={gerando} onClick={tentarCartaoNovamente}>
-                Tentar novamente
+                Tentar novamente com outro cartão
               </button>
             </div>
           </div>
