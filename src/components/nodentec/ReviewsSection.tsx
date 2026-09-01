@@ -3,14 +3,13 @@ import { BadgeCheck, Star } from "lucide-react";
 import model15 from "@/lib/1-frontal.jpg";
 import model25 from "@/lib/1-frontal (1).jpg";
 import model50 from "@/lib/1-frontal (2).jpg";
+import { RATING, RATING_BREAKDOWN, TOTAL_REVIEWS } from "./reviewsData";
 
 const examples = [
   { text: "Meu vizinho de cima ligava a caixa de som Bluetooth até tarde quase todo fim de semana. Com o de 25m a caixa dele simplesmente parou de tocar aqui em casa. Demora alguns segundos para agir, mas funciona mesmo.", author: "Marcelo R.", location: "Sorocaba, SP", model: "25 metros" },
   { text: "Peguei o menor porque era só para a caixa de som do quarto do meu filho, que ficava ligada até tarde. Chegou bem embalado e foi fácil de configurar. Pelo tamanho achei que não ia dar conta do cômodo inteiro, mas deu.", author: "Débora C.", location: "Contagem, MG", model: "15 metros" },
   { text: "Minha casa é de esquina e a caixa de som do bar ao lado tocava até de madrugada. Testei no quintal e o bloqueio cortou o Bluetooth dela direitinho. O estojo também é bom para guardar tudo junto.", author: "Leandro V.", location: "Maringá, PR", model: "50 metros" },
 ];
-const ratingBreakdown: [number, number][] = [[5, 3423], [4, 1141], [3, 0], [2, 0], [1, 0]];
-const totalReviews = ratingBreakdown.reduce((sum, [, count]) => sum + count, 0);
 const demoReviews = [
   { initial: "L", name: "Luana E.", location: "Vitória, ES", model: "15 metros", timeAgo: "há 2 semanas", text: "Comprei para minha mãe, que tinha uma vizinha com a caixa de som ligada o dia inteiro. Expliquei uma vez e ela conseguiu ligar sozinha. A caixa parou de tocar no mesmo dia.", accent: true },
   { initial: "S", name: "Samuel N.", location: "Joinville, SC", model: "25 metros", timeAgo: "há 16 dias", text: "Uso para cortar a caixa de som que o pessoal do apartamento de baixo liga nos fins de semana. As antenas ficam firmes e o aparelho não esquenta, mesmo ligado várias horas." },
@@ -25,10 +24,10 @@ const demoReviews = [
 
 export function ReviewsSection(){return <section className="nodentec-reviews-v2" id="avaliacoes" aria-labelledby="titulo-avaliacoes">
   <h2 id="titulo-avaliacoes">Avaliações</h2>
-  <p className="nodentec-review-count">{totalReviews} avaliações</p>
+  <p className="nodentec-review-count">{TOTAL_REVIEWS} avaliações</p>
   <div className="nodentec-rating-summary">
-    <div className="nodentec-rating-number"><strong>4,8</strong><div><span>{Array.from({length:5}).map((_,i)=><Star key={i}/>)}</span><small>{totalReviews} avaliações</small></div></div>
-    <div className="nodentec-rating-bars">{ratingBreakdown.map(([n,count])=><div key={n}><span>{n}</span><i><b style={{width:`${totalReviews?(count/totalReviews)*100:0}%`}}/></i><small>{count}</small></div>)}</div>
+    <div className="nodentec-rating-number"><strong>{RATING}</strong><div><span>{Array.from({length:5}).map((_,i)=><Star key={i}/>)}</span><small>{TOTAL_REVIEWS} avaliações</small></div></div>
+    <div className="nodentec-rating-bars">{RATING_BREAKDOWN.map(([n,count])=><div key={n}><span>{n}</span><i><b style={{width:`${TOTAL_REVIEWS?(count/TOTAL_REVIEWS)*100:0}%`}}/></i><small>{count}</small></div>)}</div>
     <div className="nodentec-rating-action"><span><BadgeCheck/> Conteúdo demonstrativo</span><button type="button">Avaliar produto</button></div>
   </div>
   <div className="nodentec-review-label">Em destaque</div>

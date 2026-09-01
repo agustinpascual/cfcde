@@ -9,6 +9,7 @@ import frontal15m from "@/lib/1-frontal.jpg";
 import frontal25m from "@/lib/1-frontal (1).jpg";
 import frontal50m from "@/lib/1-frontal (2).jpg";
 import { FacebookIcon, WhatsAppIcon, XIcon } from "./icons";
+import { RATING, TOTAL_REVIEWS } from "./reviewsData";
 
 type Kit = {
   id: number;
@@ -176,8 +177,10 @@ export function BuyBox({ selected, onSelect }: BuyBoxProps) {
               <Star key={i} className="h-4 w-4" fill="currentColor" strokeWidth={0} />
             ))}
           </div>
-          <span className="text-sm font-bold text-[var(--bb-black)]">Novo</span>
-          <a href="#avaliacoes" className="text-sm text-[var(--bb-muted)] underline underline-offset-2">Ver avaliações</a>
+          <span className="text-sm font-bold text-[var(--bb-black)]">{RATING}</span>
+          <a href="#avaliacoes" className="text-sm text-[var(--bb-muted)] underline underline-offset-2">
+            {TOTAL_REVIEWS.toLocaleString("pt-BR")} avaliações
+          </a>
         </div>
       </div>
 
