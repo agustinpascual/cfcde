@@ -8,3 +8,31 @@
 @media(max-width:767px){.back{display:inline-flex;min-height:35px;align-items:center;margin:0 15px 14px;padding:0 14px;border:1px solid #d4d4d4;border-radius:5px;color:#222;font-size:12px;font-weight:600}.breadcrumb{display:block;margin:0 15px 18px;color:#777;font-size:11px;line-height:1.55}.product{padding-top:15px}}
 .galleryMain{min-width:0}
 @media(max-width:767px){.info{display:none}.galleryMain{display:block}.page{padding-bottom:145px}.cookies{display:none}}
+
+/* O bloco do 1º lote vive na coluna da direita, entre o frete e a quantidade.
+   No mobile essa coluna some inteira (quem manda lá é a barra fixa de compra),
+   então ela volta mostrando só este bloco. */
+.estoqueSlot{margin:0 0 26px}
+@media(max-width:767px){
+  .info{display:block;padding:0}
+  .info > *:not(.estoqueSlot):not(.ofertas){display:none}
+  .estoqueSlot{margin:4px 18px 22px}
+}
+
+/* Pacotes (1 un / 2 un): cartões de canto reto, marcador redondo e o dourado
+   da marca no hover, no mesmo tom dos outros blocos da página. */
+/* Seletor descendente porque o reset de button do globals.css vence a classe
+   sozinha por especificidade (button:not(.sf-root *)). */
+.ofertas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 24px}
+.ofertas .oferta{display:flex;min-width:0;flex-direction:column;align-items:flex-start;padding:12px 13px 13px;border:1px solid #d9d7d1;border-radius:2px;background:#fff;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:border-color .18s ease,background-color .18s ease}
+.ofertas .oferta:hover{border-color:#b89967}
+.ofertas .ofertaAtiva{border-color:#151515;background:#faf9f6}
+.ofertaTopo{display:flex;align-items:center;gap:8px}
+.marcador{display:grid;width:15px;height:15px;flex:none;place-items:center;border:1px solid #b6b3ab;border-radius:50%}
+.ofertaAtiva .marcador{border-color:#151515}
+.ofertaAtiva .marcador::after{width:7px;height:7px;border-radius:50%;background:#151515;content:""}
+.ofertaRotulo{font-size:13px;font-weight:700}
+.ofertaPreco{margin-top:9px;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.ofertaDetalhe{margin-top:2px;color:#8a8a8a;font-size:11px}
+.ofertaEconomia{margin-top:3px;color:#2e7d33;font-size:10px;font-weight:700}
+@media(max-width:767px){.ofertas{margin:0 18px 26px}}

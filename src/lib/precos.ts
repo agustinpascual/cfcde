@@ -32,6 +32,8 @@ export function calcularTotal(kitIndex: number, qtd: number, frete: IdFrete) {
 
 const PRODUTOS_CAFE: Record<string, { nome: string; centavos: number }> = {
   "combo-plus": { nome: "Combo Plus | Frete grátis", centavos: 28990 },
+  "combo-plus2027": { nome: "Lançamento Combo Plus | 2027", centavos: 8990 },
+  "combo-plus2027-2un": { nome: "Lançamento Combo Plus | 2027 · 2 unidades", centavos: 12990 },
   "cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa": { nome: "Café com Deus Pai vol.6 + A vida que você busca", centavos: 9990 },
   "cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-caneca": { nome: "Café com Deus Pai vol.6 + A vida que você busca + caneca", centavos: 21990 },
   "2-canecas-cafe-com-deus-pai-vol-6": { nome: "2 canecas Café com Deus Pai", centavos: 19990 },

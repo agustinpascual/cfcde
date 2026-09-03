@@ -1,0 +1,65 @@
+/* Mesma casca do card "Calcular frete" logo abaixo: borda #deddd9, fundo
+   #f7f7f5 e canto de 2px. O dourado é o mesmo da tarja "Frete grátis". */
+.bloco {
+  margin: 0;
+  padding: 15px 17px 16px;
+  border: 1px solid #deddd9;
+  border-radius: 2px;
+  background: #f7f7f5;
+  color: #252525;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.lote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.lote::before {
+  width: 9px;
+  height: 9px;
+  background: #b89967;
+  content: "";
+}
+
+.relogio {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #151515;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.relogio svg { width: 14px; height: 14px; color: #777; }
+
+.barra {
+  overflow: hidden;
+  height: 4px;
+  background: #e3e1db;
+}
+
+.barra span {
+  display: block;
+  height: 100%;
+  background: #b89967;
+  transition: width .5s ease;
+}
+
+.contagem { margin: 0 0 9px; color: #555; font-size: 13px; }
+.contagem strong { color: #151515; font-weight: 700; }
+
+.aviso { margin: 9px 0 0; color: #8f8f8f; font-size: 11px; }

@@ -3,14 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { comboPlus } from "./produto";
 import styles from "./CartDrawer.module.css";
 
-const IMAGE="/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/combo-main.webp";
-const PRICE=289.9;
 type Props={open:boolean;quantity:number;onClose:()=>void;onQuantityChange:(quantity:number)=>void;productName?:string;productImage?:string;unitPrice?:number;productSlug?:string};
 const money=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 
-export default function CartDrawer({open,quantity,onClose,onQuantityChange,productName="Combo Plus | Frete grátis",productImage=IMAGE,unitPrice=PRICE,productSlug="combo-plus"}:Props){
+export default function CartDrawer({open,quantity,onClose,onQuantityChange,productName=comboPlus.nome,productImage=comboPlus.imagem,unitPrice=comboPlus.ofertas[0].preco,productSlug=comboPlus.ofertas[0].slug}:Props){
  const qty=Math.max(1,quantity), wasOpen=useRef(false);
  const [hasItem,setHasItem]=useState(quantity>0),[coupon,setCoupon]=useState("");
  const [couponStatus,setCouponStatus]=useState<"idle"|"valid"|"invalid">("idle");

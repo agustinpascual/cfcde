@@ -3,10 +3,9 @@
 import Image from "next/image";
 import { useState } from "react";
 import { MobilePurchaseBar, ShippingCalculator } from "../shared/ProductPurchaseTools";
+import StockUrgency, { type EstoqueLote } from "../shared/StockUrgency";
+import { assetRoot, desconto, galeria, moeda, parcelas, type Oferta, type Produto } from "./produto";
 import styles from "./ProductPage.module.css";
-
-const assetRoot = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672";
-const gallery = ["combo-main.webp", "combo-2.webp", "combo-3.webp", "combo-4.webp", "combo-5.webp", "combo-6.webp", "combo-7.webp"];
 
 const products = [
   ["combo-2.webp", "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + COPO", "R$89,90", "4 de R$22,48"],
@@ -17,10 +16,20 @@ const products = [
   ["combo-7.webp", "2 CANECAS + 2 LATAS DE CAFÉ GOURMET", "R$259,90", "4 de R$64,98"],
 ];
 
-export type ProductPageProps = { onBuy: (quantity: number) => void };
+export type ProductPageProps = {
+  produto: Produto;
+  oferta: Oferta;
+  onOferta: (indice: number) => void;
+  onBuy: (quantity: number) => void;
+  estoque?: EstoqueLote;
+};
 
-export default function ProductPage({ onBuy }: ProductPageProps) {
+export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque }: ProductPageProps) {
   const [selected, setSelected] = useState(0);
+  const abatimento = desconto(oferta);
+  /* Com mais de um pacote, a escolha substitui o seletor de quantidade —
+     dois controles de quantidade na mesma tela só confundem. */
+  const temPacotes = produto.ofertas.length > 1;
   const [quantity, setQuantity] = useState(1);
   const [descriptionOpen, setDescriptionOpen] = useState(true);
   const [cookies, setCookies] = useState(true);
@@ -29,12 +38,12 @@ export default function ProductPage({ onBuy }: ProductPageProps) {
     <main className={styles.page}>
       <section className={styles.product}>
         <a className={styles.back} href="/">← Voltar</a>
-        <div className={styles.badges}><span>-44%</span><span>Frete grátis</span></div>
-        <div className={styles.breadcrumb}>Home | Lançamento | Combo Plus | Frete Grátis</div>
+        <div className={styles.badges}>{abatimento ? <span>-{abatimento}%</span> : null}<span>Frete grátis</span></div>
+        <div className={styles.breadcrumb}>{produto.breadcrumb}</div>
         <div className={styles.productGrid}>
           <div className={styles.gallery}>
             <div className={styles.thumbs} aria-label="Imagens do produto">
-              {gallery.map((file, index) => (
+              {galeria.map((file, index) => (
                 <button className={selected === index ? styles.thumbActive : ""} key={file} onClick={() => setSelected(index)} aria-label={`Ver imagem ${index + 1}`}>
                   <Image src={`${assetRoot}/${file}`} alt="" width={72} height={72} />
                 </button>
@@ -42,26 +51,57 @@ export default function ProductPage({ onBuy }: ProductPageProps) {
             </div>
             <div className={styles.galleryMain}>
               <div className={styles.mainImage}>
-                <Image src={`${assetRoot}/${gallery[selected]}`} alt="Combo Plus Café com Deus Pai" fill priority sizes="(max-width: 767px) 100vw, 58vw" />
+                <Image src={`${assetRoot}/${galeria[selected]}`} alt={produto.nome} fill priority sizes="(max-width: 767px) 100vw, 58vw" />
               </div>
-              <div className={styles.dots} aria-hidden="true">{gallery.map((file, index) => <button key={file} className={selected === index ? styles.dotActive : ""} onClick={() => setSelected(index)} />)}</div>
+              <div className={styles.dots} aria-hidden="true">{galeria.map((file, index) => <button key={file} className={selected === index ? styles.dotActive : ""} onClick={() => setSelected(index)} />)}</div>
               <ShippingCalculator />
             </div>
           </div>
 
           <div className={styles.info}>
-            <h1>Combo Plus | Frete grátis</h1>
-            <div className={styles.mobileBadges}><span>-44%</span><span>Frete grátis</span></div>
-            <div className={styles.price}><s>R$513,90</s><strong>R$289,90</strong></div>
-            <p className={styles.installments}>4 x de R$72,48 sem juros <button>(Ver parcelas)</button></p>
+            <h1>{produto.nome}</h1>
+            <div className={styles.mobileBadges}>{abatimento ? <span>-{abatimento}%</span> : null}<span>Frete grátis</span></div>
+            <div className={styles.price}>{oferta.comparado ? <s>{moeda(oferta.comparado)}</s> : null}<strong>{moeda(oferta.preco)}</strong></div>
+            <p className={styles.installments}>{parcelas(oferta.preco)} <button>(Ver parcelas)</button></p>
             <p className={styles.freeShipping}>Frete grátis</p>
-            <label className={styles.quantityLabel}>Quantidade</label>
-            <div className={styles.buyRow}>
-              <div className={styles.quantity}>
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Diminuir quantidade">−</button>
-                <span>{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)} aria-label="Aumentar quantidade">+</button>
+            {estoque ? <div className={styles.estoqueSlot}><StockUrgency {...estoque} /></div> : null}
+            {temPacotes ? (
+              <div className={styles.ofertas} role="radiogroup" aria-label="Escolha a quantidade">
+                {produto.ofertas.map((opcao, indice) => {
+                  const escolhida = opcao === oferta;
+                  const economia = opcao.comparado ? opcao.comparado - opcao.preco : 0;
+                  return (
+                    <button
+                      key={opcao.rotulo}
+                      type="button"
+                      role="radio"
+                      aria-checked={escolhida}
+                      className={`${styles.oferta} ${escolhida ? styles.ofertaAtiva : ""}`}
+                      onClick={() => onOferta(indice)}
+                    >
+                      <span className={styles.ofertaTopo}>
+                        <span className={styles.marcador} aria-hidden="true" />
+                        <span className={styles.ofertaRotulo}>{opcao.rotulo}</span>
+                      </span>
+                      <span className={styles.ofertaPreco}>{moeda(opcao.preco)}</span>
+                      <span className={styles.ofertaDetalhe}>
+                        {opcao.unidades > 1 ? `${moeda(opcao.preco / opcao.unidades)} cada` : "Frete grátis"}
+                      </span>
+                      {economia > 0 ? <span className={styles.ofertaEconomia}>economize {moeda(economia)}</span> : null}
+                    </button>
+                  );
+                })}
               </div>
+            ) : null}
+            {temPacotes ? null : <label className={styles.quantityLabel}>Quantidade</label>}
+            <div className={styles.buyRow}>
+              {temPacotes ? null : (
+                <div className={styles.quantity}>
+                  <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Diminuir quantidade">−</button>
+                  <span>{quantity}</span>
+                  <button onClick={() => setQuantity((q) => q + 1)} aria-label="Aumentar quantidade">+</button>
+                </div>
+              )}
               <button className={styles.buy} onClick={() => onBuy(quantity)}>Comprar</button>
             </div>
           </div>
@@ -104,7 +144,7 @@ export default function ProductPage({ onBuy }: ProductPageProps) {
         </article>)}</div>
       </section>
 
-      <MobilePurchaseBar name="Combo Plus | Frete grátis" price="R$289,90" originalPrice="R$513,90" installment="4 x de R$72,48 sem juros" quantity={quantity} onDecrease={() => setQuantity(q => Math.max(1, q - 1))} onIncrease={() => setQuantity(q => q + 1)} onBuy={() => onBuy(quantity)} />
+      <MobilePurchaseBar name={produto.nome} price={moeda(oferta.preco)} originalPrice={oferta.comparado ? moeda(oferta.comparado) : null} installment={parcelas(oferta.preco)} quantity={quantity} onDecrease={() => setQuantity(q => Math.max(1, q - 1))} onIncrease={() => setQuantity(q => q + 1)} onBuy={() => onBuy(quantity)} />
 
       {cookies && <aside className={styles.cookies}><span>Ao navegar por este site você aceita o uso de cookies para agilizar a sua experiência de compra.</span><button onClick={() => setCookies(false)}>Entendi</button></aside>}
     </main>
