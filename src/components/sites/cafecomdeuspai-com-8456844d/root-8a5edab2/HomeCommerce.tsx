@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef } from "react";
+import { type CSSProperties, useRef } from "react";
 import styles from "./HomeCommerce.module.css";
 
 const assets = "/sites/cafecomdeuspai-com-8456844d/root-8a5edab2";
@@ -13,26 +13,27 @@ type Product = {
   installment: string;
   reviews?: number;
   href?: string;
+  imageZoom?: number;
 };
 
 const launches: Product[] = [
   { image: "asset-006.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA", price: "R$99,90", installment: "4 de R$24,98", reviews: 1, href: "/produtos/cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa/" },
   { image: "asset-007.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + CANECA", price: "R$219,90", installment: "4 de R$54,98", href: "/produtos/cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-caneca/" },
-  { image: "asset-008.webp", name: "2 CANECAS CAFÉ COM DEUS PAI (VOL.6)", price: "R$199,90", installment: "4 de R$49,98", href: "/produtos/2-canecas-cafe-com-deus-pai-vol-6/" },
-  { image: "asset-009.webp", name: "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + LATA ALFAJOR VELUTTI COM 6 UN + MARCA-TEXTO", price: "R$149,90", installment: "4 de R$37,48", href: "/produtos/a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-lata-alfajor-velutti-com-6-un-marca-texto/" },
+  { image: "asset-008.webp", name: "2 CANECAS CAFÉ COM DEUS PAI (VOL.6)", price: "R$199,90", installment: "4 de R$49,98", href: "/produtos/2-canecas-cafe-com-deus-pai-vol-6/", imageZoom: 1.14 },
+  { image: "asset-009.webp", name: "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + LATA ALFAJOR VELUTTI COM 6 UN + MARCA-TEXTO", price: "R$149,90", installment: "4 de R$37,48", href: "/produtos/a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-lata-alfajor-velutti-com-6-un-marca-texto/", imageZoom: 1.11 },
 ];
 
 const featured: Product[] = [
   { image: "asset-012.webp", name: "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + PLANNER + MARCA-TEXTO", price: "R$129,90", installment: "4 de R$32,48", href: "/produtos/a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-planner-marca-texto/" },
-  { image: "asset-013.webp", name: "PLANNER CAFÉ COM DEUS PAI", price: "R$59,90", installment: "4 de R$14,98", href: "/produtos/planner-cafe-com-deus-pai-2025/" },
+  { image: "asset-013.webp", name: "PLANNER CAFÉ COM DEUS PAI", price: "R$59,90", installment: "4 de R$14,98", href: "/produtos/planner-cafe-com-deus-pai-2025/", imageZoom: 1.12 },
   { image: "asset-014.webp", name: "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + CAFÉ COM DEUS PAI (BROCHURA) VOL.6 + PLANNER", price: "R$179,90", installment: "4 de R$44,98", href: "/produtos/a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-cafe-com-deus-pai-brochura-vol-6-planner/" },
   { image: "asset-015.webp", name: "2 LIVROS CAFÉ COM DEUS PAI VOL. 6 (BROCHURA) + 2 CANECAS", price: "R$289,90", installment: "4 de R$72,48", href: "/produtos/2-livros-cafe-com-deus-pai-vol-6-brochura-2-canecas/" },
 ];
 
 const unmissable: Product[] = [
   { image: "asset-017.webp", name: "COMBO: CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + LATA DE CAFÉ GOURMET", price: "R$108,90", installment: "4 de R$27,23", href: "/produtos/combo-cafe-com-deus-pai-vol-6-brochura-lata-de-cafe-gourmet/" },
-  { image: "asset-018.webp", name: "COMBO CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + ECOBAG + COPO (250ML)", price: "R$99,90", installment: "4 de R$24,98", reviews: 3, href: "/produtos/combo-cafe-com-deus-pai-2026-brochura-ecobag-copo-250ml/" },
-  { image: "asset-019.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + 10 FILTROS INDIVIDUAIS", price: "R$78,90", installment: "4 de R$19,73", reviews: 2, href: "/produtos/cafe-com-deus-pai-2026-brochura-10-filtros-individuais/" },
+  { image: "asset-018.webp", name: "COMBO CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + ECOBAG + COPO (250ML)", price: "R$99,90", installment: "4 de R$24,98", reviews: 3, href: "/produtos/combo-cafe-com-deus-pai-2026-brochura-ecobag-copo-250ml/", imageZoom: 1.1 },
+  { image: "asset-019.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + 10 FILTROS INDIVIDUAIS", price: "R$78,90", installment: "4 de R$19,73", reviews: 2, href: "/produtos/cafe-com-deus-pai-2026-brochura-10-filtros-individuais/", imageZoom: 1.1 },
 ];
 
 function Chevron({ direction }: { direction: "left" | "right" }) {
@@ -56,7 +57,7 @@ function ProductRail({ title, products, subdued = false }: { title: string; prod
         <div className={styles.rail} ref={rail}>
           {products.map((product) => (
             <a className={styles.card} href={product.href ?? "#"} key={product.image}>
-              <div className={styles.imageWrap}>
+              <div className={styles.imageWrap} style={{ "--product-zoom": product.imageZoom ?? 1.06 } as CSSProperties}>
                 <Image src={`${assets}/${product.image}`} alt={product.name} fill sizes="(max-width: 600px) 72vw, 25vw" />
               </div>
               <div className={styles.cardBody}>
@@ -87,17 +88,9 @@ export default function HomeCommerce() {
 
       <ProductRail title="DESTAQUES" products={featured} />
 
-      <section className={styles.author}>
-        <div className={styles.authorInner}>
-          <div className={styles.portrait}><Image src={`${assets}/asset-020.webp`} alt="Junior Rostirola, autor de Café com Deus Pai" fill sizes="(max-width: 720px) 100vw, 42vw" /></div>
-          <div className={styles.authorCopy}>
-            <span>SOBRE O AUTOR</span>
-            <h2>Junior Rostirola</h2>
-            <p>Junior Rostirola é pastor, escritor e idealizador do movimento Café com Deus Pai. Sua história de superação, marcada por uma infância difícil e pelo encontro com a fé, inspira milhões de pessoas todos os dias.</p>
-            <p>Autor do best-seller Café com Deus Pai, Junior compartilha mensagens simples e profundas que aproximam as pessoas de Deus e transformam o momento do café em um encontro diário de amor, esperança e propósito.</p>
-            <a href="/sobre/">Conheça sua história</a>
-          </div>
-        </div>
+      <section className={styles.authorBanner} aria-label="Sobre o autor Junior Rostirola">
+        <Image className={styles.authorDesktop} src={`${assets}/sobre-autor-desktop.webp`} alt="Sobre o autor Junior Rostirola" width={1440} height={550} sizes="100vw" />
+        <Image className={styles.authorMobile} src={`${assets}/sobre-autor-mobile.webp`} alt="Sobre o autor Junior Rostirola" width={400} height={760} sizes="100vw" />
       </section>
 
       <ProductRail title="IMPERDÍVEL" products={unmissable} subdued />

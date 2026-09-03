@@ -27,8 +27,7 @@
   height: auto;
 }
 
-.cta,
-.caption a {
+.cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -44,8 +43,7 @@
   transition: background-color 180ms ease, transform 180ms ease;
 }
 
-.cta:hover,
-.caption a:hover {
+.cta:hover {
   background: #7d572f;
   transform: translateY(-1px);
 }
@@ -59,26 +57,6 @@
 
 .exclusiveCta:hover {
   transform: translateX(-50%) translateY(-1px);
-}
-
-.caption {
-  position: absolute;
-  text-align: center;
-  color: #fff;
-}
-
-.booksCaption {
-  left: 50%;
-  top: 48%;
-  transform: translate(-50%, -50%);
-}
-
-.booksCaption h2 {
-  margin: 0 0 16px;
-  font-size: clamp(22px, 2.1vw, 38px);
-  font-weight: 700;
-  line-height: 1.02;
-  text-shadow: 0 1px 7px rgb(0 0 0 / 45%);
 }
 
 .arrow {
@@ -160,18 +138,6 @@
     padding: 7px 20px;
     font-size: 11px;
   }
-
-  .booksCaption {
-    top: 53%;
-    width: 88%;
-  }
-
-  .booksCaption h2 {
-    margin-bottom: 12px;
-    font-size: 24px;
-  }
-
-  .caption a { font-size: 11px; }
 
   .arrow {
     width: 32px;

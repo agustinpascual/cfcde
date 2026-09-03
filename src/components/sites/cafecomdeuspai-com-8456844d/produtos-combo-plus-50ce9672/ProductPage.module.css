@@ -5,5 +5,6 @@
 .buy:hover { background: #fff !important; color: #151515 !important; }
 .page{font-family:var(--font-work-sans),"Work Sans",sans-serif}
 .info h1,.descriptionTitle,.reviews h2,.recommendations>h2{font-family:var(--font-work-sans),"Work Sans",sans-serif}
+@media(max-width:767px){.back{display:inline-flex;min-height:35px;align-items:center;margin:0 15px 14px;padding:0 14px;border:1px solid #d4d4d4;border-radius:5px;color:#222;font-size:12px;font-weight:600}.breadcrumb{display:block;margin:0 15px 18px;color:#777;font-size:11px;line-height:1.55}.product{padding-top:15px}}
 .galleryMain{min-width:0}
 @media(max-width:767px){.info{display:none}.galleryMain{display:block}.page{padding-bottom:145px}.cookies{display:none}}

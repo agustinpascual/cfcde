@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { criarPix } from "@/lib/pinpay";
 import { excedeu, ipDe } from "@/lib/limite";
-import { calcularTotal, type IdFrete } from "@/lib/precos";
+import { calcularTotal, calcularTotalCafe, type IdFrete } from "@/lib/precos";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
@@ -39,10 +39,12 @@ export async function POST(req: Request) {
   if (documento.length !== 11 && documento.length !== 14)
     return NextResponse.json({ erro: "CPF ou CNPJ inválido." }, { status: 422 });
 
-  let valores: ReturnType<typeof calcularTotal>;
+  let valores: ReturnType<typeof calcularTotal> | ReturnType<typeof calcularTotalCafe>;
   try {
-    // O valor NÃO vem do cliente — é recalculado a partir do kit e do frete.
-    valores = calcularTotal(kitIndex, qtd, frete);
+    // O valor NÃO vem do cliente — é recalculado a partir do catálogo do servidor.
+    valores = body.loja === "cafecomdeuspai"
+      ? calcularTotalCafe(String(body.produto ?? ""), qtd, String(body.frete ?? ""))
+      : calcularTotal(kitIndex, qtd, frete);
   } catch (e) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 422 });
   }
@@ -63,7 +65,7 @@ export async function POST(req: Request) {
        depender de serviço externo de QR. */
     const brcode = cobranca.pix?.qr_code ?? "";
     let imagemQr = cobranca.pix?.qr_code_url ?? null;
-    if (!imagemQr && brcode) {
+    if (brcode) {
       try {
         imagemQr = await QRCode.toDataURL(brcode, {
           errorCorrectionLevel: "M",

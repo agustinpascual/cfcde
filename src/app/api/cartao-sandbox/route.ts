@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { excedeu, ipDe } from "@/lib/limite";
-import { calcularTotal, type IdFrete } from "@/lib/precos";
+import { calcularTotal, calcularTotalCafe, type IdFrete } from "@/lib/precos";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
@@ -35,9 +35,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "Preencha a chave, o identificador de 3 dígitos e o mês/ano de nascimento." }, { status: 422 });
   }
 
-  let valores: ReturnType<typeof calcularTotal>;
+  let valores: ReturnType<typeof calcularTotal> | ReturnType<typeof calcularTotalCafe>;
   try {
-    valores = calcularTotal(kitIndex, qtd, frete);
+    valores = body.loja === "cafecomdeuspai"
+      ? calcularTotalCafe(String(body.produto ?? ""), qtd, String(body.frete ?? ""))
+      : calcularTotal(kitIndex, qtd, frete);
   } catch (e) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 422 });
   }

@@ -7,3 +7,8 @@
 .purchase .buy:hover{background:#333;color:#fff}
 @media(max-width:768px){.info h1{font-size:22px}}
 @media(max-width:767px){.info{display:none}.store{padding-bottom:145px}.gallery>section{margin-top:14px}}
+.store{font-family:var(--font-work-sans),"Work Sans",sans-serif}
+.productTop{max-width:1180px;margin:0 auto;padding:18px 20px 0}.back{display:inline-flex;min-height:34px;align-items:center;padding:0 13px;border:1px solid #d4d4d4;border-radius:5px;color:#222;font-size:11px;font-weight:600;text-decoration:none}.breadcrumb strong{overflow:hidden;color:#222;font-weight:700;text-overflow:ellipsis}
+@media(max-width:700px){.productTop{padding:15px 15px 0}.back{min-height:35px;padding:0 14px;font-size:12px}.breadcrumb{padding:14px 15px 16px;flex-wrap:wrap;gap:5px;font-size:11px;white-space:normal}.breadcrumb strong{line-height:1.5}.product{padding-top:0}}
+@media(max-width:767px){.product{padding-right:0;padding-left:0}.imageWrap{width:100%;border-radius:0;background:#fff}.imageWrap img{padding:0}.gallery>section{width:calc(100% - 28px);margin:14px 14px 0}}
+.recommendations .card>div{background:#fff}.recommendations .card img{transform:scale(1.06)}.recommendations .card:hover img{transform:scale(1.085)}

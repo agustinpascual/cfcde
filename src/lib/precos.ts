@@ -29,3 +29,30 @@ export function calcularTotal(kitIndex: number, qtd: number, frete: IdFrete) {
   const total = subtotal - desconto + opcao.centavos;
   return { kit, subtotal, desconto, frete: opcao, total };
 }
+
+const PRODUTOS_CAFE: Record<string, { nome: string; centavos: number }> = {
+  "combo-plus": { nome: "Combo Plus | Frete grátis", centavos: 28990 },
+  "cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa": { nome: "Café com Deus Pai vol.6 + A vida que você busca", centavos: 9990 },
+  "cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-caneca": { nome: "Café com Deus Pai vol.6 + A vida que você busca + caneca", centavos: 21990 },
+  "2-canecas-cafe-com-deus-pai-vol-6": { nome: "2 canecas Café com Deus Pai", centavos: 19990 },
+  "a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-lata-alfajor-velutti-com-6-un-marca-texto": { nome: "A vida que você busca + alfajores + marca-texto", centavos: 14990 },
+  "a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-planner-marca-texto": { nome: "A vida que você busca + planner + marca-texto", centavos: 12990 },
+  "planner-cafe-com-deus-pai-2025": { nome: "Planner Café com Deus Pai", centavos: 5990 },
+  "a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-cafe-com-deus-pai-brochura-vol-6-planner": { nome: "A vida que você busca + Café com Deus Pai + planner", centavos: 17990 },
+  "2-livros-cafe-com-deus-pai-vol-6-brochura-2-canecas": { nome: "2 livros Café com Deus Pai + 2 canecas", centavos: 28990 },
+  "combo-cafe-com-deus-pai-vol-6-brochura-lata-de-cafe-gourmet": { nome: "Café com Deus Pai + café gourmet", centavos: 10890 },
+  "combo-cafe-com-deus-pai-2026-brochura-ecobag-copo-250ml": { nome: "Café com Deus Pai + ecobag + copo", centavos: 9990 },
+  "cafe-com-deus-pai-2026-brochura-10-filtros-individuais": { nome: "Café com Deus Pai + 10 filtros", centavos: 7890 },
+};
+
+export function calcularTotalCafe(produtoSlug: string, qtd: number, frete: string) {
+  const produto = PRODUTOS_CAFE[produtoSlug];
+  if (!produto) throw new Error("Produto inválido");
+  if (!Number.isInteger(qtd) || qtd < 1 || qtd > 20) throw new Error("Quantidade inválida");
+  if (frete !== "pac" && frete !== "sedex") throw new Error("Forma de envio inválida");
+  const subtotal = produto.centavos * qtd;
+  const freteSelecionado = frete === "pac"
+    ? { nome: "Correios - PAC", centavos: 0 }
+    : { nome: "Correios - SEDEX", centavos: 2032 };
+  return { kit: produto, subtotal, desconto: 0, frete: freteSelecionado, total: subtotal + freteSelecionado.centavos };
+}

@@ -28,7 +28,7 @@ export default function ProductPage({ onBuy }: ProductPageProps) {
   return (
     <main className={styles.page}>
       <section className={styles.product}>
-        <a className={styles.back} href="#">← Voltar</a>
+        <a className={styles.back} href="/">← Voltar</a>
         <div className={styles.badges}><span>-44%</span><span>Frete grátis</span></div>
         <div className={styles.breadcrumb}>Home | Lançamento | Combo Plus | Frete Grátis</div>
         <div className={styles.productGrid}>

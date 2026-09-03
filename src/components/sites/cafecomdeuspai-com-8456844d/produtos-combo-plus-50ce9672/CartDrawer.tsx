@@ -7,10 +7,10 @@ import styles from "./CartDrawer.module.css";
 
 const IMAGE="/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/combo-main.webp";
 const PRICE=289.9;
-type Props={open:boolean;quantity:number;onClose:()=>void;onQuantityChange:(quantity:number)=>void;productName?:string;productImage?:string;unitPrice?:number};
+type Props={open:boolean;quantity:number;onClose:()=>void;onQuantityChange:(quantity:number)=>void;productName?:string;productImage?:string;unitPrice?:number;productSlug?:string};
 const money=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 
-export default function CartDrawer({open,quantity,onClose,onQuantityChange,productName="Combo Plus | Frete grátis",productImage=IMAGE,unitPrice=PRICE}:Props){
+export default function CartDrawer({open,quantity,onClose,onQuantityChange,productName="Combo Plus | Frete grátis",productImage=IMAGE,unitPrice=PRICE,productSlug="combo-plus"}:Props){
  const qty=Math.max(1,quantity), wasOpen=useRef(false);
  const [hasItem,setHasItem]=useState(quantity>0),[coupon,setCoupon]=useState("");
  const [couponStatus,setCouponStatus]=useState<"idle"|"valid"|"invalid">("idle");
@@ -31,7 +31,7 @@ export default function CartDrawer({open,quantity,onClose,onQuantityChange,produ
    </article>:<div className={styles.empty}><ShoppingBag aria-hidden="true" strokeWidth={1.3}/><h3>Sua sacola está vazia</h3><p>Adicione produtos para continuar sua compra.</p></div>}</div>
    <footer className={styles.footer}><div className={styles.summary}><span>Sub-total:</span><strong>{money.format(total)}</strong></div>
     <div className={styles.coupon}><label htmlFor="cart-coupon">CUPOM DE DESCONTO</label><div><input id="cart-coupon" value={coupon} onChange={e=>{setCoupon(e.target.value);setCouponStatus("idle")}} placeholder="Digite seu Cupom"/><button type="button" onClick={apply}>Aplicar</button></div>{couponStatus!=="idle"&&<p className={couponStatus==="valid"?styles.success:styles.error} role="status">{couponStatus==="valid"?"Cupom aplicado com sucesso!":"Cupom inválido."}</p>}</div>
-    <div className={styles.total}><span>Total:</span><strong>{money.format(total)}</strong></div>{hasItem?<Link href="/checkout" className={styles.checkout}>Finalizar compra</Link>:<span className={`${styles.checkout} ${styles.disabled}`}>Finalizar compra</span>}<button className={styles.continue} type="button" onClick={onClose}>Continuar comprando</button>
+    <div className={styles.total}><span>Total:</span><strong>{money.format(total)}</strong></div>{hasItem?<Link href={`/checkout?produto=${encodeURIComponent(productSlug)}`} className={styles.checkout}>Finalizar compra</Link>:<span className={`${styles.checkout} ${styles.disabled}`}>Finalizar compra</span>}<button className={styles.continue} type="button" onClick={onClose}>Continuar comprando</button>
    </footer>
   </aside>
  </div>

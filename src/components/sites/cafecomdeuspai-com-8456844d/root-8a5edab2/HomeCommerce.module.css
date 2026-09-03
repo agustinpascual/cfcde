@@ -59,3 +59,10 @@
   .rail { grid-auto-columns: 79%; }
   .portrait { min-height: 375px; }
 }
+
+.authorBanner{width:100%;overflow:hidden;background:#f5f2ee}
+.authorBanner img{display:block;width:100%;height:auto}
+.authorMobile{display:none!important}
+@media(max-width:760px){.authorDesktop{display:none!important}.authorMobile{display:block!important}}
+.subdued,.imageWrap{background:#fff}.imageWrap img{transform:scale(var(--product-zoom,1.06))}.card:hover .imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .025))}
+@media(max-width:760px){.rail{grid-auto-columns:82%}.imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .02))}.card:hover .imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .035))}}

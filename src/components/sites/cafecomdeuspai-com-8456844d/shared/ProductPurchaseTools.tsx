@@ -1,5 +1,6 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
 import { FormEvent, useState } from "react";
 import styles from "./ProductPurchaseTools.module.css";
 
@@ -14,16 +15,22 @@ export type ProductPurchaseProps = {
   onBuy: () => void;
 };
 
+type Entrega = { label: string; iso: string };
+
 type ShippingResult =
   | { status: "idle" }
   | { status: "error"; message: string }
-  | { status: "success"; pac: string; sedex: string };
+  | { status: "success"; postalCode: string; pac: Entrega; sedex: Entrega };
 
-function deliveryDate(days: number) {
+const LAST_CEP_KEY = "cdp-last-shipping-cep";
+const PAC_DIAS = 25;
+const SEDEX_DIAS = 13;
+
+function entrega(dias: number): Entrega {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + days);
-  return new Intl.DateTimeFormat("pt-BR").format(date);
+  date.setDate(date.getDate() + dias);
+  return { label: new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date), iso: date.toISOString().slice(0, 10) };
 }
 
 export function ShippingCalculator() {
@@ -39,21 +46,38 @@ export function ShippingCalculator() {
       return;
     }
 
+    try { localStorage.setItem(LAST_CEP_KEY, digits); } catch {}
+
     setResult({
       status: "success",
-      pac: deliveryDate(25),
-      sedex: deliveryDate(13),
+      postalCode: digits,
+      pac: entrega(PAC_DIAS),
+      sedex: entrega(SEDEX_DIAS),
     });
   }
 
   function updatePostalCode(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 8);
-    setPostalCode(digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits);
+    setPostalCode(digits);
     if (result.status !== "idle") setResult({ status: "idle" });
   }
 
+  if (result.status === "success") {
+    return <section className={`${styles.shipping} ${styles.shippingResult}`} aria-labelledby="shipping-result-title">
+      <div className={styles.resultHeader}><p id="shipping-result-title">Entregas para o CEP: <b>{result.postalCode}</b></p><button type="button" onClick={() => setResult({ status: "idle" })}>Alterar CEP</button></div>
+      <div className={styles.resultTracking}><TriangleAlert aria-hidden="true" /><span>O código de rastreio do seu pedido estará disponível em até 5 dias úteis na área do cliente em &quot;Detalhes do pedido&quot; &quot;Entrega&quot;</span></div>
+      <p className={styles.resultScope}>Envio a domicílio</p>
+      <ul className={styles.resultOptions}>
+        <li><span><b>Correios - PAC</b><small>Chega {result.pac.label}</small></span><strong>Grátis <s>R$20,32</s></strong></li>
+        <li><span><b>Correios - SEDEX</b><small>Chega {result.sedex.label}</small></span><strong>R$20,32</strong></li>
+      </ul>
+      <p className={styles.resultHoliday}>O prazo de entrega <b>não contabiliza feriados.</b></p>
+      <p className={styles.resultSuccess}>Sucesso! Você tem frete grátis</p>
+    </section>;
+  }
+
   return (
-    <section className={styles.shipping} aria-labelledby="shipping-title">
+    <section className={`${styles.shipping} ${styles.shippingCompact}`} aria-labelledby="shipping-title">
       <form onSubmit={calculate} noValidate>
         <label id="shipping-title" htmlFor="shipping-postal-code">Calcular frete</label>
         <div className={styles.shippingControls}>
@@ -72,13 +96,6 @@ export function ShippingCalculator() {
 
       <div id="shipping-feedback" className={styles.feedback} aria-live="polite">
         {result.status === "error" ? <p className={styles.error}>{result.message}</p> : null}
-        {result.status === "success" ? (
-          <div className={styles.shippingResult}>
-            <strong>Sucesso! Você tem frete grátis</strong>
-            <p><span>Correios - PAC</span><time dateTime={result.pac}>Entrega prevista: {result.pac}</time></p>
-            <p><span>Correios - SEDEX</span><time dateTime={result.sedex}>Entrega prevista: {result.sedex}</time></p>
-          </div>
-        ) : null}
       </div>
     </section>
   );
@@ -101,7 +118,7 @@ export function MobilePurchaseBar({
         <div className={styles.priceLine}>
           {originalPrice ? <del>{originalPrice}</del> : null}
           <strong>{price}</strong>
-          <span>{installment}</span>
+          <span>{installment.replace(/^4 de /, "4 x de ")}</span>
         </div>
         <small>Frete grátis</small>
       </div>

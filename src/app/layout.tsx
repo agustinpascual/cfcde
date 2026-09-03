@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Sans, Inter, Lato, Work_Sans } from "next/font/google";
 import { Suspense } from "react";
 import Rastreador from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
+import SplashScreen from "@/components/sites/cafecomdeuspai-com-8456844d/shared/SplashScreen";
 import { marca } from "@/components/storefront/brand";
 import "./globals.css";
 
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <body className={`${instrumentSans.variable} ${lato.variable} ${workSans.variable} ${inter.variable}`}>
         {children}
+        <SplashScreen />
         <Suspense fallback={null}><Rastreador /></Suspense>
       </body>
     </html>
