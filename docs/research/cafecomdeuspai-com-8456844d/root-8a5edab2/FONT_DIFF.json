@@ -1,0 +1,158 @@
+{
+  "original": {
+    "LANÇAMENTO": {
+      "tag": "H2",
+      "family": "\"Work Sans\", sans-serif",
+      "size": "14px",
+      "weight": "500",
+      "line": "14px",
+      "letter": "-0.7px",
+      "transform": "uppercase",
+      "color": "rgb(109, 109, 109)"
+    },
+    "IMPERDÍVEL": {
+      "tag": "A",
+      "family": "\"Work Sans\", sans-serif",
+      "size": "13px",
+      "weight": "500",
+      "line": "normal",
+      "letter": "normal",
+      "transform": "uppercase",
+      "color": "rgb(255, 255, 255)"
+    },
+    "Quer receber novidades?": {
+      "tag": "H2",
+      "family": "Inter, sans-serif",
+      "size": "28px",
+      "weight": "700",
+      "line": "normal",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(31, 31, 31)"
+    },
+    "Descubra cada detalhe em vídeo": {
+      "tag": "H2",
+      "family": "Inter, sans-serif",
+      "size": "24px",
+      "weight": "700",
+      "line": "normal",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(31, 31, 31)"
+    },
+    "Atendimento": {
+      "tag": "DIV",
+      "family": "Inter, sans-serif",
+      "size": "16px",
+      "weight": "500",
+      "line": "24px",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(31, 31, 31)"
+    },
+    "Dúvidas sobre seus pedidos?": {
+      "tag": "DIV",
+      "family": "Inter, sans-serif",
+      "size": "16px",
+      "weight": "500",
+      "line": "24px",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(31, 31, 31)"
+    },
+    "body": {
+      "family": "\"Work Sans\", sans-serif",
+      "size": "14px",
+      "weight": "400",
+      "line": "normal"
+    }
+  },
+  "clone": {
+    "LANÇAMENTO": {
+      "tag": "H2",
+      "family": "\"Work Sans\", \"Work Sans Fallback\", \"Work Sans\", sans-serif",
+      "size": "14px",
+      "weight": "500",
+      "line": "14px",
+      "letter": "-0.7px",
+      "transform": "uppercase",
+      "color": "rgb(109, 109, 109)"
+    },
+    "DESTAQUES": {
+      "tag": "H2",
+      "family": "\"Work Sans\", \"Work Sans Fallback\", \"Work Sans\", sans-serif",
+      "size": "14px",
+      "weight": "500",
+      "line": "14px",
+      "letter": "-0.7px",
+      "transform": "uppercase",
+      "color": "rgb(109, 109, 109)"
+    },
+    "IMPERDÍVEL": {
+      "tag": "H2",
+      "family": "\"Work Sans\", \"Work Sans Fallback\", \"Work Sans\", sans-serif",
+      "size": "14px",
+      "weight": "500",
+      "line": "14px",
+      "letter": "-0.7px",
+      "transform": "uppercase",
+      "color": "rgb(109, 109, 109)"
+    },
+    "Quer receber novidades?": {
+      "tag": "H2",
+      "family": "Inter, \"Inter Fallback\", Inter, sans-serif",
+      "size": "28px",
+      "weight": "700",
+      "line": "32.2px",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(21, 21, 21)"
+    },
+    "Descubra cada detalhe em vídeo": {
+      "tag": "H2",
+      "family": "Inter, \"Inter Fallback\", Inter, sans-serif",
+      "size": "28px",
+      "weight": "700",
+      "line": "32.2px",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(33, 33, 33)"
+    },
+    "Junior Rostirola": {
+      "tag": "H2",
+      "family": "\"Work Sans\", \"Work Sans Fallback\", \"Work Sans\", sans-serif",
+      "size": "24px",
+      "weight": "500",
+      "line": "28.8px",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(38, 34, 31)"
+    },
+    "Atendimento": {
+      "tag": "SUMMARY",
+      "family": "Inter, \"Inter Fallback\", Inter, sans-serif",
+      "size": "16px",
+      "weight": "500",
+      "line": "24px",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(20, 20, 20)"
+    },
+    "Dúvidas sobre seus pedidos?": {
+      "tag": "SUMMARY",
+      "family": "Inter, \"Inter Fallback\", Inter, sans-serif",
+      "size": "16px",
+      "weight": "500",
+      "line": "24px",
+      "letter": "normal",
+      "transform": "none",
+      "color": "rgb(20, 20, 20)"
+    },
+    "body": {
+      "family": "-apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "size": "13px",
+      "weight": "400",
+      "line": "18.59px"
+    }
+  }
+}

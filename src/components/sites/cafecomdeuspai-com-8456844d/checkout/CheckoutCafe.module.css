@@ -1,0 +1,80 @@
+.shell{min-height:100vh;background:#fff;color:#222;font-family:var(--font-inter),Inter,Arial,sans-serif}.logoHeader{height:150px;padding:22px 30px}.logoHeader a,.logoHeader img{display:block;width:92px;height:104px;object-fit:contain}.progress{position:relative;display:grid;grid-template-columns:repeat(3,1fr);max-width:1250px;margin:22px auto 62px}.progress:before{content:"";position:absolute;top:19px;left:8%;right:8%;height:1px;background:#999}.step{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;color:#777;font-size:20px;font-weight:400}.step span{display:grid;width:38px;height:38px;place-items:center;border:1.5px solid #999;border-radius:50%;background:#fff}.step svg{width:18px;height:18px;stroke-width:1.6}.step b{font-weight:400}.step.active{color:#161616}.step.active span{border-color:#111}.layout{display:grid;grid-template-columns:minmax(0,2.15fr) minmax(360px,.92fr);gap:82px;padding:0 30px 100px}.formColumn{max-width:1225px}.formColumn section{margin-bottom:54px}.formColumn h1,.formColumn h2{margin:0 0 22px;font-size:30px;font-weight:500;line-height:1.2}.input{width:100%;height:82px;padding:0 28px;border:1.5px solid #999;border-radius:5px;background:#fff;font:400 25px/1 var(--font-inter),Inter,sans-serif;outline:none}.input:focus{border-color:#111;box-shadow:0 0 0 1px #111}.checkbox{display:flex;align-items:center;gap:18px;margin-top:27px;color:#777;font-size:20px}.checkbox input{width:23px;height:23px;margin:0;accent-color:#111}.cepWrap{position:relative}.cepWrap a{position:absolute;top:50%;right:25px;color:#555;font-size:18px;text-decoration:none;transform:translateY(-50%)}.continue{display:block;width:500px;height:86px;margin:32px 0 0 auto;border:0;border-radius:4px;background:#000!important;color:#fff!important;font-size:28px;cursor:pointer}.error{margin:-20px 0 15px;color:#a12e2e;font-size:15px}.summary{padding-top:4px}.product{display:grid;grid-template-columns:128px 1fr auto;align-items:center;gap:18px;padding:0 0 20px;border-bottom:1px solid #ddd}.product img{width:128px;height:128px;object-fit:cover}.product>div:nth-child(2){font-size:25px;line-height:1.25}.productPrice{text-align:right}.productPrice span{display:block;color:#777;font-size:18px}.productPrice span b{color:#222}.productPrice strong{display:block;font-size:25px}.totals{padding:24px 0}.totals p{display:flex;justify-content:space-between;margin:0 0 25px;font-size:25px}.totals p:last-child{font-size:31px}.coupon>button{width:100%;min-height:58px;border:1.5px solid #222;border-radius:4px;background:#fff!important;color:#222!important;font-size:21px;text-decoration:underline;letter-spacing:.05em;cursor:pointer}.couponForm{display:grid;grid-template-columns:1fr 105px;gap:8px;margin-top:10px}.couponForm input{height:48px;padding:0 12px;border:1px solid #999}.couponForm button{border:0;background:#111!important;color:#fff!important}.couponForm small{grid-column:1/-1}.formColumn>.coupon{display:none}.mobileSummaryToggle{display:none}.payment>p{margin:-12px 0 30px;color:#777;font-size:17px}.payment>label{display:flex;min-height:86px;align-items:center;gap:18px;margin-bottom:12px;padding:18px 22px;border:1.5px solid #bbb;border-radius:5px;cursor:pointer}.payment>label.selected{border-color:#111;box-shadow:0 0 0 1px #111}.payment>label input{width:20px;height:20px;accent-color:#111}.payment>label span{display:flex;flex:1;flex-direction:column;gap:5px}.payment>label b{font-size:19px}.payment>label small{color:#777;font-size:14px}.payment>label>strong{font-size:19px}.payment>label>svg{width:27px}.back{margin-bottom:35px;border:0;background:none;color:#555;text-decoration:underline;cursor:pointer}.stopNotice{margin-top:25px;padding:16px;border-radius:4px;background:#f4f4f4;color:#666;font-size:14px}
+@media(max-width:800px){.shell{min-height:100vh;border:7px solid #183638}.logoHeader{height:151px;padding:18px 0;text-align:center}.logoHeader a,.logoHeader img{width:92px;height:104px;margin:auto}.mobileSummaryToggle{display:flex;width:100%;height:62px;align-items:center;justify-content:space-between;padding:0 22px;border:0;border-bottom:1px solid #ddd;background:#fff!important;font-size:18px}.mobileSummaryToggle span{display:flex;align-items:center;gap:12px}.mobileSummaryToggle svg{width:17px;transition:transform .2s}.mobileSummaryToggle .rotated{transform:rotate(180deg)}.progress{margin:23px 22px 34px}.progress:before{left:12%;right:12%;top:17px}.step{gap:6px;font-size:18px}.step span{width:36px;height:36px}.layout{display:flex;padding:0 30px 90px}.formColumn{width:100%}.summary{display:none}.summaryOpen{position:absolute;z-index:4;top:213px;right:7px;left:7px;display:block;padding:20px;background:#fff;border-bottom:1px solid #ddd;box-shadow:0 8px 20px rgba(0,0,0,.08)}.summaryOpen .product{grid-template-columns:70px 1fr auto}.summaryOpen .product img{width:70px;height:70px}.summaryOpen .product>div:nth-child(2),.summaryOpen .productPrice strong,.summaryOpen .totals p{font-size:14px}.summaryOpen .totals p:last-child{font-size:18px}.desktopCoupon{display:none}.formColumn>.coupon{display:block;margin:0 0 48px}.coupon>button{height:49px;font-size:18px}.formColumn section{margin-bottom:46px}.formColumn h1,.formColumn h2{margin-bottom:17px;font-size:25px}.input{height:69px;padding:0 22px;font-size:22px}.checkbox{gap:14px;margin-top:23px;font-size:17px}.checkbox input{width:19px;height:19px}.cepWrap a{right:17px;font-size:16px}.continue{width:100%;height:72px;margin-top:28px;font-size:23px}.payment>label{min-height:74px;padding:14px}.payment>label b{font-size:17px}}
+@media(max-width:420px){.layout{padding-right:18px;padding-left:18px}.logoHeader{height:145px}.progress{margin-right:12px;margin-left:12px}.step{font-size:15px}.coupon>button{font-size:15px}.input{font-size:18px}.cepWrap a{font-size:14px}.formColumn h1,.formColumn h2{font-size:23px}}
+
+/* The global button reset uses a more specific selector. Keep the checkout CTA at the reference size. */
+.continue{font-size:28px!important}
+@media(max-width:800px){.continue{font-size:23px!important}}
+
+/* Checkout uses CSS pixels; these proportions match the reference at normal browser zoom. */
+.progress{max-width:1120px;margin-top:12px;margin-bottom:48px}
+.progress:before{top:15px}
+.step{gap:6px;font-size:16px}
+.step span{width:31px;height:31px}
+.step svg{width:15px;height:15px}
+.layout{grid-template-columns:minmax(0,2.15fr) minmax(320px,.92fr);gap:58px;padding-bottom:70px}
+.formColumn h1,.formColumn h2{margin-bottom:17px;font-size:23px}
+.formColumn section{margin-bottom:40px}
+.input{height:60px;padding:0 20px;font-size:18px}
+.checkbox{gap:12px;margin-top:19px;font-size:15px}
+.checkbox input{width:18px;height:18px}
+.cepWrap a{right:18px;font-size:15px}
+.continue{width:420px;height:62px;margin-top:24px;font-size:20px!important}
+.product{grid-template-columns:96px 1fr auto;gap:14px}
+.product img{width:96px;height:96px}
+.product>div:nth-child(2){font-size:18px}
+.productPrice span{font-size:14px}
+.productPrice strong{font-size:18px}
+.totals{padding:19px 0}
+.totals p{margin-bottom:18px;font-size:18px}
+.totals p:last-child{font-size:23px}
+.coupon>button{min-height:46px;font-size:16px}
+
+@media(max-width:800px){
+  .logoHeader{height:126px;padding:14px 0}
+  .logoHeader a,.logoHeader img{width:76px;height:88px}
+  .mobileSummaryToggle{height:52px;padding:0 18px;font-size:15px}
+  .summaryOpen{top:178px}
+  .progress{margin:19px 17px 29px}
+  .progress:before{top:14px}
+  .step{font-size:15px}
+  .step span{width:30px;height:30px}
+  .layout{padding:0 24px 70px}
+  .formColumn>.coupon{margin-bottom:35px}
+  .coupon>button{height:43px;font-size:15px}
+  .formColumn section{margin-bottom:34px}
+  .formColumn h1,.formColumn h2{margin-bottom:14px;font-size:21px}
+  .input{height:54px;padding:0 17px;font-size:17px}
+  .checkbox{gap:11px;margin-top:18px;font-size:14px}
+  .checkbox input{width:17px;height:17px}
+  .cepWrap a{right:14px;font-size:13px}
+  .continue{width:100%;height:57px;margin-top:22px;font-size:18px!important}
+}
+
+@media(max-width:420px){
+  .shell{border-width:4px}
+  .logoHeader{height:112px}
+  .logoHeader a,.logoHeader img{width:68px;height:78px}
+  .mobileSummaryToggle{height:48px;padding:0 14px;font-size:13px}
+  .summaryOpen{top:164px;right:4px;left:4px}
+  .progress{margin:17px 8px 25px}
+  .step{font-size:13px}
+  .step span{width:28px;height:28px}
+  .progress:before{top:13px}
+  .layout{padding-right:16px;padding-left:16px}
+  .coupon>button{font-size:13px}
+  .formColumn h1,.formColumn h2{font-size:19px}
+  .input{height:51px;font-size:15px}
+  .checkbox{font-size:13px}
+  .continue{height:54px;font-size:17px!important}
+}
+
+.addressFields{display:grid;grid-template-columns:minmax(0,2fr) minmax(120px,.55fr);gap:12px;margin-top:14px}
+.contactFields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.addressFields .input,.contactFields .input{height:54px;font-size:16px}
+.contactFields .fullRow{grid-column:1/-1}
+.addressFields .street,.cepMessage{grid-column:1/-1}
+.cepMessage{min-height:18px;margin:0;color:#666;font-size:13px}
+.cepMessage:empty{display:none}
+.cepError{color:#a12e2e}
+@media(max-width:520px){.addressFields{grid-template-columns:1fr 110px;gap:10px}.contactFields{grid-template-columns:1fr;gap:10px}.addressFields .input,.contactFields .input{height:49px;font-size:14px}.addressFields .street,.contactFields .fullRow,.cepMessage{grid-column:1/-1}}

@@ -1,0 +1,54 @@
+.root{position:fixed;inset:0;z-index:10000;visibility:hidden;pointer-events:none;font-family:var(--font-work-sans),"Work Sans",sans-serif;transition:visibility 0s linear .3s}.root.open{visibility:visible;pointer-events:auto;transition-delay:0s}.overlay{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgb(0 0 0/55%);opacity:0;cursor:default;transition:opacity .3s ease}.open .overlay{opacity:1}.drawer{position:absolute;top:0;right:0;display:flex;width:min(738px,100vw);height:100dvh;flex-direction:column;color:#202020;background:#fff;border-top:3px solid #174c51;box-shadow:-12px 0 35px rgb(0 0 0/16%);transform:translateX(100%);transition:transform .3s ease}.open .drawer{transform:translateX(0)}
+.header{position:relative;display:flex;min-height:109px;align-items:center;justify-content:center;padding:0 32px;border-bottom:1px solid #dedede}.header h2{margin:0;font-size:36px;line-height:1;font-weight:700}.bag{position:absolute;left:32px;width:48px;height:48px}.iconButton{position:absolute;right:27px;display:grid;width:54px;height:54px;padding:0;place-items:center;border:0;border-radius:50%;color:#202020;background:transparent;cursor:pointer}.iconButton svg{width:48px;height:48px}.iconButton:hover,.remove:hover{background:#f3f3f3}
+.content{flex:1;min-height:0;overflow-y:auto;padding:31px 32px 0}.product{display:grid;grid-template-columns:200px minmax(0,1fr) 46px;gap:28px;align-items:start;padding-bottom:30px;border-bottom:1px solid #ddd}.imageWrap{position:relative;width:200px;height:190px;overflow:hidden;border-radius:0 0 16px 16px;background:#f5f5f5}.imageWrap img{object-fit:cover}.productInfo{min-width:0}.productInfo h3{margin:0 0 13px;font-size:28px;line-height:1.22;font-weight:400}.productInfo p{margin:0 0 19px;font-size:32px;line-height:1.1;font-weight:600}.productInfo label{display:block;margin-bottom:11px;font-size:25px;line-height:1;font-weight:600}.stepper{display:grid;width:160px;height:57px;grid-template-columns:48px 1fr 48px;align-items:center;border-radius:18px;background:#f5f5f5}.stepper button{display:grid;width:38px;height:38px;margin:auto;padding:0;place-items:center;border:0;border-radius:50%;color:#4e4e4e;background:#e5e5e5;cursor:pointer}.stepper button:hover{background:#d9d9d9}.stepper button svg{width:21px;height:21px}.stepper span{text-align:center;font-size:23px;font-weight:500}.remove{display:grid;width:46px;height:46px;padding:0;place-items:center;border:0;border-radius:50%;background:transparent;cursor:pointer}.remove svg{width:39px;height:39px}.empty{display:flex;height:100%;min-height:230px;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:#646464}.empty svg{width:65px;height:65px;margin-bottom:18px}.empty h3{margin:0 0 7px;font-size:27px;color:#202020}.empty p{margin:0;font-size:17px}
+.footer{flex:0 0 auto;padding:18px 32px 29px;background:#fff}.summary,.total{display:flex;align-items:center;justify-content:space-between;font-size:29px;line-height:1.25}.summary strong,.total strong{font-size:31px}.coupon{margin:24px 0 20px}.coupon>label{display:block;margin-bottom:10px;font-size:20px;line-height:1;font-weight:500}.coupon>div{display:grid;height:84px;grid-template-columns:minmax(0,1fr) 184px;overflow:hidden;border:1px solid #c7c7c7;border-radius:16px}.coupon input{min-width:0;padding:0 24px;border:0;outline:0;color:#202020;background:#fff;font:400 23px/1 var(--font-work-sans),"Work Sans",sans-serif}.coupon input::placeholder{color:#919191}.coupon>div button{border:0;border-left:1px solid #c7c7c7;background:#f6f6f6;font-size:23px;font-weight:600;cursor:pointer}.coupon>div button:hover{background:#ebebeb}.coupon p{margin:7px 4px 0;font-size:16px}.success{color:#26834a}.error{color:#b52e2e}.total{margin-bottom:22px}.checkout,.continue{display:flex;width:100%;height:64px;align-items:center;justify-content:center;border-radius:17px;font-size:27px;font-weight:700;text-decoration:none}.checkout{color:#fff!important;background:#202020}.checkout:hover{background:#353535}.checkout.disabled{opacity:.45;cursor:not-allowed}.continue{margin-top:15px;border:4px solid #202020;color:#202020;background:#fff;cursor:pointer}.continue:hover{background:#f3f3f3}
+@media(max-width:560px){.header{min-height:76px;padding:0 20px}.header h2{font-size:24px}.bag{left:20px;width:33px;height:33px}.iconButton{right:13px;width:42px;height:42px}.iconButton svg{width:32px;height:32px}.content{padding:20px 20px 0}.product{grid-template-columns:105px minmax(0,1fr) 34px;gap:13px;padding-bottom:20px}.imageWrap{width:105px;height:105px;border-radius:0 0 10px 10px}.productInfo h3{margin-bottom:8px;font-size:16px}.productInfo p{margin-bottom:11px;font-size:19px}.productInfo label{margin-bottom:7px;font-size:14px}.stepper{width:112px;height:38px;grid-template-columns:35px 1fr 35px;border-radius:12px}.stepper button{width:27px;height:27px}.stepper button svg{width:15px;height:15px}.stepper span{font-size:16px}.remove{width:34px;height:34px}.remove svg{width:27px;height:27px}.footer{padding:13px 20px 20px}.summary,.total{font-size:18px}.summary strong,.total strong{font-size:20px}.coupon{margin:14px 0}.coupon>label{margin-bottom:7px;font-size:13px}.coupon>div{height:52px;grid-template-columns:minmax(0,1fr) 105px;border-radius:11px}.coupon input{padding:0 13px;font-size:15px}.coupon>div button{font-size:15px}.coupon p{font-size:12px}.total{margin-bottom:13px}.checkout,.continue{height:49px;border-radius:12px;font-size:17px}.continue{margin-top:9px;border-width:3px}.empty h3{font-size:22px}.empty p{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.root,.overlay,.drawer{transition-duration:1ms}}
+
+/* Win over the storefront's global button reset without affecting other routes. */
+.footer .continue{display:flex;width:100%;height:64px;align-items:center;justify-content:center;margin-top:15px;border:4px solid #202020;border-radius:17px;color:#202020;background:#fff;font-size:27px;font-weight:700;text-decoration:none;cursor:pointer}
+.footer .continue:hover{background:#f3f3f3}
+.header .iconButton:hover{background:transparent}
+@media(min-width:561px){.footer{height:616px;padding-top:18px}.footer .coupon{margin:42px 0 0}.footer .total{margin-top:107px;margin-bottom:46px}.footer .continue{margin-top:33px}}
+@media(max-width:560px){.footer .continue{height:49px;margin-top:9px;border-width:3px;border-radius:12px;font-size:17px}}
+
+.quantityRow{display:flex;align-items:center;gap:16px}
+.quantityRow .stepper{flex:0 0 auto}
+.root .overlay{background:rgb(0 0 0/55%)}
+
+@media(max-width:560px){
+  .drawer{width:80vw;min-width:260px}
+  .header{min-height:44px;padding:0 15px}
+  .header h2{font-size:14px}
+  .bag{left:15px;width:21px;height:21px}
+  .iconButton{right:8px;width:32px;height:32px}
+  .iconButton svg{width:22px;height:22px}
+  .content{padding:7px 15px 0}
+  .product{grid-template-columns:76px minmax(0,1fr) 23px;gap:7px;padding-bottom:9px}
+  .imageWrap{width:76px;height:76px;border-radius:7px}
+  .productInfo h3{overflow:hidden;margin:0 0 8px;font-size:11px;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+  .productInfo p{margin:0 0 9px;font-size:13px}
+  .quantityRow{justify-content:space-between;gap:5px}
+  .productInfo label{margin:0;font-size:9px;font-weight:400;white-space:nowrap}
+  .stepper{width:61px;height:23px;grid-template-columns:20px 1fr 20px;border-radius:7px}
+  .stepper button{width:14px;height:14px}
+  .stepper button svg{width:9px;height:9px}
+  .stepper span{font-size:9px}
+  .remove{width:23px;height:23px}
+  .remove svg{width:17px;height:17px}
+  .footer{padding:10px 15px 14px}
+  .summary,.total{font-size:11px}
+  .summary strong,.total strong{font-size:12px}
+  .coupon{margin:15px 0 37px}
+  .coupon>label{margin-bottom:7px;font-size:7px}
+  .coupon>div{height:33px;grid-template-columns:minmax(0,1fr) 69px;border-radius:0}
+  .coupon input{padding:0 10px;font-size:10px}
+  .coupon>div button{font-size:9px;font-weight:400}
+  .coupon p{font-size:8px}
+  .total{margin-bottom:17px}
+  .checkout,.footer .continue{height:26px;border-radius:5px;font-size:10px}
+  .footer .continue{margin-top:10px;border-width:1.5px}
+  .empty svg{width:38px;height:38px}
+  .empty h3{font-size:15px}
+  .empty p{font-size:10px}
+}

@@ -1,0 +1,19 @@
+.section {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition: opacity .8s ease, transform .8s cubic-bezier(.22, 1, .36, 1);
+  will-change: opacity, transform;
+}
+.item {
+  opacity: 0;
+  transform: scale(.95) translate3d(0, 10px, 0);
+  transition: opacity .55s ease var(--reveal-delay, 0ms), transform .7s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .section,.item { opacity:1; transform:none; transition:none; }
+}

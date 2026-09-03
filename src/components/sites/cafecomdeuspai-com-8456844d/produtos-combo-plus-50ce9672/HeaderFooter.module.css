@@ -1,0 +1,94 @@
+.promoBar { height:40px; display:flex; align-items:center; justify-content:center; padding:0 20px; background:#050505; color:#fff; font-size:11px; font-weight:700; letter-spacing:.06em; text-align:center; text-transform:uppercase; }
+.header { position:relative; z-index:30; width:100%; background:#fff; border-bottom:1px solid #ededed; color:#080808; }
+.headerInner { height:72px; max-width:1300px; margin:0 auto; padding:0 18px; display:flex; align-items:center; gap:24px; }
+.logoLink { width:57px; height:58px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; overflow:hidden; }
+.logo { width:51px; height:57px; object-fit:contain; }
+.desktopNav { display:flex; flex:1 1 auto; align-items:center; justify-content:center; gap:clamp(13px,1.35vw,22px); white-space:nowrap; }
+.desktopNav a { color:#111; font-size:11px; font-weight:600; letter-spacing:.025em; text-decoration:none; text-transform:uppercase; transition:opacity .2s; }
+.desktopNav a:hover { opacity:.55; }
+.utilities { display:flex; align-items:center; gap:5px; flex:0 0 auto; }
+.searchForm { position:relative; width:188px; height:36px; }
+.searchForm input { width:100%; height:100%; padding:0 39px 0 14px; border:1px solid #dedede; border-radius:19px; background:#fafafa; color:#111; font:inherit; font-size:11px; outline:none; }
+.searchForm input:focus { border-color:#888; background:#fff; }
+.searchForm button { position:absolute; top:0; right:3px; width:34px; height:36px; display:grid; place-items:center; border:0; background:transparent; cursor:pointer; }
+.searchForm svg { width:17px; height:17px; stroke-width:1.7; }
+.iconButton { position:relative; width:36px; height:36px; padding:0; border:0; border-radius:50%; display:grid; place-items:center; color:#080808; background:transparent; cursor:pointer; transition:background .2s; }
+.iconButton:hover { background:#f2f2f2; }
+.iconButton svg { width:21px; height:21px; stroke-width:1.65; }
+.cartCount { position:absolute; top:-1px; right:-1px; min-width:16px; height:16px; padding:0 4px; display:grid; place-items:center; border-radius:9px; background:#111; color:#fff; font-size:9px; }
+.menuButton,.mobileSearchButton { display:none; }
+.mobileSearch { display:none; }
+.menuOverlay { display:none; }
+.footer { width:100%; padding:52px 20px 20px; color:#141414; background:#fff; }
+.footerMain { max-width:1300px; margin:0 auto; padding:42px 40px; display:grid; grid-template-columns:1.05fr repeat(4,1fr); gap:28px; background:#f6f6f3; border-radius:8px; }
+.footerBrand { display:flex; flex-direction:column; align-items:flex-start; gap:24px; }
+.footerBrand>a { width:82px; height:92px; overflow:hidden; display:block; }
+.footerBrand img { width:82px; height:92px; object-fit:contain; }
+.socials { display:flex; gap:8px; }
+.socials a { width:36px; height:36px; display:grid; place-items:center; border-radius:50%; color:#111; background:#fff; }
+.socials svg { width:17px; height:17px; stroke-width:1.7; }
+.footerColumn { min-width:0; }
+.footerColumn summary { list-style:none; font-size:12px; font-weight:700; line-height:1.35; text-transform:none; cursor:default; }
+.footerColumn summary::-webkit-details-marker { display:none; }
+.footerColumn summary svg { display:none; }
+.footerColumn ul { margin:18px 0 0; padding:0; list-style:none; }
+.footerColumn li+li { margin-top:10px; }
+.footerColumn a,.helpText { color:#555; font-size:11px; line-height:1.55; text-decoration:none; }
+.footerColumn a:hover { color:#000; text-decoration:underline; }
+.footerColumn:not([open])>ul,.footerColumn:not([open])>.helpText { display:block; }
+.helpText { margin-top:18px; }
+.helpText p { margin:0 0 12px; }
+.trackingLink { display:inline-block; color:#111!important; font-weight:700; text-decoration:underline!important; }
+.legalStrip { max-width:1300px; margin:0 auto; padding:25px 20px 0; display:grid; grid-template-columns:1fr auto; align-items:start; gap:22px 50px; }
+.paymentBlock>strong,.secureBlock>strong { display:block; margin-bottom:10px; font-size:11px; }
+.payments { display:flex; flex-wrap:wrap; gap:6px; }
+.payments span { min-width:44px; height:25px; padding:0 8px; display:grid; place-items:center; border:1px solid #ddd; border-radius:3px; color:#333; background:#fff; font-size:8px; font-weight:700; }
+.payments span{width:48px;padding:2px 5px}
+.payments img{display:block;width:100%;height:100%;object-fit:contain}
+.secureBlock span { display:flex; align-items:center; gap:7px; color:#555; font-size:10px; }
+.secureBlock svg { width:25px; height:25px; }
+.secureSeal{display:block;width:79px;height:30px;object-fit:contain}
+.copyright { grid-column:1/-1; margin:2px 0 0; color:#777; font-size:9px; line-height:1.65; text-align:center; }
+@media (max-width: 1100px) and (min-width: 769px) { .headerInner{gap:12px}.desktopNav{gap:10px}.desktopNav a{font-size:9px}.searchForm{width:145px}.footerMain{padding:36px 28px;gap:18px} }
+@media (max-width: 768px) {
+  .promoBar { height:34px; padding:0 12px; font-size:9px; }
+  .headerInner { position:relative; height:58px; padding:0 12px; justify-content:space-between; gap:5px; }
+  .menuButton,.mobileSearchButton { display:grid; }
+  .desktopNav,.searchForm,.accountButton { display:none; }
+  .logoLink { position:absolute; left:50%; top:50%; width:36px; height:44px; transform:translate(-50%,-50%); }
+  .logo { width:34px; height:40px; }
+  .utilities { margin-left:auto; }
+  .mobileSearch { height:54px; padding:8px 13px; display:flex; border-top:1px solid #eee; background:#fff; }
+  .mobileSearch input { flex:1; min-width:0; padding:0 13px; border:1px solid #ddd; border-right:0; border-radius:3px 0 0 3px; outline:none; font-size:12px; }
+  .mobileSearch button { width:43px; border:1px solid #ddd; border-left:0; background:#fff; }
+  .mobileSearch svg { width:18px; }
+  .menuOverlay { position:fixed; inset:0; z-index:60; display:block; visibility:hidden; background:rgba(0,0,0,.45); opacity:0; transition:opacity .22s,visibility .22s; }
+  .menuOverlayOpen { visibility:visible; opacity:1; }
+  .mobileMenu { width:min(84vw,340px); height:100%; padding:0 20px; background:#fff; transform:translateX(-102%); transition:transform .25s ease; }
+  .menuOverlayOpen .mobileMenu { transform:translateX(0); }
+  .mobileMenuTop { height:62px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e8e8e8; font-size:13px; font-weight:700; text-transform:uppercase; }
+  .mobileMenu nav { display:flex; flex-direction:column; }
+  .mobileMenu nav a { min-height:49px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #ededed; color:#111; font-size:12px; font-weight:600; text-decoration:none; text-transform:uppercase; }
+  .mobileMenu nav svg { width:14px; height:14px; transform:rotate(-90deg); }
+  .footer { padding:30px 12px 14px; }
+  .footerMain { padding:28px 18px 14px; display:block; border-radius:8px; }
+  .footerBrand { align-items:center; gap:16px; padding-bottom:24px; }
+  .footerBrand>a,.footerBrand img { width:66px; height:75px; }
+  .footerColumn { border-top:1px solid #dededb; }
+  .footerColumn summary { min-height:50px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+  .footerColumn summary svg { width:15px; height:15px; display:block; transition:transform .2s; }
+  .footerColumn[open] summary svg { transform:rotate(180deg); }
+  .footerColumn ul,.helpText { margin:0; padding:0 0 16px; }
+  .footerColumn:not([open])>ul,.footerColumn:not([open])>.helpText { display:none; }
+  .legalStrip { padding:22px 8px 0; display:flex; flex-direction:column; align-items:center; gap:22px; }
+  .paymentBlock,.secureBlock { width:100%; text-align:center; }
+  .payments,.secureBlock span { justify-content:center; }
+  .secureSeal{margin:0 auto}
+  .copyright { margin:0; font-size:8px; }
+}
+
+.promoBar,.header,.mobileMenu{font-family:var(--font-work-sans),"Work Sans",sans-serif}
+.footer{font-family:var(--font-inter),Inter,sans-serif}
+.footerColumn summary{font-size:16px;font-weight:500;line-height:24px}
+.footerColumn li,.helpText{font-size:14px;line-height:21px}
+@media(max-width:767px){.footerColumn summary{font-size:13px;line-height:20px}.footerColumn li,.helpText{font-size:12px;line-height:18px}}

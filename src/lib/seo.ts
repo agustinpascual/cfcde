@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { marca } from "@/components/storefront/brand";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bella-gummy.vercel.app";
-const OG_IMG = "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images/og-compartilhamento.png";
+/* Defina NEXT_PUBLIC_SITE_URL no ambiente quando o domínio estiver apontado. */
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://exemplo.com.br";
 
 /* Metadados de compartilhamento por página.
    Sem isto o Next herda o openGraph do layout inteiro, e toda página era
@@ -17,17 +18,17 @@ export function metadadosPagina({ titulo, descricao, caminho }: {
     openGraph: {
       type: "website",
       locale: "pt_BR",
-      siteName: "Bela Blue Beauty",
+      siteName: marca.nome,
       title: titulo,
       description: descricao,
       url,
-      images: [{ url: OG_IMG, width: 1200, height: 630, type: "image/png", alt: titulo }],
+      /* Sem imagem de compartilhamento ainda — adicione um PNG 1200x630
+         em /public e referencie aqui. */
     },
     twitter: {
       card: "summary_large_image",
       title: titulo,
       description: descricao,
-      images: [OG_IMG],
     },
   };
 }

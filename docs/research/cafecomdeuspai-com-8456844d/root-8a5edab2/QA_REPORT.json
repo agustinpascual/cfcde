@@ -1,0 +1,14 @@
+{
+  "clone-desktop": {
+    "cart": true,
+    "heroControls": 0,
+    "cookieDismissed": true,
+    "productLinks": 2
+  },
+  "clone-mobile": {
+    "cart": true,
+    "heroControls": 0,
+    "cookieDismissed": true,
+    "productLinks": 2
+  }
+}

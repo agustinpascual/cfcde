@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Instrument_Sans, Lato } from "next/font/google";
+import { Instrument_Sans, Inter, Lato, Work_Sans } from "next/font/google";
 import { Suspense } from "react";
 import Rastreador from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
+import { marca } from "@/components/storefront/brand";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -18,32 +19,24 @@ const lato = Lato({
   display: "swap",
 });
 
-/* Domínio público. Serve de base para URLs absolutas (Open Graph, canonical).
-   É secundário até o domínio próprio ser apontado — troque a env quando for. */
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://bella-gummy.vercel.app";
-/* 1200x630 é a proporção que WhatsApp, Facebook e LinkedIn esperam.
-   Precisa ser PNG de verdade: a imagem anterior era WebP com extensão .png
-   e, com nosniff ligado, os crawlers recusavam e o preview saía sem imagem. */
-const OG_IMG = "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images/og-compartilhamento.png";
+const workSans = Work_Sans({ variable: "--font-work-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
 
+/* Domínio público. Serve de base para URLs absolutas (Open Graph, canonical).
+   Aponte NEXT_PUBLIC_SITE_URL quando o domínio próprio estiver no ar. */
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://exemplo.com.br";
+
+/* Preencha com os dados da marca antes de publicar.
+   O nome vem de components/storefront/brand.ts — fonte única. */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
-    default: "Gummys - Suplemento Alimentar em goma",
-    template: "%s | Bela Blue Beauty",
+    default: marca.nome,
+    template: `%s | ${marca.nome}`,
   },
-  description:
-    "Bela Gummy: suplemento alimentar em gomas mastigáveis da Bela Blue Beauty. Prático de tomar, sem água e sem preparo. Kits com até 44% de desconto, 5% off no PIX e frete grátis para todo o Brasil.",
-  applicationName: "Bela Blue Beauty",
-  keywords: [
-    "suplemento alimentar em goma",
-    "gummy suplemento",
-    "goma mastigável suplemento",
-    "suplemento em gomas",
-    "Bela Blue Beauty",
-    "comprar suplemento em goma",
-  ],
-  authors: [{ name: "Bela Blue Beauty" }],
+  description: marca.tagline,
+  applicationName: marca.nome,
+  authors: [{ name: marca.nome }],
   alternates: { canonical: "/" },
   robots: {
     index: true,
@@ -54,28 +47,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     url: "/",
-    siteName: "Bela Blue Beauty",
-    title: "Gummys - Suplemento Alimentar em goma",
-    description:
-      "Suplemento alimentar em gomas mastigáveis. Sem água, sem preparo. Kits com até 44% de desconto e frete grátis para todo o Brasil.",
-    images: [{ url: OG_IMG, width: 1200, height: 630, type: "image/png", alt: "Bela Gummy — suplemento alimentar em gomas" }],
+    siteName: marca.nome,
+    title: marca.nome,
+    description: marca.tagline,
+    /* Adicione um PNG 1200x630 em /public e referencie aqui. */
   },
   twitter: {
     card: "summary_large_image",
-    title: "Gummys - Suplemento Alimentar em goma",
-    description: "Suplemento alimentar em gomas mastigáveis, com kits de até 44% de desconto.",
-    images: [OG_IMG],
+    title: marca.nome,
+    description: marca.tagline,
   },
-  icons: {
-    icon: "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images/favicon-source.png",
-  },
+  /* Usa src/app/favicon.ico até você fornecer o ícone da marca. */
   formatDetection: { telephone: false },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className={`${instrumentSans.variable} ${lato.variable}`}>
+      <body className={`${instrumentSans.variable} ${lato.variable} ${workSans.variable} ${inter.variable}`}>
         {children}
         <Suspense fallback={null}><Rastreador /></Suspense>
       </body>

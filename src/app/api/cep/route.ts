@@ -1,4 +1,8 @@
 type ViaCepResponse = {
+  cep?: string;
+  logradouro?: string;
+  complemento?: string;
+  bairro?: string;
   localidade?: string;
   uf?: string;
   erro?: boolean;
@@ -27,7 +31,14 @@ export async function GET(request: Request) {
       return Response.json({ error: "CEP não encontrado." }, { status: 404 });
     }
 
-    return Response.json({ city: data.localidade, state: data.uf });
+    return Response.json({
+      postalCode: data.cep ?? cep,
+      street: data.logradouro ?? "",
+      complement: data.complemento ?? "",
+      neighborhood: data.bairro ?? "",
+      city: data.localidade,
+      state: data.uf,
+    });
   } catch {
     return Response.json(
       { error: "Serviço de CEP temporariamente indisponível. Tente novamente." },

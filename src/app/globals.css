@@ -1,6 +1,26 @@
 @import "tailwindcss";
 
 /* ============================================================
+   STOREFRONT (--sf-*) — tokens neutros da vitrine nova.
+   Troque os valores aqui para aplicar a identidade da marca.
+   Independente dos --bb-* abaixo, que ainda servem as rotas antigas.
+   ============================================================ */
+:root {
+  --sf-ink: #141414;          /* texto principal */
+  --sf-ink-2: #4a4a4a;        /* texto secundário */
+  --sf-muted: #8a8a8a;        /* texto de apoio */
+  --sf-line: #e4e2df;         /* bordas */
+  --sf-surface: #ffffff;      /* fundo de cards */
+  --sf-surface-2: #f6f4f1;    /* fundo de seções alternadas */
+  --sf-accent: #2b6b62;       /* cor de marca — botões e destaques */
+  --sf-accent-ink: #ffffff;   /* texto sobre o accent */
+  --sf-sale: #b3392f;         /* preço promocional / urgência */
+
+  --sf-container: 1280px;
+  --sf-radius: 10px;
+}
+
+/* ============================================================
    Tokens extraídos de https://www.belabluebeauty.com.br/bela-power-black/
    ============================================================ */
 :root {
@@ -50,12 +70,27 @@ body {
   color: var(--bb-text);
   background: #fff;
 }
-h1, h2, h3, h4, h5, h6, p, ul, ol, figure { margin: 0; }
-ul, ol { padding: 0; list-style: none; }
-a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+/* Reset legado das rotas antigas (--bb-*). Fica fora de @layer de propósito:
+   é assim que ele sempre venceu os utilitários do Tailwind aqui.
+   O :not(.sf-root *) isenta a vitrine nova, que tem baseline próprio abaixo. */
+h1:not(.sf-root *), h2:not(.sf-root *), h3:not(.sf-root *),
+h4:not(.sf-root *), h5:not(.sf-root *), h6:not(.sf-root *),
+p:not(.sf-root *), ul:not(.sf-root *), ol:not(.sf-root *),
+figure:not(.sf-root *) { margin: 0; }
+ul:not(.sf-root *), ol:not(.sf-root *) { padding: 0; list-style: none; }
+a:not(.sf-root *) { color: inherit; text-decoration: none; }
+button:not(.sf-root *) { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 input { font: inherit; }
 img { max-width: 100%; }
+
+/* Baseline da vitrine. Dentro de @layer base, então os utilitários do
+   Tailwind (layer utilities) ganham — que é o comportamento esperado. */
+@layer base {
+  .sf-root :is(h1, h2, h3, h4, h5, h6, p, ul, ol, figure) { margin: 0; }
+  .sf-root :is(ul, ol) { padding: 0; list-style: none; }
+  .sf-root a { color: inherit; text-decoration: none; }
+  .sf-root button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+}
 
 /* container do site: 1440 na viewport desktop, max 1720 */
 .bb-container { width: 100%; max-width: 1720px; margin: 0 auto; padding: 0 20px; }
