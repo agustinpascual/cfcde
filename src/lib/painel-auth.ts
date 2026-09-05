@@ -3,9 +3,12 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 
 /* Proteção do painel por e-mail + senha em variáveis de ambiente.
-   O cookie guarda um HMAC do e-mail + prazo de validade — nunca a senha.
-   Simples de operar; para vários usuários, o caminho é o Supabase Auth. */
-const COOKIE = "bb_painel";
+   NÃO há tabela de usuários: o admin é o par PAINEL_EMAIL/PAINEL_SENHA, e o
+   cookie guarda um HMAC do e-mail + prazo de validade — nunca a senha.
+   Trocar a senha é trocar a variável e reiniciar; trocar o e-mail invalida as
+   sessões abertas. Para vários usuários com senha no banco, o caminho é o
+   Supabase Auth. */
+const COOKIE = "cdp_painel";
 const DURACAO = 60 * 60 * 12; // 12 horas
 
 const segredo = () => process.env.PAINEL_SENHA ?? "";

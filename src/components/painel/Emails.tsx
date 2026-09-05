@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import e from "./emails.module.css";
+import { marca } from "@/components/storefront/brand";
 
 type Contato = { email: string; nome: string | null; origem: string; inscrito: boolean };
 type Campanha = {
@@ -20,7 +21,7 @@ const MODELO = `<table role="presentation" width="100%" cellpadding="0" cellspac
       <!-- cabeçalho: a faixa navy está assada na imagem, porque cliente de
            e-mail não tem filter e alguns invertem fundo no tema escuro -->
       <tr><td align="center" style="background:#0b2860;font-size:0;line-height:0">
-        <img src="${LOGO}" width="600" alt="Bela Blue Beauty" style="display:block;border:0;width:100%;max-width:600px;height:auto">
+        <img src="${LOGO}" width="600" alt="${marca.nome}" style="display:block;border:0;width:100%;max-width:600px;height:auto">
       </td></tr>
 
       <!-- faixa dourada -->
@@ -68,7 +69,7 @@ const MODELO = `<table role="presentation" width="100%" cellpadding="0" cellspac
 
       <!-- rodapé -->
       <tr><td style="background:#0b2860;padding:26px 34px">
-        <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#ffffff">Bela Blue Beauty</p>
+        <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#ffffff">${marca.nome}</p>
         <p style="margin:0 0 14px;font-size:12px;line-height:1.7;color:#a6b6d5">
           Você recebe este e-mail porque comprou ou se cadastrou na nossa loja.
         </p>

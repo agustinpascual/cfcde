@@ -17,7 +17,7 @@ const NOTAS: Record<ChaveConfig, string> = {
   PINPAY_TOKEN: "Chave secreta sk_live_ ou sk_test_ da PinPay",
   PINPAY_WEBHOOK_SECRET: "Signing Secret whsec_ do endpoint cadastrado",
   RESEND_API_KEY: "Chave re_ da Resend",
-  RESEND_REMETENTE: 'Remetente verificado, ex.: "Bela Blue <pedidos@seudominio.com.br>"',
+  RESEND_REMETENTE: 'Remetente verificado, ex.: "Café com Deus Pai <pedidos@seudominio.com.br>"',
   ZAPI_INSTANCIA: "ID da instância na Z-API",
   ZAPI_TOKEN: "Token da instância",
   ZAPI_CLIENT_TOKEN: "Token de segurança da conta Z-API",

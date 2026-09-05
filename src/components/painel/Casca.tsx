@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IconeBanco, IconeChat, IconeEmail, IconePedidos, IconePlug, IconeVendas, IconeVivo } from "./Icones";
+import { marca } from "@/components/storefront/brand";
 import s from "./painel.module.css";
 
 const ITENS = [
@@ -23,7 +24,7 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
     <div className={s.app}>
       <nav className={s.lateral}>
         <div className={s.marca}>
-          <p className={s.marcaNome}>Bela Blue Beauty</p>
+          <p className={s.marcaNome}>{marca.nome}</p>
           <p className={s.marcaSub}>Painel administrativo</p>
         </div>
 

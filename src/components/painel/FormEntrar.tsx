@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { marca } from "@/components/storefront/brand";
 import s from "./entrar.module.css";
 
 export default function FormEntrar() {
@@ -33,7 +34,7 @@ export default function FormEntrar() {
   return (
     <div className={s.tela}>
       <form className={s.caixa} onSubmit={entrar}>
-        <p className={s.marca}>Bela Blue Beauty</p>
+        <p className={s.marca}>{marca.nome}</p>
         <h1 className={s.titulo}>Painel administrativo</h1>
         <p className={s.sub}>Acesso restrito.</p>
 
