@@ -6,12 +6,12 @@
    ============================================================ */
 
 export const marca = {
-  nome: "SUA MARCA",
-  /* Sem arquivo de logo ainda: o Header desenha o nome como wordmark.
-     Quando tiver o SVG/PNG, aponte aqui e troque no Header. */
-  logo: null as string | null,
-  tagline: "Um subtítulo curto sobre o que a loja vende",
-  whatsapp: "5500000000000",
+  nome: "Café com Deus Pai",
+  /* O Header da vitrine desenha o nome como wordmark; as telas da loja usam
+     o PNG abaixo (mesmo arquivo do favicon e dos ícones do app). */
+  logo: "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png" as string | null,
+  tagline: "Devocionais, canecas, cafés e combos para começar o dia com Deus.",
+  whatsapp: "554732249292",
 };
 
 export const avisoTopo = "Espaço para o aviso do topo — frete, cupom ou prazo";
