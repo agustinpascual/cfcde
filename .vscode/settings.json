@@ -1,0 +1,34 @@
+{
+  // O watcher do macOS (fsevents) e o indexador do TS não têm nada a fazer
+  // dentro de build, dependências ou mídia. Sem estas exclusões o VS Code
+  // vigiava os ~4.000 arquivos do .next e os 908 MB de node_modules.
+  "files.watcherExclude": {
+    "**/.next/**": true,
+    "**/.open-next/**": true,
+    "**/.wrangler/**": true,
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/public/**/videos/**": true,
+    "**/docs/design-references/**": true
+  },
+  "search.exclude": {
+    "**/.next": true,
+    "**/.open-next": true,
+    "**/.wrangler": true,
+    "**/node_modules": true,
+    "**/package-lock.json": true,
+    "**/public/sites/**": true,
+    "**/docs/design-references": true
+  },
+  "files.exclude": {
+    "**/.DS_Store": true
+  },
+  // O tsserver carregava o projeto inteiro em memória sem teto útil.
+  "typescript.tsserver.maxTsServerMemory": 2048,
+  "typescript.tsserver.watchOptions": {
+    "watchFile": "useFsEventsOnParentDirectory",
+    "watchDirectory": "useFsEvents"
+  },
+  "typescript.disableAutomaticTypeAcquisition": true
+}
