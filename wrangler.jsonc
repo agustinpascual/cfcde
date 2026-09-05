@@ -1,0 +1,47 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// O nome PRECISA ser o mesmo do Worker no painel da Cloudflare (cfcde).
+	// Sem este arquivo versionado o `wrangler deploy` gera um wrangler.jsonc
+	// na hora, tirando o nome do "name" do package.json ("scaffold"), que não
+	// existe na conta — era esse o erro 10143 do deploy.
+	"name": "cfcde",
+	// Conta de destino, fixada de propósito. Sem isto o wrangler cai na conta
+	// do token OAuth que estiver guardado em ~/Library/Preferences/.wrangler,
+	// e o deploy vai parar na conta errada devolvendo "Authentication error
+	// [code: 10000]" — que parece falta de permissão, mas é conta trocada.
+	"account_id": "62cd8cd3c790a5283bcec7d955ae1b5c",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-09-03",
+	// nodejs_compat: as rotas usam node:crypto.
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	// Otimização de imagens do next/image.
+	"images": {
+		"binding": "IMAGES"
+	},
+	// Domínio próprio. custom_domain faz o wrangler criar/apontar o registro
+	// DNS na zona no momento do deploy — hoje o apex devolve 404 do próprio
+	// Cloudflare porque não existe Worker nenhum atendendo por ele.
+	// A zona precisa estar nesta mesma conta; se não estiver, o deploy avisa.
+	// Domínio próprio. `custom_domain: true` faz o wrangler criar o registro
+	// DNS na zona durante o deploy. A zona cafecomdeusepai.com vive nesta
+	// mesma conta (62cd8cd3…), que é o que faz isto funcionar — se um dia o
+	// deploy falhar aqui, conferir se a zona não saiu da conta.
+	"routes": [
+		{ "pattern": "cafecomdeusepai.com", "custom_domain": true },
+		{ "pattern": "www.cafecomdeusepai.com", "custom_domain": true }
+	],
+
+	"observability": {
+		"enabled": true
+	}
+	// Sem "services"/WORKER_SELF_REFERENCE de propósito: o binding só serve para
+	// ISR / revalidação sob demanda (fila e cache incremental), e este site não
+	// usa nada disso — não há revalidate, revalidateTag nem revalidatePath.
+	// Se um dia entrar ISR, ligue o cache em R2 conforme
+	// https://opennext.js.org/cloudflare/caching e adicione:
+	//   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "cfcde" }]
+}

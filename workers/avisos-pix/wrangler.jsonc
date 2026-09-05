@@ -1,0 +1,24 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "cfcde-avisos-pix",
+	"main": "index.ts",
+	"compatibility_date": "2026-09-03",
+
+	// 12h UTC = 9h de Brasília — o mesmo horário que estava no vercel.json.
+	"triggers": {
+		"crons": ["0 12 * * *"]
+	},
+
+	"vars": {
+		// Sem barra no fim.
+		"SITE_URL": "https://cafecomdeusepai.com"
+	},
+
+	// CRON_SECRET não fica aqui — é secret:
+	//   npx wrangler secret put CRON_SECRET --name cfcde-avisos-pix
+	// e o MESMO valor precisa estar no Worker do site.
+
+	"observability": {
+		"enabled": true
+	}
+}
