@@ -77,12 +77,17 @@ export default function HomeVideoStories() {
               if (element) cardVideos.current.set(index, element);
               else cardVideos.current.delete(index);
             }}
-            src={videos[index].src}
+            /* Só o card central e o próximo recebem src. Os outros três
+               ficam no poster: sem src o navegador não abre conexão nem
+               monta decodificador de vídeo, e a vitrine passa de cinco
+               vídeos vivos para dois. Quem clica num card lateral abre o
+               story, que tem o próprio <video> com o src certo. */
+            src={offset >= 0 && offset <= 1 ? videos[index].src : undefined}
             poster={videos[index].poster}
             muted
             playsInline
             autoPlay={offset === 0}
-            preload={offset >= 0 && offset <= 1 ? "auto" : "metadata"}
+            preload="auto"
             onEnded={offset === 0 ? avancar : undefined}
           />
           <span className={styles.play} aria-hidden="true">▶</span>

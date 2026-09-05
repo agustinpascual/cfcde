@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, LockKeyhole, Mail, MapPin, Truck, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { calcularDescontos, cupomValido, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
@@ -55,6 +56,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   const [couponOpen, setCouponOpen] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState("");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -87,7 +89,15 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   const [savePaymentData, setSavePaymentData] = useState(true);
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const shippingFeeCents = shippingMethod === "sedex" ? 2032 : 0;
-  const totalCents = product.priceCents + shippingFeeCents;
+  /* Mesma conta do servidor (lib/promocoes): cupom primeiro, Pix sobre o
+     valor já com cupom. Quem cobra é a API, isto aqui só mostra. */
+  const descontos = calcularDescontos({
+    subtotalCentavos: product.priceCents,
+    produtoSlug: product.slug,
+    cupom: cupomAplicado,
+    pagamento: payment === "pix" ? "pix" : "cartao",
+  });
+  const totalCents = product.priceCents - descontos.totalCentavos + shippingFeeCents;
 
   useEffect(() => {
     try {
@@ -178,10 +188,34 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   }
 
   function applyCoupon() {
-    setCouponMessage(coupon.trim().toUpperCase() === "PRIMEIRACOMPRA" ? "Cupom aplicado." : "Cupom inválido.");
+    const codigo = coupon.trim().toUpperCase();
+    const valido = cupomValido(codigo, product.slug);
+    if (!valido) {
+      setCupomAplicado("");
+      setCouponMessage(codigo ? "Cupom inválido para este produto." : "Digite um cupom.");
+      return;
+    }
+    setCupomAplicado(codigo);
+    setCoupon(codigo);
+    setCouponMessage(`Cupom ${codigo} aplicado: ${Math.round(valido.percentual * 100)}% de desconto.`);
   }
 
+  /* O cupom pode chegar pela URL (?cupom=) ou do pop-up de saída da página do
+     produto, que grava no navegador. */
+  useEffect(() => {
+    const daUrl = new URLSearchParams(window.location.search).get("cupom");
+    let salvo: string | null = null;
+    try { salvo = localStorage.getItem("cdp-cupom"); } catch {}
+    const codigo = (daUrl || salvo || "").trim().toUpperCase();
+    if (!codigo || !cupomValido(codigo, product.slug)) return;
+    setCoupon(codigo);
+    setCupomAplicado(codigo);
+    setCouponOpen(true);
+    setCouponMessage(`Cupom ${codigo} aplicado.`);
+  }, [product.slug]);
+
   const paymentPayload = {
+    cupom: cupomAplicado,
     loja: "cafecomdeuspai",
     produto: product.slug,
     qtd: 1,
@@ -297,7 +331,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
               </div>
               {!paymentExpanded ? <><h1>Forma de pagamento</h1><div className={styles.paymentOptions} role="radiogroup" aria-label="Forma de pagamento">
                 <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>EM ATÉ 4X SEM JUROS</small></span><ChevronRight /></button>
-                <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("pix"); setPaymentExpanded(true); setPaymentError(""); }}><PixLogo /><span><b>Pix</b><small>Aprovação rápida</small></span><ChevronRight /></button>
+                <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("pix"); setPaymentExpanded(true); setPaymentError(""); }}><PixLogo /><span><b>Pix</b><small>Aprovação rápida</small></span><em className={styles.pixOff}>{Math.round(DESCONTO_PIX * 100)}% OFF</em><ChevronRight /></button>
               </div></> : <div className={styles.paymentDetail}>
                 <header><button type="button" aria-label="Voltar às formas de pagamento" onClick={() => { setPaymentExpanded(false); setPaymentError(""); }}><ArrowLeft /></button><span>{payment === "pix" ? <PixLogo /> : <CreditCard />}<b>{payment === "pix" ? "Pix" : "Cartão de crédito"}</b></span></header>
                 {payment === "pix" ? <>
@@ -314,7 +348,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
             </section>
           )}
         </main>
-        <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary product={product} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
+        <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary product={product} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} descontos={descontos} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
       </div>
       {shippingModalOpen && <div className={styles.shippingModalBackdrop} role="presentation" onMouseDown={() => setShippingModalOpen(false)}><div className={styles.shippingModal} role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title" onMouseDown={event => event.stopPropagation()}><span className={styles.modalHandle} aria-hidden="true" /><header><div><h2 id="shipping-modal-title">Entrega</h2><p>Escolha como deseja receber seu pedido</p></div><button type="button" aria-label="Fechar" onClick={() => setShippingModalOpen(false)}><X /></button></header><div className={styles.shippingModalBody}><b><Truck aria-hidden="true" /> Envio em domicílio</b><label className={draftShipping === "pac" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "pac"} onChange={() => setDraftShipping("pac")} /><span><b>Correios - PAC</b><small>Chega em {deliveryDate(25)}</small></span><strong>Grátis<small>R$ 20,32</small></strong></label><label className={draftShipping === "sedex" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "sedex"} onChange={() => setDraftShipping("sedex")} /><span><b>Correios - SEDEX</b><small>Chega em {deliveryDate(13)}</small></span><strong>R$ 20,32</strong></label></div><div className={styles.shippingModalActions}><button className={styles.shippingSave} type="button" onClick={() => { setShippingMethod(draftShipping); setShippingModalOpen(false); }}>Salvar forma de entrega</button><button className={styles.shippingCancel} type="button" onClick={() => setShippingModalOpen(false)}>Cancelar</button></div></div></div>}
       {modalRecusaAberto && <div className={styles.modalBackdrop} role="presentation" onMouseDown={() => setModalRecusaAberto(false)}><div className={styles.modalRecusa} role="alertdialog" aria-modal="true" aria-labelledby="titulo-recusa-cartao" aria-describedby="texto-recusa-cartao" onMouseDown={event => event.stopPropagation()}><div className={styles.modalIcon} aria-hidden="true">!</div><h2 id="titulo-recusa-cartao">Pagamento recusado</h2><p id="texto-recusa-cartao">Este pagamento foi recusado pela operadora do cartão. Entre em contato com a operadora para mais informações. Caso prefira, finalize via Pix.</p><div className={styles.modalActions}><button type="button" className={styles.modalPrimary} onClick={gerarPixPeloModal} disabled={generatingPix}>{generatingPix ? "Gerando Pix…" : "Gerar Pix"}</button><button type="button" className={styles.modalSecondary} onClick={tentarCartaoNovamente}>Tentar novamente com outro cartão</button></div></div></div>}
@@ -322,7 +356,19 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   );
 }
 
-function OrderSummary({ product, shippingMethod, shippingFeeCents }: { product: CheckoutProduct; shippingMethod: "pac" | "sedex" | null; shippingFeeCents: number }) { const price=money.format(product.priceCents/100); const total=money.format((product.priceCents+shippingFeeCents)/100); return <div><div className={styles.product}><Image src={product.image} alt={product.name} width={128} height={128} /><div><b>{product.name} × 1</b></div><div className={styles.productPrice}>{product.originalPrice && <span><s>{product.originalPrice}</s></span>}<strong>{price}</strong></div></div><div className={styles.totals}><p><span>Subtotal</span><strong>{price}</strong></p>{shippingMethod && <p><span>Frete ({shippingMethod === "pac" ? "PAC" : "SEDEX"})</span><strong>{shippingFeeCents ? money.format(shippingFeeCents/100) : "Grátis"}</strong></p>}<p><span>Total</span><strong>{total}</strong></p></div></div> }
+function OrderSummary({ product, shippingMethod, shippingFeeCents, descontos }: { product: CheckoutProduct; shippingMethod: "pac" | "sedex" | null; shippingFeeCents: number; descontos: Descontos }) {
+  const price = money.format(product.priceCents / 100);
+  const total = money.format((product.priceCents - descontos.totalCentavos + shippingFeeCents) / 100);
+  return <div><div className={styles.product}><Image src={product.image} alt={product.name} width={128} height={128} /><div><b>{product.name} × 1</b></div><div className={styles.productPrice}>{product.originalPrice && <span><s>{product.originalPrice}</s></span>}<strong>{price}</strong></div></div>
+    <div className={styles.totals}>
+      <p><span>Subtotal</span><strong>{price}</strong></p>
+      {descontos.cupomAplicado && <p className={styles.descontoLinha}><span>Cupom {descontos.cupomAplicado}</span><strong>− {money.format(descontos.cupomCentavos / 100)}</strong></p>}
+      {descontos.pixCentavos > 0 && <p className={styles.descontoLinha}><span>Desconto Pix ({Math.round(DESCONTO_PIX * 100)}%)</span><strong>− {money.format(descontos.pixCentavos / 100)}</strong></p>}
+      {shippingMethod && <p><span>Frete ({shippingMethod === "pac" ? "PAC" : "SEDEX"})</span><strong>{shippingFeeCents ? money.format(shippingFeeCents / 100) : "Grátis"}</strong></p>}
+      <p><span>Total</span><strong>{total}</strong></p>
+    </div>
+  </div>;
+}
 
 function PixLogo() { return <svg className={styles.pixLogo} viewBox="0 0 50 50" aria-hidden="true"><path d="M25 .039c-2.16 0-4.2.841-5.73 2.371L9.68 12h3.25c1.6 0 3.11.62 4.24 1.76l6.77 6.769a1.505 1.505 0 0 0 2.12-.01l6.77-6.759A5.96 5.96 0 0 1 37.07 12h3.25l-9.59-9.59A8.06 8.06 0 0 0 25 .039ZM7.68 14l-5.27 5.27a8.113 8.113 0 0 0 0 11.46L7.68 36h5.25c1.07 0 2.07-.42 2.83-1.17l6.769-6.769a3.506 3.506 0 0 1 4.942 0l6.769 6.769A4.04 4.04 0 0 0 37.07 36h5.25l5.27-5.27a8.113 8.113 0 0 0 0-11.46L42.32 14h-5.25c-1.07 0-2.07.42-2.83 1.17l-6.769 6.769a3.47 3.47 0 0 1-4.942 0L15.76 15.17A4.04 4.04 0 0 0 12.93 14H7.68ZM25 29.037c-.385.001-.771.148-1.061.443l-6.769 6.76A5.96 5.96 0 0 1 12.93 38H9.68l9.59 9.59a8.113 8.113 0 0 0 11.46 0L40.32 38h-3.25a5.96 5.96 0 0 1-4.24-1.76l-6.769-6.769A1.494 1.494 0 0 0 25 29.037Z" /></svg> }
 

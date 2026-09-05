@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import type { EstoqueLote } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/StockUrgency";
 import { useCartQuantity } from "@/components/sites/cafecomdeuspai-com-8456844d/useCart";
@@ -15,9 +16,11 @@ type Props = {
   /* Ligados por página: hoje só /produtos/combo-plus2027 usa. */
   notificacoes?: boolean;
   estoque?: EstoqueLote;
+  /* Cupom oferecido quando a pessoa tenta sair da página. */
+  cupomSaida?: { codigo: string; percentual: number };
 };
 
-export default function ComboPlusStore({ produto = comboPlus, notificacoes = false, estoque }: Props) {
+export default function ComboPlusStore({ produto = comboPlus, notificacoes = false, estoque, cupomSaida }: Props) {
   const [cartOpen, setCartOpen] = useState(false);
   const [cartQuantity, setCartQuantity] = useCartQuantity();
   /* A oferta escolhida sobe até aqui porque a sacola também precisa dela. */
@@ -51,6 +54,9 @@ export default function ComboPlusStore({ produto = comboPlus, notificacoes = fal
         onQuantityChange={setCartQuantity}
       />
       {notificacoes ? <PurchaseNotifications imagem={produto.imagem} nome={produto.nome} /> : null}
+      {cupomSaida ? (
+        <ExitOffer codigoDoCupom={cupomSaida.codigo} percentual={cupomSaida.percentual} slug={oferta.slug} />
+      ) : null}
     </div>
   );
 }

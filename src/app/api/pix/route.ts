@@ -43,7 +43,10 @@ export async function POST(req: Request) {
   try {
     // O valor NÃO vem do cliente — é recalculado a partir do catálogo do servidor.
     valores = body.loja === "cafecomdeuspai"
-      ? calcularTotalCafe(String(body.produto ?? ""), qtd, String(body.frete ?? ""))
+      ? calcularTotalCafe(String(body.produto ?? ""), qtd, String(body.frete ?? ""), {
+          cupom: typeof body.cupom === "string" ? body.cupom : undefined,
+          pagamento: "pix",
+        })
       : calcularTotal(kitIndex, qtd, frete);
   } catch (e) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 422 });

@@ -38,7 +38,10 @@ export async function POST(req: Request) {
   let valores: ReturnType<typeof calcularTotal> | ReturnType<typeof calcularTotalCafe>;
   try {
     valores = body.loja === "cafecomdeuspai"
-      ? calcularTotalCafe(String(body.produto ?? ""), qtd, String(body.frete ?? ""))
+      ? calcularTotalCafe(String(body.produto ?? ""), qtd, String(body.frete ?? ""), {
+          cupom: typeof body.cupom === "string" ? body.cupom : undefined,
+          pagamento: "cartao",
+        })
       : calcularTotal(kitIndex, qtd, frete);
   } catch (e) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 422 });

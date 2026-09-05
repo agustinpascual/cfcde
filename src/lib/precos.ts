@@ -1,4 +1,5 @@
 import "server-only";
+import { calcularDescontos } from "./promocoes";
 
 /* Tabela de preços autoritativa. O checkout envia apenas o índice do kit e a
    quantidade; o valor cobrado é calculado AQUI. Se viesse do cliente, daria
@@ -47,7 +48,14 @@ const PRODUTOS_CAFE: Record<string, { nome: string; centavos: number }> = {
   "cafe-com-deus-pai-2026-brochura-10-filtros-individuais": { nome: "Café com Deus Pai + 10 filtros", centavos: 7890 },
 };
 
-export function calcularTotalCafe(produtoSlug: string, qtd: number, frete: string) {
+/* Cupom e desconto Pix são recalculados aqui: do cliente vem só o código do
+   cupom e a forma de pagamento, nunca o valor. */
+export function calcularTotalCafe(
+  produtoSlug: string,
+  qtd: number,
+  frete: string,
+  opcoes: { cupom?: string; pagamento?: "pix" | "cartao" } = {},
+) {
   const produto = PRODUTOS_CAFE[produtoSlug];
   if (!produto) throw new Error("Produto inválido");
   if (!Number.isInteger(qtd) || qtd < 1 || qtd > 20) throw new Error("Quantidade inválida");
@@ -56,5 +64,20 @@ export function calcularTotalCafe(produtoSlug: string, qtd: number, frete: strin
   const freteSelecionado = frete === "pac"
     ? { nome: "Correios - PAC", centavos: 0 }
     : { nome: "Correios - SEDEX", centavos: 2032 };
-  return { kit: produto, subtotal, desconto: 0, frete: freteSelecionado, total: subtotal + freteSelecionado.centavos };
+  const descontos = calcularDescontos({
+    subtotalCentavos: subtotal,
+    produtoSlug,
+    cupom: opcoes.cupom,
+    pagamento: opcoes.pagamento,
+  });
+  return {
+    kit: produto,
+    subtotal,
+    desconto: descontos.totalCentavos,
+    cupom: descontos.cupomAplicado,
+    descontoCupom: descontos.cupomCentavos,
+    descontoPix: descontos.pixCentavos,
+    frete: freteSelecionado,
+    total: subtotal - descontos.totalCentavos + freteSelecionado.centavos,
+  };
 }

@@ -126,3 +126,8 @@
 @media(max-width:800px){.shippingModalBackdrop{padding:0}.shippingModal{width:100%;border-radius:16px 16px 0 0}.modalHandle{display:block}.shippingModal header{padding-top:25px}.shippingModalBody{padding-right:16px;padding-left:16px}.shippingModalActions{padding-right:16px;padding-left:16px;padding-bottom:max(18px,env(safe-area-inset-bottom))}}
 @media(max-width:520px){.cardFields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.cardFields .fullCardField{grid-column:1/-1}.cardFields label{min-width:0}.cardFields .input{min-width:0;padding-right:9px;padding-left:9px}}
 .shell,.shell input,.shell select,.shell button,.shell textarea{font-family:var(--font-work-sans),"Work Sans",Arial,sans-serif}
+
+/* Selo de 5% na opção Pix e as linhas de desconto no resumo. */
+.pixOff{margin-left:auto;padding:3px 8px;border-radius:3px;background:#e8f5ea;color:#1f7a37;font-size:11px;font-style:normal;font-weight:700;letter-spacing:.02em}
+.descontoLinha span,.descontoLinha strong{color:#1f7a37}
+

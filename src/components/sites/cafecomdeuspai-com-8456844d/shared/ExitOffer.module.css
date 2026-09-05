@@ -1,0 +1,115 @@
+.fundo {
+  position: fixed;
+  z-index: 12000;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  background: rgb(0 0 0 / 62%);
+  place-items: center;
+  animation: aparece .25s ease both;
+}
+
+.caixa {
+  position: relative;
+  width: min(430px, 100%);
+  padding: 30px 28px 26px;
+  border-top: 4px solid #b89967;
+  background: #fff;
+  color: #252525;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 35%);
+  animation: sobe .3s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.selo {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 5px 11px;
+  background: #b89967;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.titulo {
+  margin: 0 0 10px;
+  font: 500 25px/1.2 Georgia, "Times New Roman", serif;
+}
+
+.texto { margin: 0 0 20px; color: #666; font-size: 13px; line-height: 1.6; }
+
+.cupom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px dashed #b89967;
+  background: #fbf8f2;
+}
+
+.codigo { font-size: 17px; font-weight: 700; letter-spacing: .09em; }
+
+.copiar {
+  border: 0;
+  background: none;
+  color: #8c6f3f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.usar {
+  display: block;
+  width: 100%;
+  padding: 15px 18px;
+  border: 0;
+  background: #151515;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity .2s ease;
+}
+
+.usar:hover { opacity: .85 }
+
+.recusar {
+  margin-top: 14px;
+  border: 0;
+  background: none;
+  color: #999;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.fechar {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  color: #9a9a9a;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@keyframes aparece { from { opacity: 0 } to { opacity: 1 } }
+@keyframes sobe { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fundo, .caixa { animation: none }
+}
