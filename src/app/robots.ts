@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
-
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bella-gummy.vercel.app";
+import { SITE } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      // checkout e API ficam fora do índice — são páginas transacionais
-      { userAgent: "*", allow: "/", disallow: ["/checkout", "/api/"] },
+      {
+        userAgent: "*",
+        allow: "/",
+        /* Fora do índice: transacional (checkout, pagamento), administrativo
+           (painel) e as rotas de serviço. */
+        disallow: ["/checkout", "/pagamento/", "/painel", "/descadastro", "/api/"],
+      },
     ],
     sitemap: `${SITE}/sitemap.xml`,
   };

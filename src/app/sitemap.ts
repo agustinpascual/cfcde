@@ -1,14 +1,26 @@
 import type { MetadataRoute } from "next";
-
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bella-gummy.vercel.app";
+import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
+import { SITE } from "@/lib/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const agora = new Date();
+  const pagina = (
+    caminho: string,
+    changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"],
+    priority: number,
+  ) => ({ url: `${SITE}${caminho}`, lastModified: agora, changeFrequency, priority });
+
   return [
-    { url: `${SITE}/`, lastModified: agora, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE}/sobre`, lastModified: agora, changeFrequency: "yearly", priority: 0.4 },
-    { url: `${SITE}/duvidas-frequentes`, lastModified: agora, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE}/politica-de-privacidade`, lastModified: agora, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE}/contato`, lastModified: agora, changeFrequency: "yearly", priority: 0.5 },
+    pagina("/", "daily", 1),
+    /* As páginas de produto são o que traz busca — prioridade acima das
+       institucionais. */
+    pagina("/produtos/combo-plus", "weekly", 0.9),
+    pagina("/produtos/combo-plus2027", "weekly", 0.9),
+    ...PRODUCTS.map(({ slug }) => pagina(`/produtos/${slug}`, "weekly", 0.8)),
+    pagina("/vitrine", "weekly", 0.6),
+    pagina("/duvidas-frequentes", "monthly", 0.6),
+    pagina("/contato", "yearly", 0.5),
+    pagina("/sobre", "yearly", 0.4),
+    pagina("/politica-de-privacidade", "yearly", 0.3),
   ];
 }
