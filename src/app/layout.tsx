@@ -3,7 +3,9 @@ import { Instrument_Sans, Inter, Lato, Work_Sans } from "next/font/google";
 import { Suspense } from "react";
 import Rastreador from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import SplashScreen from "@/components/sites/cafecomdeuspai-com-8456844d/shared/SplashScreen";
+import AntiClone from "@/components/seguranca/AntiClone";
 import { marca } from "@/components/storefront/brand";
+import { SITE } from "@/lib/seo";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -23,9 +25,6 @@ const lato = Lato({
 const workSans = Work_Sans({ variable: "--font-work-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
 
-/* Domínio público. Serve de base para URLs absolutas (Open Graph, canonical).
-   Aponte NEXT_PUBLIC_SITE_URL quando o domínio próprio estiver no ar. */
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://exemplo.com.br";
 
 /* Preencha com os dados da marca antes de publicar.
    O nome vem de components/storefront/brand.ts — fonte única. */
@@ -38,7 +37,6 @@ export const metadata: Metadata = {
   description: marca.tagline,
   applicationName: marca.nome,
   authors: [{ name: marca.nome }],
-  alternates: { canonical: "/" },
   robots: {
     index: true,
     follow: true,
@@ -58,7 +56,7 @@ export const metadata: Metadata = {
     title: marca.nome,
     description: marca.tagline,
   },
-  /* Usa src/app/favicon.ico até você fornecer o ícone da marca. */
+  /* Ícones: src/app/favicon.ico, icon.png e apple-icon.png (convenção do Next). */
   formatDetection: { telephone: false },
 };
 
@@ -68,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${instrumentSans.variable} ${lato.variable} ${workSans.variable} ${inter.variable}`}>
         {children}
         <SplashScreen />
+        <AntiClone />
         <Suspense fallback={null}><Rastreador /></Suspense>
       </body>
     </html>
