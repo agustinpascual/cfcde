@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { type CSSProperties, useRef } from "react";
 import styles from "./HomeCommerce.module.css";
+import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
 
 const assets = "/sites/cafecomdeuspai-com-8456844d/root-8a5edab2";
 
@@ -16,7 +17,7 @@ type Product = {
   imageZoom?: number;
 };
 
-const launches: Product[] = [
+const vol6Combos: Product[] = [
   { image: "asset-006.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA", price: "R$99,90", installment: "4 de R$24,98", reviews: 1, href: "/produtos/cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa/" },
   { image: "asset-007.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + CANECA", price: "R$219,90", installment: "4 de R$54,98", href: "/produtos/cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-caneca/" },
   { image: "asset-008.webp", name: "2 CANECAS CAFÉ COM DEUS PAI (VOL.6)", price: "R$199,90", installment: "4 de R$49,98", href: "/produtos/2-canecas-cafe-com-deus-pai-vol-6/", imageZoom: 1.14 },
@@ -30,15 +31,33 @@ const featured: Product[] = [
   { image: "asset-015.webp", name: "2 LIVROS CAFÉ COM DEUS PAI VOL. 6 (BROCHURA) + 2 CANECAS", price: "R$289,90", installment: "4 de R$72,48", href: "/produtos/2-livros-cafe-com-deus-pai-vol-6-brochura-2-canecas/" },
 ];
 
-const unmissable: Product[] = [
+const unmissableFixos: Product[] = [
   { image: "asset-017.webp", name: "COMBO: CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + LATA DE CAFÉ GOURMET", price: "R$108,90", installment: "4 de R$27,23", href: "/produtos/combo-cafe-com-deus-pai-vol-6-brochura-lata-de-cafe-gourmet/" },
   { image: "asset-018.webp", name: "COMBO CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + ECOBAG + COPO (250ML)", price: "R$99,90", installment: "4 de R$24,98", reviews: 3, href: "/produtos/combo-cafe-com-deus-pai-2026-brochura-ecobag-copo-250ml/", imageZoom: 1.1 },
   { image: "asset-019.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + 10 FILTROS INDIVIDUAIS", price: "R$78,90", installment: "4 de R$19,73", reviews: 2, href: "/produtos/cafe-com-deus-pai-2026-brochura-10-filtros-individuais/", imageZoom: 1.1 },
 ];
 
+const unmissable: Product[] = [...vol6Combos, ...unmissableFixos];
+
 function Chevron({ direction }: { direction: "left" | "right" }) {
   return <span aria-hidden="true">{direction === "left" ? "‹" : "›"}</span>;
 }
+
+/* A vitrine de Lançamento junta a lista curada da home com tudo que está no
+   catálogo nessa categoria. Antes eram só 4 itens fixos: a seta rolava e não
+   havia mais nada para mostrar. */
+const doCatalogo: Product[] = PRODUCTS
+  .filter((p) => p.category === "Lançamento")
+  .map((p) => ({
+    image: p.image,
+    name: p.name,
+    price: p.price,
+    installment: p.installment,
+    href: `/produtos/${p.slug}`,
+  }));
+
+/* Só o catálogo: os itens do vol.6 saíram daqui para a esteira IMPERDÍVEL. */
+const lancamentos: Product[] = doCatalogo;
 
 function ProductRail({ title, products, subdued = false }: { title: string; products: Product[]; subdued?: boolean }) {
   const rail = useRef<HTMLDivElement>(null);
@@ -58,7 +77,7 @@ function ProductRail({ title, products, subdued = false }: { title: string; prod
           {products.map((product) => (
             <a className={styles.card} href={product.href ?? "#"} key={product.image}>
               <div className={styles.imageWrap} style={{ "--product-zoom": product.imageZoom ?? 1.06 } as CSSProperties}>
-                <Image src={`${assets}/${product.image}`} alt={product.name} fill sizes="(max-width: 600px) 72vw, 25vw" />
+                <Image src={product.image.startsWith("/") ? product.image : `${assets}/${product.image}`} alt={product.name} fill sizes="(max-width: 600px) 72vw, 25vw" />
               </div>
               <div className={styles.cardBody}>
                 <h3>{product.name}</h3>
@@ -77,20 +96,22 @@ function ProductRail({ title, products, subdued = false }: { title: string; prod
 export default function HomeCommerce() {
   return (
     <div className={styles.commerce}>
-      <ProductRail title="LANÇAMENTO" products={launches} />
+      <ProductRail title="LANÇAMENTO" products={lancamentos} />
 
       <section className={styles.banners} aria-label="Destaques da loja">
         <div className={styles.bannerGrid}>
-          <a href="/produtos/combo-plus/" aria-label="Conheça o Combo Plus"><Image src={`${assets}/asset-010.webp`} alt="Combo Plus Café com Deus Pai" fill sizes="(max-width: 720px) 100vw, 50vw" /></a>
-          <a href="#lancamentos" aria-label="Confira os lançamentos"><Image src={`${assets}/asset-011.webp`} alt="Lançamentos Café com Deus Pai" fill sizes="(max-width: 720px) 100vw, 50vw" /></a>
+          {/* O banner é o COMBO VOLUME 7; apontar para /combo-plus levava ao combo do
+              vol.6 — quem clicasse caía num produto diferente do anunciado. */}
+          <a href="/produtos/combo-plus2027" aria-label="Conheça o Combo Plus 2027"><Image src={`${assets}/asset-010-v3.webp`} alt="Combo Plus 2027 · Café com Deus Pai volume 7" fill sizes="(max-width: 720px) 100vw, 50vw" /></a>
+          <a href="/categoria/lancamento" aria-label="Ver todos os lançamentos"><Image src={`${assets}/asset-011-v3.webp`} alt="Lançamentos Café com Deus Pai" fill sizes="(max-width: 720px) 100vw, 50vw" /></a>
         </div>
       </section>
 
       <ProductRail title="DESTAQUES" products={featured} />
 
       <section className={styles.authorBanner} aria-label="Sobre o autor Junior Rostirola">
-        <Image className={styles.authorDesktop} src={`${assets}/sobre-autor-desktop.webp`} alt="Sobre o autor Junior Rostirola" width={1440} height={550} sizes="100vw" />
-        <Image className={styles.authorMobile} src={`${assets}/sobre-autor-mobile.webp`} alt="Sobre o autor Junior Rostirola" width={400} height={760} sizes="100vw" />
+        <Image className={styles.authorDesktop} src={`${assets}/sobre-autor-desktop-v2.webp`} alt="Sobre o autor Junior Rostirola" width={1580} height={600} sizes="100vw" />
+        <Image className={styles.authorMobile} src={`${assets}/sobre-autor-mobile-v2.webp`} alt="Sobre o autor Junior Rostirola" width={625} height={1020} sizes="100vw" />
       </section>
 
       <ProductRail title="IMPERDÍVEL" products={unmissable} subdued />

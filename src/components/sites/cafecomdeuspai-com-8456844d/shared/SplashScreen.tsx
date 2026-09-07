@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import LoadingScreen from "./LoadingScreen";
 
@@ -7,7 +8,13 @@ import LoadingScreen from "./LoadingScreen";
    terminam) e tem um teto de 4s para nunca prender quem chegou na loja. */
 const TETO_MS = 4000;
 
+/* Rotas onde a splash atrapalha: quem está pagando não pode esperar uma
+   animação de marca para ver o código PIX. A splash é boas-vindas da loja,
+   não interlúdio no meio de uma compra. */
+const SEM_SPLASH = ["/pagamento", "/checkout", "/painel"];
+
 export default function SplashScreen() {
+  const pathname = usePathname();
   const [pronto, setPronto] = useState(false);
 
   useEffect(() => {
@@ -26,5 +33,6 @@ export default function SplashScreen() {
     };
   }, []);
 
+  if (SEM_SPLASH.some((r) => pathname.startsWith(r))) return null;
   return <LoadingScreen hidden={pronto} />;
 }

@@ -78,11 +78,6 @@ export default function HomeLower() {
 
       <SiteFooter />
 
-      {!cookies ? <a className={styles.whatsapp} href="https://wa.me/554732249292" target="_blank" rel="noreferrer" aria-label="Fale conosco pelo WhatsApp">
-        <WhatsAppIcon />
-        <span>Fale conosco</span>
-      </a> : null}
-
       {cookies ? (
         <div className={styles.cookie} role="dialog" aria-label="Aviso de cookies">
           <p>Utilizamos cookies para melhorar sua experiência. Ao continuar navegando, você concorda com a nossa <a href="/politica-de-privacidade/">Política de Privacidade</a>.</p>

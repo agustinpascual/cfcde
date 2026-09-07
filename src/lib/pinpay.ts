@@ -1,4 +1,5 @@
 import "server-only";
+import { ler } from "./config-integracoes";
 
 /* Cliente PinPay — roda SÓ no servidor.
    Doc: https://hub.usepinpay.com/documentacao
@@ -25,9 +26,13 @@ export type PixStatus = {
   customer?: { name: string; document: string };
 };
 
-function token() {
-  const t = process.env.PINPAY_TOKEN;
-  if (!t) throw new Error("PINPAY_TOKEN não configurado — defina em .env.local");
+/* Cofre primeiro, ambiente como reserva — a mesma ordem das outras
+   integrações. Antes isto lia só process.env, então trocar a credencial pelo
+   painel não tinha efeito nenhum: as cobranças continuavam saindo pela chave
+   antiga do ambiente, sem nenhum aviso. */
+async function token() {
+  const t = (await ler("PINPAY_TOKEN")) || process.env.PINPAY_TOKEN;
+  if (!t) throw new Error("PINPAY_TOKEN não configurado — salve em Integrações ou no .env.local");
   return t;
 }
 
@@ -35,7 +40,7 @@ async function chamar<T>(caminho: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${caminho}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token()}`,
+      Authorization: `Bearer ${await token()}`,
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
@@ -65,6 +70,10 @@ async function chamar<T>(caminho: string, init?: RequestInit): Promise<T> {
 }
 
 /* Confere se a credencial está válida (GET /balance da doc). */
+/** Dados da conta dona da credencial em uso. */
+export const contaPinpay = () =>
+  chamar<{ name?: string; email?: string; environment?: string }>("/account", { method: "GET" });
+
 export const verificarCredencial = () => chamar<unknown>("/balance", { method: "GET" });
 
 export function criarPix(dados: {
@@ -76,5 +85,5 @@ export function criarPix(dados: {
   return chamar<PixCriado>("/pix", { method: "POST", body: JSON.stringify(dados) });
 }
 
-export const consultarPix = (id: string) =>
-  chamar<PixStatus>(`/pix/${encodeURIComponent(id)}`, { method: "GET" });
+export const consultarPix = (id: string, signal?: AbortSignal) =>
+  chamar<PixStatus>(`/pix/${encodeURIComponent(id)}`, { method: "GET", signal });

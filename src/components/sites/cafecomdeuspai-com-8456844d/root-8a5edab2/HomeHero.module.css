@@ -153,3 +153,61 @@
 @media (prefers-reduced-motion: reduce) {
   .track { transition: none; }
 }
+
+/* ===== Chamada sobre o banner =====
+   Gradiente em vez de véu uniforme: escurece onde o texto fica e preserva a
+   imagem no topo. Um preto chapado sobre a foto inteira apagaria a fotografia
+   junto com o problema de contraste. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(0,0,0,.32) 0%, rgba(0,0,0,.52) 55%, rgba(0,0,0,.62) 100%);
+}
+
+.chamada {
+  max-width: 18ch;              /* linha curta: chamada se lê de relance */
+  margin: 0;
+  color: #fff;
+  font-size: clamp(26px, 3.5vw, 44px);
+  /* Em corpo grande sobre foto o peso alto vira bloco: 800 fechava as
+     contra-formas, 600 ainda pesava. 400 deixa a frase respirar — a
+     legibilidade vem do véu escuro e da sombra, não da espessura. */
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -.4px;
+  text-shadow: 0 2px 18px rgba(0,0,0,.45);
+}
+
+/* Classe dobrada: o globals.css define cor para `a` com especificidade que
+   vencia uma classe simples, e o rótulo saía em #212121 sobre #151515 —
+   contraste de 1,04:1, ilegível. */
+.conheca.conheca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 42px;
+  border: 1px solid #151515;
+  background: #151515;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background .18s, border-color .18s;
+}
+.conheca.conheca:hover { background: #2d2926; border-color: #2d2926; }
+
+@media (max-width: 640px) {
+  .overlay { gap: 22px; padding: 32px 20px; justify-content: center; }
+  .chamada { max-width: 14ch; }
+  .conheca { min-height: 48px; padding: 0 32px; font-size: 14px; }
+}

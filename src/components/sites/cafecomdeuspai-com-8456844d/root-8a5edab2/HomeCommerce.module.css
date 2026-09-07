@@ -61,6 +61,9 @@
 }
 
 .authorBanner{width:100%;overflow:hidden;background:#f5f2ee}
+/* No PC ele ia de borda a borda (1440px) enquanto vitrines e banners
+   duplos ficam em 1186px — destoava de tudo à volta. */
+@media (min-width: 1000px){.authorBanner{max-width:1186px;margin-left:auto;margin-right:auto}}
 .authorBanner img{display:block;width:100%;height:auto}
 .authorMobile{display:none!important}
 @media(max-width:760px){.authorDesktop{display:none!important}.authorMobile{display:block!important}}

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { IconeBanco, IconeChat, IconeEmail, IconePedidos, IconePlug, IconeVendas, IconeVivo } from "./Icones";
 import { marca } from "@/components/storefront/brand";
@@ -23,10 +24,20 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
   return (
     <div className={s.app}>
       <nav className={s.lateral}>
-        <div className={s.marca}>
-          <p className={s.marcaNome}>{marca.nome}</p>
+        <Link href="/painel" className={s.marca}>
+          {/* O logo é preto com o "fé" em cobre: sobre a barra escura sumiria,
+              e inverter as cores mataria o cobre. Vai numa placa creme — que é
+              a combinação da própria marca. Proporção real 665×748. */}
+          {marca.logo ? (
+            <span className={s.marcaPlaca}>
+              <Image src={marca.logo} alt={marca.nome} width={40} height={45}
+                className={s.marcaLogo} priority />
+            </span>
+          ) : (
+            <p className={s.marcaNome}>{marca.nome}</p>
+          )}
           <p className={s.marcaSub}>Painel administrativo</p>
-        </div>
+        </Link>
 
         <div className={s.menu}>
           {ITENS.map((g) => (

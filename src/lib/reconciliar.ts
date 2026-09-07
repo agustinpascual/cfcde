@@ -1,4 +1,5 @@
 import "server-only";
+import { confirmarPorEmail, depois, registrarCompraNoPixel } from "./confirmar-pedido";
 import { entregarAcessoApp } from "./entrega-app";
 import { consultarPix } from "./pinpay";
 import { supabaseAdmin } from "./supabase/servidor";
@@ -28,35 +29,55 @@ export type ResultadoReconciliacao = {
 export async function reconciliarPendentes(limite = 100): Promise<ResultadoReconciliacao> {
   const db = supabaseAdmin();
   const r: ResultadoReconciliacao = { verificados: 0, atualizados: 0, aprovados: 0, erros: 0 };
-  if (!db) return r;
+  if (!db) throw new Error("Supabase não configurado");
+  const prazo = Date.now() + 40_000;
 
-  const { data: pendentes } = await db.from("pedidos")
+  const { data: pendentes, error: erroLeitura } = await db.from("pedidos")
     .select("referencia,pix_id,status")
     .eq("status", "pendente")
+    .eq("metodo_pagamento", "pix")
     .not("pix_id", "is", null)
-    .order("criado_em", { ascending: false })
+    .order("pix_conferido_em", { ascending: true, nullsFirst: true })
+    .order("criado_em", { ascending: true })
     .limit(limite);
+  if (erroLeitura) throw new Error(erroLeitura.message);
 
   for (const p of pendentes ?? []) {
+    if (Date.now() >= prazo) break;
+    // Reserva a tentativa no histórico antes da rede, inclusive se a PinPay falhar.
+    const { data: reservado, error: erroReserva } = await db.from("pedidos")
+      .update({ pix_conferido_em: new Date().toISOString() })
+      .eq("referencia", p.referencia).eq("status", "pendente")
+      .eq("metodo_pagamento", "pix").select("referencia").maybeSingle();
+    if (erroReserva) { r.erros++; continue; }
+    if (!reservado) continue;
     r.verificados++;
     try {
-      const pix = await consultarPix(p.pix_id as string);
+      const pix = await consultarPix(p.pix_id as string, AbortSignal.timeout(8000));
       const novo = MAPA[pix.status];
       if (!novo || novo === "pendente") continue;   // ainda em aberto
 
       const aprovado = novo === "aprovado";
-      const { error } = await db.from("pedidos").update({
+      const { data: atualizado, error } = await db.from("pedidos").update({
         status: novo,
         ...(aprovado ? { pago_em: pix.paid_at ?? new Date().toISOString() } : {}),
-      }).eq("referencia", p.referencia);
+      }).eq("referencia", p.referencia).eq("status", "pendente")
+        .eq("metodo_pagamento", "pix").select("referencia").maybeSingle();
 
       if (error) { r.erros++; continue; }
+      if (!atualizado) continue; // O webhook ou outra consulta já atualizou o pedido.
       r.atualizados++;
 
       if (aprovado) {
         r.aprovados++;
-        // libera o acesso ao app, como o webhook faria
-        await entregarAcessoApp(p.referencia as string);
+        // A aprovação por consulta também precisa confirmar a compra por e-mail.
+        depois(confirmarPorEmail(p.referencia as string).then((resultado) => {
+          if (!resultado.ok) console.error("[reconciliar] confirmação falhou:", resultado.motivo);
+        }));
+        depois(registrarCompraNoPixel(p.referencia as string));
+        depois(entregarAcessoApp(p.referencia as string).then((resultado) => {
+          if (!resultado.ok) console.error("[reconciliar] entrega do app falhou:", resultado.motivo);
+        }));
       }
     } catch {
       r.erros++;

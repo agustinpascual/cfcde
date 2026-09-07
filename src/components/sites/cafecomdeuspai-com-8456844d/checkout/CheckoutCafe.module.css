@@ -98,7 +98,7 @@
 .pixResult{text-align:center}.pixResult h2{margin:0 0 8px;font-size:21px}.pixResult>p{margin:0 0 14px;color:#555}.qr{display:block;width:220px;height:220px;margin:12px auto;background:#fff}.pixResult label{display:block;text-align:left;font-size:13px;font-weight:600}.pixResult textarea{display:block;width:100%;height:78px;margin:8px 0 10px;padding:10px;resize:none;border:1px solid #aaa;border-radius:4px;background:#fff;font:12px/1.4 monospace}.copyButton{min-height:46px;font-size:15px!important}
 .paymentError{margin:14px 0 0;padding:11px;border-radius:4px;background:#fff0f0;color:#9e2424;font-size:13px}
 .cardFields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:15px}.cardFields label{display:flex;flex-direction:column;gap:7px;color:#333;font-size:13px}.cardFields .input{height:48px;padding:0 13px;font-size:14px}.fullCardField{grid-column:1/-1}.cardResult{margin:13px 0 0!important;padding:12px;border-radius:4px;background:#fff0f0;color:#922;font-size:13px!important;line-height:1.45}
-.modalBackdrop{position:fixed;z-index:1000;inset:0;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.52)}.modalRecusa{width:min(100%,430px);padding:30px 26px 24px;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.28);text-align:center}.modalIcon{display:flex;width:54px;height:54px;align-items:center;justify-content:center;margin:0 auto 16px;border-radius:50%;background:#fff0f0;color:#c42b32;font-size:30px;font-weight:800}.modalRecusa h2{margin:0;color:#222;font-size:23px;line-height:30px}.modalRecusa p{margin:10px 0 0;color:#667085;font-size:14px;line-height:21px}.modalActions{display:flex;flex-direction:column;gap:10px;margin-top:22px}.modalPrimary,.modalSecondary{width:100%;padding:13px 18px;border-radius:8px;font-size:15px!important;font-weight:700;cursor:pointer}.modalPrimary{border:0;background:#111!important;color:#fff!important}.modalSecondary{border:1px solid #333;background:#fff!important;color:#111!important}.modalPrimary:disabled{cursor:wait;opacity:.65}
+.modalBackdrop{position:fixed;z-index:1000;inset:0;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.52)}.modalRecusa{width:min(100%,430px);padding:30px 26px 24px;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.28);text-align:center}.modalIcon{display:flex;width:54px;height:54px;align-items:center;justify-content:center;margin:0 auto 16px;border-radius:50%;background:#fbeceb;color:#a33a2f;font-size:30px;font-weight:800}.modalRecusa h2{margin:0;color:#151515;font-size:23px;line-height:30px}.modalRecusa p{margin:10px 0 0;color:#57504a;font-size:14px;line-height:21px}.modalActions{display:flex;flex-direction:column;gap:10px;margin-top:22px}.modalPrimary,.modalSecondary{width:100%;min-height:50px;padding:13px 18px;border-radius:5px;font-size:15px!important;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s}.modalPrimary{border:0;background:#151515!important;color:#fff!important}.modalPrimary:hover:not(:disabled){background:#2d2926!important}.modalSecondary{border:1px solid #dedede;background:#fff!important;color:#151515!important}.modalSecondary:hover{border-color:#151515}.modalPrimary:disabled{cursor:wait;opacity:.65}
 @media(max-width:520px){.paymentActions{padding:14px}.qr{width:190px;height:190px}.payButton{min-height:50px;font-size:15px!important}.cardFields{grid-template-columns:1fr}.fullCardField{grid-column:auto}}
 
 /* Proporções compactas do checkout de referência. */
@@ -131,3 +131,53 @@
 .pixOff{margin-left:auto;padding:3px 8px;border-radius:3px;background:#e8f5ea;color:#1f7a37;font-size:11px;font-style:normal;font-weight:700;letter-spacing:.02em}
 .descontoLinha span,.descontoLinha strong{color:#1f7a37}
 
+
+/* ===== Checkout no desktop: conter a largura =====
+   `.layout` não tinha largura máxima e ia de borda a borda. Numa tela de
+   1440px o campo de e-mail ficava com ~945px — a linha de digitação mais
+   larga que qualquer formulário precisa, e a origem da sensação de layout
+   quebrado. 1120px alinha com a barra de progresso, que já usava esse teto. */
+@media (min-width: 801px) {
+  .layout {
+    max-width: 1120px; margin: 0 auto; gap: 64px;
+    grid-template-columns: minmax(0, 1.9fr) minmax(340px, 0.95fr);
+  }
+  .formColumn { max-width: none; }
+
+  /* O cabeçalho seguia outra régua: o logo colado na borda esquerda enquanto
+     o conteúdo ficava centralizado. Agora os dois usam o mesmo eixo. */
+  .logoHeader { max-width: 1120px; margin-left: auto; margin-right: auto; padding-left: 0; padding-right: 0; }
+}
+
+/* A moldura de 7px em #183638 (verde-petróleo) no celular vinha do template
+   de origem — cor que não existe na paleta do Café com Deus Pai e que ainda
+   comia 14px de largura útil numa tela de 390px. */
+@media (max-width: 800px) {
+  .shell { border: 0; }
+}
+
+/* ===== Selo de desconto do Pix =====
+   O botão do Pix tem um filho a mais que os outros — o selo "5% OFF" — e a
+   grade herdada tem três colunas (ícone · texto · seta). O selo ocupava a
+   coluna da seta e empurrava a seta para uma segunda linha, deixando a opção
+   com 97px de altura contra 64px das demais.
+
+   Só o botão que tem selo ganha a quarta coluna; os outros seguem intactos. */
+.paymentOptions > button:has(.pixOff) {
+  grid-template-columns: 23px 1fr auto 18px;
+}
+.pixOff { margin-left: 0; white-space: nowrap; }
+
+/* O iOS dá zoom ao focar um campo com fonte menor que 16px, e ao sair do campo
+   a página fica deslocada — no meio do checkout isso custa venda. Não há como
+   manter 13-15px e impedir o zoom sem travar o pinch da página inteira, então
+   os campos vão a 16px no celular. A altura das caixas não muda.
+   Seletor triplicado de propósito: precisa vencer as regras de 420/520/800px
+   que definem .input dentro de .addressFields, .cardFields e .addressEdit. */
+@media (max-width: 800px) {
+  .input.input.input,
+  .couponForm.couponForm input { font-size: 16px; }
+  /* Os campos do cartão voltam ao tamanho original (14px): essa área fica
+     como estava antes desta sessão, exatamente como o cliente pediu. */
+  .cardFields .input.input.input { font-size: 14px; }
+}

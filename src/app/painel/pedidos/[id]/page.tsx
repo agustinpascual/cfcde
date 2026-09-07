@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
+import FormRastreio from "@/components/painel/FormRastreio";
 import { lerAoVivo, lerPedido, moeda } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
@@ -61,6 +62,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       subtitulo={`Criado em ${quando(pedido.criado_em)}`} aoVivo={vivos.length}>
       <p className={d.voltar}>
         <Link href="/painel/pedidos">← Voltar para os pedidos</Link>
+        <Link href={`/painel/pedidos/${id}/recibo`} className={d.linkRecibo}>Recibo de compra</Link>
       </p>
 
       <div className={d.topo}>
@@ -110,6 +112,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <p className={d.vazio}>Endereço não informado.</p>
           )}
           {pedido.frete_tipo && <p className={d.frete}>{pedido.frete_tipo}</p>}
+          <FormRastreio pedidoId={id} atual={pedido.codigo_rastreio ?? null} />
         </section>
 
         <section className={`${s.cartao} ${d.bloco} ${d.blocoLargo}`}>

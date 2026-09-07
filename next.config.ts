@@ -25,11 +25,15 @@ const nextConfig: NextConfig = {
        são os dois destinos que o navegador realmente chama. */
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      /* connect.facebook.net serve o fbevents.js do Meta Pixel. Sem esta
+         liberação a CSP bloqueia o script e o rastreamento morre calado —
+         nenhum erro visível, só nenhum evento chegando ao Gerenciador. */
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      /* O pixel também funciona por <img> quando o JS está desligado. */
+      "img-src 'self' data: blob: https://www.facebook.com https://connect.facebook.net",
       "font-src 'self' data:",
-      "connect-src 'self' https://viacep.com.br https://*.supabase.co",
+      "connect-src 'self' https://viacep.com.br https://*.supabase.co https://www.facebook.com https://connect.facebook.net",
       "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com",
       "form-action 'self'",
       "base-uri 'self'",

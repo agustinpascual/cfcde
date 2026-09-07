@@ -10,11 +10,12 @@ const assetRoot = "/sites/cafecomdeuspai-com-8456844d/root-8a5edab2";
 
 const slides = [
   {
-    desktopImage: `${assetRoot}/asset-003.webp`,
-    mobileImage: `${assetRoot}/asset-005.webp`,
+    desktopImage: `${assetRoot}/asset-003-v3.webp`,
+    mobileImage: `${assetRoot}/asset-005-v3.webp`,
     alt: "Você faz parte desta história — faça parte do grupo exclusivo Café com Deus Pai",
-    href: "https://chat.whatsapp.com/",
-    button: "Entrar no grupo",
+    titulo: "Sim, Deus deseja tomar café com você",
+    href: "/produtos/combo-plus2027" as string | null,
+    button: "Conheça" as string | null,
   },
 ];
 
@@ -45,7 +46,7 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
 
   return (
     <>
-      <SiteHeader cartCount={cartCount} onCartClick={onCartClick} />
+      <SiteHeader cartCount={cartCount} onCartClick={onCartClick} transparente />
       <section
         className={styles.hero}
         aria-roledescription={carrossel ? "carrossel" : undefined}
@@ -74,15 +75,24 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
                   sizes="100vw"
                 />
               </picture>
-              <a
-                className={`${styles.cta} ${styles.exclusiveCta}`}
-                href={slide.href}
-                target="_blank"
-                rel="noreferrer"
-                tabIndex={current === index ? 0 : -1}
-              >
-                {slide.button}
-              </a>
+              {/* Camada escura + texto. O véu não é enfeite: sem ele o texto
+                  branco fica ilegível sobre as áreas claras da foto, e a
+                  legibilidade da chamada é o que faz a primeira dobra
+                  funcionar. */}
+              {slide.titulo || slide.button ? (
+                <div className={styles.overlay}>
+                  {slide.titulo ? <h2 className={styles.chamada}>{slide.titulo}</h2> : null}
+                  {slide.href && slide.button ? (
+                    <a
+                      className={styles.conheca}
+                      href={slide.href}
+                      tabIndex={current === index ? 0 : -1}
+                    >
+                      {slide.button}
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </article>
           ))}
         </div>

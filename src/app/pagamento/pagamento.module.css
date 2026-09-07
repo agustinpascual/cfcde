@@ -1,0 +1,137 @@
+
+/* Classe dobrada de propósito. O globals.css tem `button:not(.sf-root *)`
+   com especificidade (0,1,1), que vence uma classe simples (0,1,0) e zera
+   fundo, padding e peso do botão. Dobrar a classe sobe para (0,2,0). */
+/* Página do PIX: uma tarefa só — pagar. Sem menu, sem vitrine, sem sacola.
+   Tudo que competiria com o pagamento foi retirado de propósito. */
+
+.tela { min-height: 100vh; background: #f7f5f1; color: #151515; display: flex; flex-direction: column; }
+
+.cabecalho {
+  background: #fff; border-bottom: 1px solid #e4dfd7;
+  padding: 16px 20px; display: flex; justify-content: center;
+}
+.logo { width: 62px; height: auto; display: block; }
+
+.corpo { flex: 1 1 auto; width: 100%; max-width: 560px; margin: 0 auto; padding: 26px 20px 60px; }
+
+.aviso {
+  display: flex; align-items: center; gap: 9px; justify-content: center;
+  background: #e9f2ec; border: 1px solid #bcd6c6; color: #2f6b4f;
+  border-radius: 10px; padding: 11px 14px; font-size: 14px; font-weight: 600;
+}
+.aviso svg { flex: 0 0 18px; }
+
+/* O valor é a informação que o cliente confere no app do banco antes de
+   confirmar; por isso ele domina, e o número do pedido fica claramente
+   subordinado — com folga entre os dois, que antes brigavam por espaço. */
+.resumo { text-align: center; margin: 30px 0 26px; }
+.resumoRotulo {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: #8b8279; margin-bottom: 10px;
+}
+.valor { font-size: 40px; font-weight: 800; letter-spacing: -1.4px; line-height: 1; font-variant-numeric: tabular-nums; }
+.pedido { font-size: 13px; color: #8b8279; margin-top: 22px; }
+.pedido b { color: #57504a; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .3px; }
+
+.cartao {
+  background: #fff; border: 1px solid #e4dfd7; border-radius: 14px;
+  padding: 22px; margin-top: 20px;
+}
+
+.qr { display: block; margin: 0 auto; width: 232px; height: 232px; }
+.qrLegenda { text-align: center; font-size: 13px; color: #57504a; margin-top: 10px; }
+
+.ou { display: flex; align-items: center; gap: 12px; margin: 20px 0 16px; color: #8b8279; font-size: 12px; }
+.ou::before, .ou::after { content: ""; flex: 1 1 auto; height: 1px; background: #e4dfd7; }
+
+/* Altura suficiente para um BR Code inteiro. Antes o código aparecia
+   cortado no meio de uma linha, e um código PIX truncado é inútil — quem
+   selecionasse à mão copiaria pela metade e o pagamento falharia. */
+.codigo {
+  display: block; box-sizing: border-box; width: 100%; min-height: 118px; resize: vertical;
+  border: 1px solid #e4dfd7; border-radius: 9px; padding: 12px;
+  font-family: ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.55;
+  color: #151515; background: #f7f5f1; word-break: break-all;
+}
+.codigo:focus { outline: 2px solid #b89967; outline-offset: 1px; border-color: transparent; }
+
+/* Serve para <button> e para <a>. O display/box-sizing são obrigatórios:
+   um <a> é inline por padrão, e sem eles o `width:100%` não cria caixa —
+   o link ficava sobreposto ao conteúdo em vez de abaixo dele. */
+.copiar.copiar {
+  display: block; box-sizing: border-box; width: 100%; margin-top: 10px;
+  border: 0; border-radius: 10px; cursor: pointer; text-align: center;
+  text-decoration: none; font-family: inherit; line-height: 1.2;
+  background: #151515; color: #fff; padding: 15px; font-size: 15px; font-weight: 700;
+  transition: background .15s;
+}
+.copiar.copiar:hover { background: #2d2926; }
+.copiado.copiado { background: #2f6b4f; }
+
+/* Passo a passo — deliberadamente discreto. É texto de apoio: quem já paga
+   PIX não lê, e quem lê precisa de frase curta, não de parágrafo. Os números
+   viraram tipografia em latão no lugar de círculos preenchidos, que pesavam
+   tanto quanto o botão de copiar e disputavam a atenção com ele. */
+.passos {
+  margin-top: 28px; padding: 20px 22px;
+  border: 1px solid #e4dfd7; border-radius: 12px; background: #fdfcfa;
+}
+.passosTitulo {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: #8b8279; margin-bottom: 14px;
+}
+.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.passo { display: flex; gap: 12px; align-items: baseline; }
+.passoNum {
+  flex: 0 0 14px; font-size: 13px; font-weight: 800; color: #b89967;
+  font-variant-numeric: tabular-nums; line-height: 1.5;
+}
+.passoTexto { font-size: 14.5px; line-height: 1.5; color: #57504a; }
+.passoTexto b { color: #151515; font-weight: 700; }
+.passosNota {
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid #efeae2;
+  font-size: 13px; line-height: 1.55; color: #8b8279;
+}
+
+.nota {
+  margin-top: 24px; padding: 14px 16px; border-radius: 10px;
+  background: #fbf2df; border: 1px solid #ead9b0; color: #8a6420;
+  font-size: 13px; line-height: 1.6;
+}
+
+.rodape { text-align: center; font-size: 12.5px; color: #8b8279; margin-top: 26px; line-height: 1.6; }
+.rodape a { color: #8a6f42; text-decoration: underline; text-underline-offset: 2px; }
+
+.vazio { text-align: center; padding: 60px 20px; }
+.vazioTitulo { font-size: 19px; font-weight: 800; }
+.vazioTexto { font-size: 14px; color: #57504a; margin-top: 8px; line-height: 1.6; }
+.vazioBotao {
+  display: inline-block; margin-top: 18px; border-radius: 10px;
+  background: #151515; color: #fff; padding: 13px 26px; font-size: 15px; font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .corpo { padding: 20px 14px 48px; }
+  .qr { width: 200px; height: 200px; }
+  .valor { font-size: 29px; }
+}
+
+/* Tela de agradecimento, depois que o PIX cai. */
+.sucesso { text-align: center; padding: 10px 0 4px; }
+.sucessoIcone {
+  display: grid; place-items: center; width: 62px; height: 62px; margin: 0 auto 14px;
+  border-radius: 50%; background: #e9f2ec; color: #2f6b4f;
+}
+.sucessoTitulo { font-size: 26px; font-weight: 800; letter-spacing: -.6px; line-height: 1.2; }
+.sucessoTexto { font-size: 15px; color: #57504a; margin-top: 8px; }
+.sucessoTexto b { color: #151515; font-variant-numeric: tabular-nums; }
+
+.rastreioRotulo {
+  font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+  color: #8a6f42; text-align: center;
+}
+.rastreioCodigo {
+  font-family: ui-monospace, Menlo, monospace; font-size: 21px; font-weight: 700;
+  letter-spacing: 1.5px; text-align: center; margin: 8px 0 16px; color: #151515;
+}

@@ -13,11 +13,26 @@ export const CHAVES = [
   "ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN",
   "GEMINI_API_KEY",
   "BBF_PROVISIONAMENTO_TOKEN", "BBF_PROVISIONAMENTO_URL",
+  /* Dados do emitente, usados no recibo de compra. Não são segredos —
+     saem impressos no documento que o cliente recebe. */
+  "EMPRESA_RAZAO_SOCIAL", "EMPRESA_CNPJ", "EMPRESA_IE",
+  "EMPRESA_ENDERECO", "EMPRESA_TELEFONE", "EMPRESA_LOGO",
+  /* Correios: cria a encomenda quando o pagamento é aprovado e devolve o
+     código de rastreio. A URL é pública; o segredo, não. */
+  "CORREIOS_URL", "CORREIOS_SECRET",
+  /* Token da API de Conversões da Meta. O ID do pixel é público e mora em
+     NEXT_PUBLIC_META_PIXEL_ID; o token, não. */
+  "META_CAPI_TOKEN",
 ] as const;
 export type ChaveConfig = (typeof CHAVES)[number];
 
 /* Estes não são segredos — podem ir e voltar em texto puro. */
-const PUBLICOS: ChaveConfig[] = ["RESEND_REMETENTE", "ZAPI_INSTANCIA", "BBF_PROVISIONAMENTO_URL"];
+const PUBLICOS: ChaveConfig[] = [
+  "RESEND_REMETENTE", "ZAPI_INSTANCIA", "BBF_PROVISIONAMENTO_URL",
+  "EMPRESA_RAZAO_SOCIAL", "EMPRESA_CNPJ", "EMPRESA_IE",
+  "EMPRESA_ENDERECO", "EMPRESA_TELEFONE", "EMPRESA_LOGO",
+  "CORREIOS_URL",
+];
 
 let cache: { em: number; valores: Map<string, string> } | null = null;
 const TTL = 30_000;

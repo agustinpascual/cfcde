@@ -138,3 +138,47 @@ img { max-width: 100%; }
 @media(max-width:900px){.nodentec-review-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.nodentec-review-grid{grid-template-columns:1fr}.nodentec-review-grid article{min-height:220px}}
 [data-cdp-home]{font-family:var(--font-work-sans),"Work Sans",sans-serif}
+
+/* ============================================================
+   Paleta do painel administrativo — Café com Deus Pai
+   Tirada da própria loja: preto quente (#151515) e latão (#b89967).
+   O painel antes usava o kit padrão do Tailwind (cinza-azulado e
+   #2563eb), que não tinha relação nenhuma com a marca.
+
+   Sobre o latão: #b89967 sobre branco dá contraste de 2,3:1 e reprova
+   em acessibilidade. Por isso são duas variantes — --cdp-ouro só
+   preenche superfícies e bordas; texto e link usam --cdp-ouro-escuro.
+   ============================================================ */
+:root {
+  /* neutros quentes */
+  --cdp-tinta:       #1a1714;
+  --cdp-tinta-2:     #57504a;
+  --cdp-tinta-3:     #8b8279;
+  --cdp-fundo:       #f7f5f1;
+  --cdp-superficie:  #ffffff;
+  --cdp-borda:       #e4dfd7;
+
+  /* barra lateral: preto quente, não azul-marinho */
+  --cdp-menu:        #17150f;
+  --cdp-menu-2:      #262117;
+  --cdp-menu-texto:  #d9d2c4;
+  --cdp-menu-fraco:  #8f8778;
+
+  /* latão da marca */
+  --cdp-ouro:        #b89967;
+  --cdp-ouro-escuro: #8a6f42;
+  --cdp-ouro-fundo:  #f5edde;
+  --cdp-ouro-borda:  #e4d3b3;
+
+  /* semânticos, aquecidos para conviver com o latão */
+  --cdp-ok:          #2f6b4f;
+  --cdp-ok-fundo:    #e9f2ec;
+  --cdp-ok-borda:    #bcd6c6;
+  --cdp-vivo:        #2f6b4f;
+  --cdp-erro:        #a33a2f;
+  --cdp-erro-fundo:  #fbeceb;
+  --cdp-erro-borda:  #ecc4bf;
+  --cdp-aviso:       #8a6420;
+  --cdp-aviso-fundo: #fbf2df;
+  --cdp-aviso-borda: #ead9b0;
+}

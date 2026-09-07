@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import type { EstoqueLote } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/StockUrgency";
@@ -30,10 +31,12 @@ export default function ComboPlusStore({ produto = comboPlus, notificacoes = fal
   function addToCart(quantity: number) {
     setCartQuantity(quantity);
     setCartOpen(true);
+    pixel("AddToCart", dadosProdutoPixel(oferta.slug, produto.nome, Math.round(oferta.preco * quantity * 100), quantity));
   }
 
   return (
     <div>
+      <EventoMeta evento="ViewContent" dados={dadosProdutoPixel(oferta.slug, produto.nome, Math.round(oferta.preco * 100))} />
       <SiteHeader cartCount={cartQuantity} onCartClick={() => setCartOpen(true)} />
       <ProductPage
         produto={produto}

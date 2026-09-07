@@ -14,17 +14,21 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import styles from "./HeaderFooter.module.css";
+import { RASTREIO_BASE } from "@/lib/rastreio";
 
 const assetRoot =
   "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672";
 
 const navigation = [
-  ["Lançamentos", "/lancamento/"],
-  ["Relâmpago", "/relampago/"],
-  ["Imperdível", "/ofertas-especiais/"],
-  ["Combos", "/combos/"],
-  ["Kids/Teens", "/kids-teens/"],
-  ["Idiomas", "/idiomas1/"],
+  /* As três primeiras têm página de seção própria, alimentada pelo catálogo.
+     As outras ainda não têm produtos classificados e apontam para a home —
+     antes todas davam 404. */
+  ["Lançamentos", "/categoria/lancamento"],
+  ["Relâmpago", "/"],
+  ["Imperdível", "/categoria/imperdivel"],
+  ["Combos", "/categoria/destaques"],
+  ["Kids/Teens", "/"],
+  ["Idiomas", "/"],
   ["Compra Internacional", "https://lp.cafecomdeuspai.com/amz-paises"],
 ] as const;
 
@@ -59,6 +63,9 @@ const footerColumns = [
 type HeaderProps = {
   cartCount?: number;
   onCartClick?: () => void;
+  /** Sobrepõe o cabeçalho ao conteúdo, sem fundo. Usado na home,
+      onde ele fica por cima do banner. */
+  transparente?: boolean;
 };
 
 export function PromoBar() {
@@ -69,7 +76,7 @@ export function PromoBar() {
   );
 }
 
-export function SiteHeader({ cartCount = 0, onCartClick }: HeaderProps) {
+export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -94,9 +101,12 @@ export function SiteHeader({ cartCount = 0, onCartClick }: HeaderProps) {
   }, []);
 
   return (
-    <>
+    /* No modo transparente a FAIXA e o cabeçalho sobem juntos como um bloco.
+       Sobrepor só o cabeçalho fazia ele cobrir a faixa: no celular o logo
+       ficava por cima do texto "FRETE GRÁTIS POR TEMPO LIMITADO". */
+    <div className={transparente ? styles.sobreposto : undefined}>
       <PromoBar />
-      <header className={styles.header}>
+      <header className={`${styles.header} ${transparente ? styles.headerTransparente : ""}`}>
         <div className={styles.headerInner}>
           <button
             className={`${styles.iconButton} ${styles.menuButton}`}
@@ -128,7 +138,7 @@ export function SiteHeader({ cartCount = 0, onCartClick }: HeaderProps) {
           </nav>
 
           <div className={styles.utilities}>
-            <form className={styles.searchForm} action="/search/" role="search">
+            <form className={styles.searchForm} action="/busca" role="search">
               <input name="q" type="search" placeholder="Digite sua pesquisa aqui..." aria-label="Pesquisar" />
               <button type="submit" aria-label="Buscar">
                 <Search aria-hidden="true" />
@@ -154,7 +164,7 @@ export function SiteHeader({ cartCount = 0, onCartClick }: HeaderProps) {
         </div>
 
         {searchOpen ? (
-          <form className={styles.mobileSearch} action="/search/" role="search">
+          <form className={styles.mobileSearch} action="/busca" role="search">
             <input autoFocus name="q" type="search" placeholder="O que você está buscando?" aria-label="Pesquisar" />
             <button type="submit" aria-label="Buscar"><Search aria-hidden="true" /></button>
           </form>
@@ -178,7 +188,7 @@ export function SiteHeader({ cartCount = 0, onCartClick }: HeaderProps) {
           </nav>
         </aside>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -217,7 +227,7 @@ export function SiteFooter() {
           <div className={styles.helpText}>
             <p><strong>SAC: (47) 3224-9292</strong><br />Resposta por WhatsApp em até <strong>72h úteis</strong>.</p>
             <p><strong>Dica:</strong> não recebeu o código de rastreio?<br />Confira sua <strong>caixa de spam</strong> e <strong>lixeira</strong>.</p>
-            <a className={styles.trackingLink} href="https://rastreamento.correios.com.br/app/index.php">Acompanhe o seu pedido</a>
+            <a className={styles.trackingLink} href={RASTREIO_BASE} target="_blank" rel="noopener noreferrer">Acompanhe o seu pedido</a>
           </div>
         </details>
       </div>

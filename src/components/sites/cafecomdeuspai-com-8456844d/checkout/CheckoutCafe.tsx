@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, LockKeyhole, Mail, MapPin, Truck, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CHAVE_PIX } from "@/app/pagamento/PagamentoPix";
+import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { calcularDescontos, cupomValido, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
 
@@ -47,7 +50,9 @@ function installmentOption(totalCents: number, installments: number) {
   if (installments <= 4) return `${installments}x de ${money.format(totalCents / installments / 100)} sem juros`;
   const interestPercent = installments * 1.5;
   const financedTotalCents = Math.round(totalCents * (1 + interestPercent / 100));
-  return `${installments}x de ${money.format(financedTotalCents / installments / 100)} (${interestPercent.toLocaleString("pt-BR")}% de juros)`;
+  /* O percentual de juros sai do rótulo: ele continua sendo aplicado ao valor
+     da parcela — o cliente vê o que vai pagar —, só não é anunciado ao lado. */
+  return `${installments}x de ${money.format(financedTotalCents / installments / 100)}`;
 }
 
 export default function CheckoutCafe({ product }: { product: CheckoutProduct }) {
@@ -70,6 +75,8 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   const [error, setError] = useState("");
   const [payment, setPayment] = useState<"pix" | "card">("pix");
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
+  const router = useRouter();
+
   const [paymentError, setPaymentError] = useState("");
   const [generatingPix, setGeneratingPix] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -234,6 +241,12 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
       const data = await response.json();
       if (!response.ok) throw new Error(data.erro || "Não foi possível gerar o PIX.");
       setPixCharge(data);
+      pixel("AddPaymentInfo", { ...dadosProdutoPixel(product.slug, product.name, data.total), payment_method: "pix" });
+      /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
+         código e o passo a passo. Guardar no sessionStorage evita uma
+         segunda ida ao servidor — o dado já está aqui. */
+      try { sessionStorage.setItem(CHAVE_PIX, JSON.stringify(data)); } catch { /* storage bloqueado */ }
+      router.push("/pagamento");
     } catch (error) { setPaymentError(error instanceof Error ? error.message : "Não foi possível gerar o PIX."); }
     finally { setGeneratingPix(false); }
   }
@@ -269,6 +282,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
 
   return (
     <div className={styles.shell}>
+      <EventoMeta evento="InitiateCheckout" umaVezPor={product.slug} dados={dadosProdutoPixel(product.slug, product.name, totalCents)} />
       <header className={styles.logoHeader}><a href="/"><Image src={logo} alt="Café com Deus Pai" width={663} height={746} priority /></a></header>
 
       <button className={styles.mobileSummaryToggle} type="button" onClick={() => setSummaryOpen(v => !v)} aria-expanded={summaryOpen}>

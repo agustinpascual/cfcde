@@ -32,7 +32,13 @@ export function registrar(tipo: string, dados?: Record<string, unknown>) {
     if (!rastreavel(location.pathname)) return;
     const sessao = sessionStorage.getItem(CHAVE);
     if (!sessao) return;
-    const corpo = JSON.stringify({ sessao, tipo, pagina: location.pathname, dados });
+    /* `pedido` sobe para o nível de cima além de ficar em `dados`: a rota
+       usa o campo raiz para gravar pedido_ref na sessão, que é o que liga a
+       trilha do visitante ao pedido na tela de detalhe. */
+    const corpo = JSON.stringify({
+      sessao, tipo, pagina: location.pathname, dados,
+      ...(typeof dados?.pedido === "string" ? { pedido: dados.pedido } : {}),
+    });
     // sendBeacon sobrevive à navegação; fetch é o plano B
     if (navigator.sendBeacon) navigator.sendBeacon("/api/track", new Blob([corpo], { type: "application/json" }));
     else void fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, body: corpo, keepalive: true });

@@ -1,0 +1,25 @@
+/* Página de seção. Cabeçalho centralizado, como no modelo de referência:
+   o nome da seção é o título da página, não um rótulo de coluna. */
+
+.pagina { max-width: 1186px; margin: 0 auto; padding: 46px 20px 80px; }
+
+/* Classes dobradas: o reset global zera margem de h1/p e impõe
+   line-height de 18,59px. Numa fonte de 34px o texto transbordava a própria
+   linha e o subtítulo subia por cima do título. */
+.titulo.titulo {
+  margin: 0 0 10px; font-size: 34px; font-weight: 700; line-height: 1.15;
+  letter-spacing: -.6px; color: #151515; text-align: center;
+}
+.subtitulo.subtitulo {
+  margin: 0 0 36px; font-size: 14px; line-height: 1.5;
+  color: #8b8279; text-align: center;
+}
+
+.vazio { font-size: 15px; color: #57504a; text-align: center; padding: 30px 0; }
+.vazio a { color: #8a6f42; text-decoration: underline; text-underline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .pagina { padding: 30px 14px 60px; }
+  .titulo { font-size: 25px; }
+  .subtitulo { margin-bottom: 24px; }
+}

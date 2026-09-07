@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "cfcde-conferir-pix",
+  "account_id": "62cd8cd3c790a5283bcec7d955ae1b5c",
+  "main": "index.ts",
+  "compatibility_date": "2026-09-03",
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": { "crons": ["* * * * *"] },
+  "services": [{ "binding": "SITE", "service": "cfcde" }],
+  "vars": { "SITE_URL": "https://cafecomdeusepai.com" },
+  "observability": { "enabled": true }
+}

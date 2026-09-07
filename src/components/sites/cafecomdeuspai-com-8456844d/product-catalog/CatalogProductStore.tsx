@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, Minus, Plus, Star, Truck } from "lucide-react";
 import { useState } from "react";
+import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { useCartQuantity } from "../useCart";
 import CartDrawer from "../produtos-combo-plus-50ce9672/CartDrawer";
 import { SiteFooter, SiteHeader } from "../produtos-combo-plus-50ce9672/HeaderFooter";
@@ -23,10 +24,12 @@ export default function CatalogProductStore({ product }: Props) {
   function buy() {
     setCartQuantity(quantity);
     setCartOpen(true);
+    pixel("AddToCart", dadosProdutoPixel(product.slug, product.name, product.priceCents * quantity, quantity));
   }
 
   return (
     <div className={styles.store}>
+      <EventoMeta evento="ViewContent" dados={dadosProdutoPixel(product.slug, product.name, product.priceCents)} />
       <SiteHeader cartCount={cartQuantity} onCartClick={() => setCartOpen(true)} />
       <main>
         <div className={styles.productTop}><Link className={styles.back} href="/">← Voltar</Link></div>

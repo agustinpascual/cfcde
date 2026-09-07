@@ -31,6 +31,10 @@ export type Endereco = {
 
 export type PedidoDetalhe = Pedido & {
   pix_id: string | null;
+  /* Opcionais: só existem depois da migration 0021. Marcados com `?` para o
+     painel continuar funcionando se ela ainda não tiver sido aplicada. */
+  codigo_rastreio?: string | null;
+  rastreio_atualizado?: string | null;
   subtotal_centavos: number; desconto_centavos: number; frete_centavos: number;
   frete_tipo: string | null;
   cliente_documento: string | null; cliente_telefone: string | null;
@@ -203,13 +207,18 @@ export async function estadoInstalacao(): Promise<EstadoTabela[] | null> {
     // significam que a tabela existe.
     const existe = !error || (error as { code?: string }).code !== "PGRST205";
 
-    const colunasFaltando: string[] = [];
+    /* Em paralelo, não em série. O laço sequencial anterior fazia 9 idas ao
+       banco só em `pedidos`, uma esperando a outra — ~1,8s somados, pagos em
+       TODA tela do painel (a faixa de instalação está em todas). Como as
+       sondagens são independentes, o custo passa a ser o da mais lenta. */
+    let colunasFaltando: string[] = [];
     if (existe) {
-      for (const coluna of COLUNAS[nome] ?? []) {
+      const sondas = await Promise.all((COLUNAS[nome] ?? []).map(async (coluna) => {
         const r = await db.from(nome).select(coluna).limit(1);
         // 42703 = coluna não existe
-        if ((r.error as { code?: string } | null)?.code === "42703") colunasFaltando.push(coluna);
-      }
+        return (r.error as { code?: string } | null)?.code === "42703" ? coluna : null;
+      }));
+      colunasFaltando = sondas.filter((c): c is string => c !== null);
     }
     return { nome, para, existe, colunasFaltando };
   }));

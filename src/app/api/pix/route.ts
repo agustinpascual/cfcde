@@ -3,6 +3,10 @@ import QRCode from "qrcode";
 import { criarPix } from "@/lib/pinpay";
 import { excedeu, ipDe } from "@/lib/limite";
 import { calcularTotal, calcularTotalCafe, type IdFrete } from "@/lib/precos";
+import { ler } from "@/lib/config-integracoes";
+import { depois, enviarPixPorEmail } from "@/lib/confirmar-pedido";
+import { novoNumeroPedido } from "@/lib/numero-pedido";
+import { origemOficial } from "@/lib/origem";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 
 export const runtime = "nodejs";
@@ -13,6 +17,13 @@ const emailOk = (v: unknown) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v ??
 
 export async function POST(req: Request) {
   // cada chamada cria uma cobrança de verdade na conta do lojista
+  /* Bloqueia cobrança pedida de um domínio que não é o seu: um clone em
+     proxy reverso não consegue vender usando a sua conta da PinPay. */
+  if (!origemOficial(req)) {
+    console.warn("[pix] origem recusada:", req.headers.get("origin"));
+    return NextResponse.json({ erro: "Origem não autorizada." }, { status: 403 });
+  }
+
   if (excedeu(`pix:${ipDe(req)}`, 8, 60_000)) {
     return NextResponse.json(
       { erro: "Muitas tentativas. Aguarde um minuto." },
@@ -52,7 +63,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 422 });
   }
 
-  const pedido = `PED-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const pedido = await novoNumeroPedido();
   const origem = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
 
   try {
@@ -74,7 +85,7 @@ export async function POST(req: Request) {
           errorCorrectionLevel: "M",
           margin: 1,
           width: 420,
-          color: { dark: "#0b2860", light: "#ffffff" },
+          color: { dark: "#151515", light: "#ffffff" },  // preto da marca, não o navy antigo
         });
       } catch (e) {
         console.error("[pinpay] falha ao gerar QR local:", (e as Error).message);
@@ -105,6 +116,26 @@ export async function POST(req: Request) {
       if (error) console.error("[pix] falha ao registrar pedido:", error.message);
     }
 
+    /* Manda o código por e-mail. Em segundo plano: o cliente não pode esperar
+       a Resend para ver o QR na tela. Sem este e-mail, quem fecha a aba perde
+       o código e o pedido morre pendente. */
+    if (email) {
+      depois(enviarPixPorEmail({
+        referencia: pedido,
+        clienteNome: nome,
+        clienteEmail: email,
+        clienteDocumento: documento,
+        clienteTelefone: soDigitos(body.celular) || null,
+        itens: [{ descricao: valores.kit.nome, quantidade: qtd, totalCentavos: valores.subtotal }],
+        subtotalCentavos: valores.subtotal,
+        descontoCentavos: valores.desconto,
+        freteCentavos: valores.frete.centavos,
+        freteTipo: valores.frete.nome,
+        totalCentavos: valores.total,
+        brcode,
+      }).catch((e) => console.error("[pix] e-mail do código falhou:", (e as Error).message)));
+    }
+
     // devolve só o que o front precisa — nada de credencial
     return NextResponse.json({
       id: cobranca.id,
@@ -119,9 +150,12 @@ export async function POST(req: Request) {
     const err = e as Error & { status?: number; codigo?: string };
     console.error("[pinpay] falha ao criar PIX:", err.status ?? "-", err.codigo ?? "-", err.message);
 
-    if (!process.env.PINPAY_TOKEN) {
+    /* Confere no cofre também: a credencial pode estar salva pelo painel e
+       ausente do ambiente, e antes essa checagem acusava "não configurado"
+       mesmo com a chave gravada. */
+    if (!(await ler("PINPAY_TOKEN")) && !process.env.PINPAY_TOKEN) {
       return NextResponse.json(
-        { erro: "Pagamento indisponível: PINPAY_TOKEN não configurado no servidor." },
+        { erro: "Pagamento indisponível: credencial da PinPay não configurada." },
         { status: 503 }
       );
     }

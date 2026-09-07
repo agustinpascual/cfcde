@@ -1,0 +1,51 @@
+/* Grade de produtos compartilhada pela busca e pelas páginas de seção.
+   Cartões encostados por uma linha fina, como na vitrine de referência —
+   sem sombra nem cantos arredondados, que destoariam do resto da loja. */
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid #e4dfd7;
+  border-left: 1px solid #e4dfd7;
+}
+
+.card {
+  display: flex; flex-direction: column;
+  padding: 16px 16px 22px;
+  border-right: 1px solid #e4dfd7;
+  border-bottom: 1px solid #e4dfd7;
+  color: inherit; text-decoration: none;
+  transition: background .15s;
+}
+.card:hover { background: #fbfaf8; }
+
+.imagem { position: relative; display: block; aspect-ratio: 1 / 1; overflow: hidden; }
+.imagem img { width: 100%; height: 100%; object-fit: contain; }
+
+/* A categoria não se repete aqui: numa página de seção todos os itens são
+   dela, e na busca o nome já diz do que se trata. */
+.categoria { display: none; }
+
+.nome {
+  margin-top: 14px; min-height: 2.7em;
+  font-size: 13.5px; font-weight: 600; line-height: 1.35;
+  text-transform: uppercase; color: #151515;
+}
+
+.preco {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin-top: 12px; font-size: 17px; font-weight: 700; color: #151515;
+}
+.de { font-size: 13px; font-weight: 400; color: #8b8279; text-decoration: line-through; }
+/* O parcelamento senta na mesma linha do preço, à direita — é a comparação
+   que o cliente faz de relance. */
+.parcela { margin-left: auto; font-size: 13px; font-weight: 400; color: #57504a; }
+
+@media (max-width: 900px) { .grade { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) {
+  .grade { grid-template-columns: repeat(2, 1fr); }
+  .card { padding: 12px 12px 18px; }
+  .nome { font-size: 12px; min-height: 3em; }
+  .preco { font-size: 15px; flex-wrap: wrap; }
+  .parcela { margin-left: 0; width: 100%; font-size: 12px; }
+}

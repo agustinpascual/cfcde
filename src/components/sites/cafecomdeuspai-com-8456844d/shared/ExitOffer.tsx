@@ -31,20 +31,31 @@ export default function ExitOffer({ codigoDoCupom: cupom, percentual, slug }: Pr
   useEffect(() => {
     try { if (sessionStorage.getItem(CHAVE_SESSAO)) return; } catch {}
 
+    /* CARÊNCIA antes de armar qualquer gatilho.
+
+       Sem ela a oferta aparecia na CHEGADA, não na saída: quem entra no
+       produto clicando num link do menu já está com o ponteiro no topo da
+       tela, e o primeiro movimento em direção à barra do navegador dispara
+       `mouseout` com clientY <= 0. O visitante era recebido por um popup de
+       "espere um instante" sem nunca ter tentado sair.
+
+       Três segundos bastam para o ponteiro descer para o conteúdo, e ninguém
+       decide abandonar a página em menos que isso. */
+    const CARENCIA_MS = 3000;
+
+    let armado = false;
+    let segurando = false;
+    const limpar: (() => void)[] = [];
+
     /* Desktop: o ponteiro sair pela borda de cima é a intenção de fechar a aba. */
     const saiuPorCima = (evento: MouseEvent) => {
+      if (!armado) return;
       if (evento.clientY <= 0 && !evento.relatedTarget) abrir();
     };
 
     /* Mobile e botão voltar: uma entrada extra no histórico segura a primeira
        tentativa de sair e mostra a oferta. A segunda passa — navegador nenhum
        deixa prender de verdade, e insistir só faz a pessoa fechar a aba. */
-    let segurando = false;
-    try {
-      history.pushState({ cdpOferta: true }, "", window.location.href);
-      segurando = true;
-    } catch {}
-
     const aoVoltar = () => {
       if (!segurando) return;
       segurando = false;
@@ -53,11 +64,25 @@ export default function ExitOffer({ codigoDoCupom: cupom, percentual, slug }: Pr
       }
     };
 
+    const armar = () => {
+      armado = true;
+      /* O pushState também espera: empilhar no mesmo instante da navegação de
+         entrada embaralha o histórico e pode disparar popstate na chegada. */
+      try {
+        history.pushState({ cdpOferta: true }, "", window.location.href);
+        segurando = true;
+      } catch {}
+      window.addEventListener("popstate", aoVoltar);
+      limpar.push(() => window.removeEventListener("popstate", aoVoltar));
+    };
+
+    const relogio = window.setTimeout(armar, CARENCIA_MS);
     document.addEventListener("mouseout", saiuPorCima);
-    window.addEventListener("popstate", aoVoltar);
+
     return () => {
+      window.clearTimeout(relogio);
       document.removeEventListener("mouseout", saiuPorCima);
-      window.removeEventListener("popstate", aoVoltar);
+      limpar.forEach((f) => f());
     };
   }, [abrir]);
 

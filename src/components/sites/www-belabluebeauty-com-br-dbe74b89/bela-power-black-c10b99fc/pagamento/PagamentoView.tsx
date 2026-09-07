@@ -2,6 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { acompanharPix } from "@/lib/acompanhar-pix";
 import { lerCobranca, type Cobranca } from "../checkout/cobranca";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { IMG, produto } from "../data";
@@ -65,17 +66,11 @@ export default function PagamentoView({ id }: { id: string }) {
 
   /* polling do status */
   useEffect(() => {
-    const t = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/pix/${id}`, { cache: "no-store" });
-        if (!res.ok) return;
-        const d = await res.json();
-        if (d.status === "approved" && !aprovado.current) {
-          aprovado.current = true; setStatus("approved"); registrar("compra", { id }); clearInterval(t);
-        } else if (d.status === "expired") { setTempoEsgotado(true); }
-      } catch { /* tenta de novo no próximo ciclo */ }
-    }, 4000);
-    return () => clearInterval(t);
+    return acompanharPix(id, (d) => {
+      if ((d.status === "approved" || d.status === "paid") && !aprovado.current) {
+        aprovado.current = true; setStatus("approved"); registrar("compra", { id });
+      } else if (d.status === "expired") { setTempoEsgotado(true); }
+    });
   }, [id]);
 
   /* contagem de 15 minutos */

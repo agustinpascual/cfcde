@@ -24,13 +24,22 @@ const NOTAS: Record<ChaveConfig, string> = {
   GEMINI_API_KEY: "Chave do Google AI Studio — dá ao robô compreensão de linguagem",
   BBF_PROVISIONAMENTO_URL: "URL do endpoint que cria a conta no app (app-bella-two)",
   BBF_PROVISIONAMENTO_TOKEN: "Token x-bbf-token que autoriza a criação de acesso",
+  EMPRESA_RAZAO_SOCIAL: "Razão social completa, como no cartão CNPJ",
+  EMPRESA_CNPJ: "Apenas números ou com pontuação — sai impresso no recibo",
+  EMPRESA_IE: "Inscrição estadual (deixe vazio se for isento)",
+  EMPRESA_ENDERECO: "Endereço completo em uma linha: rua, nº, bairro, cidade/UF, CEP",
+  EMPRESA_TELEFONE: "Telefone de contato que aparece no recibo",
+  META_CAPI_TOKEN: "Token da API de Conversões (Eventos > Configurar > API de Conversões)",
+  CORREIOS_URL: "Endpoint que cria a encomenda, ex.: https://….supabase.co/functions/v1/pedido-pago",
+  CORREIOS_SECRET: "Valor do cabeçalho x-integration-secret — nunca sai do servidor",
+  EMPRESA_LOGO: "Caminho do logo, ex.: /sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png",
 };
 
 const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: string[] }[] = [
   {
     nome: "PinPay", papel: "Cobranças PIX e webhook de pagamento",
     chaves: ["PINPAY_TOKEN", "PINPAY_WEBHOOK_SECRET"],
-    passos: ["Cadastrar https://bella-gummy.vercel.app/api/webhooks/pinpay no painel da PinPay", "Marcar o evento payment_approved"],
+    passos: ["Cadastrar https://cafecomdeusepai.com/api/webhooks/pinpay no painel da PinPay", "Marcar o evento payment_approved"],
   },
   {
     nome: "Resend", papel: "E-mails de confirmação de pedido e pagamento",
@@ -38,26 +47,35 @@ const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: st
     passos: ["Verificar o domínio na Resend (SPF + DKIM)", "Sem domínio verificado só dá para enviar ao e-mail da própria conta"],
   },
   {
+    nome: "Meta Pixel", papel: "Rastreia visitas, início de checkout e compras",
+    chaves: ["META_CAPI_TOKEN"],
+    passos: [
+      "O ID do pixel fica no build (NEXT_PUBLIC_META_PIXEL_ID); só o token é editável aqui",
+      "PageView e InitiateCheckout saem do navegador; Purchase sai do servidor quando o PIX é confirmado",
+      "Purchase pelo servidor é o único jeito de contar PIX: o cliente fecha a aba antes de o pagamento cair",
+    ],
+  },
+  {
+    nome: "Correios", papel: "Cria a encomenda e devolve o código de rastreio",
+    chaves: ["CORREIOS_URL", "CORREIOS_SECRET"],
+    passos: [
+      "A chamada sai do servidor da loja, nunca do navegador — o segredo não pode ir para o JavaScript da página",
+      "Dispara sozinho quando a PinPay confirma o pagamento; o código vai no e-mail de confirmação",
+      "Sem estas duas chaves o pedido segue normal, só sem rastreio automático",
+    ],
+  },
+  {
+    nome: "Dados da empresa", papel: "Saem impressos no recibo de compra do cliente",
+    chaves: ["EMPRESA_RAZAO_SOCIAL", "EMPRESA_CNPJ", "EMPRESA_IE", "EMPRESA_ENDERECO", "EMPRESA_TELEFONE", "EMPRESA_LOGO"],
+    passos: [
+      "O recibo abre em cada pedido, no botão \u201cRecibo\u201d",
+      "Recibo não é nota fiscal: a NF-e exige certificado digital e autorização da SEFAZ",
+    ],
+  },
+  {
     nome: "Z-API (WhatsApp)", papel: "Atendimento e disparos pelo WhatsApp",
     chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN"],
     passos: ["Conectar o número na Z-API", "Apontar o webhook de mensagens para /api/webhooks/zapi"],
-  },
-  {
-    nome: "App fitness", papel: "Cria a conta no app quando o pagamento é aprovado",
-    chaves: ["BBF_PROVISIONAMENTO_URL", "BBF_PROVISIONAMENTO_TOKEN"],
-    passos: [
-      "O endpoint recebe { referencia } e cria a conta buscando e-mail e nome no pedido",
-      "Para o e-mail com a senha chegar, o Resend precisa estar configurado no lado do app",
-    ],
-  },
-  {
-    nome: "Gemini", papel: "Cérebro do robô do WhatsApp — entende pergunta fora do previsto",
-    chaves: ["GEMINI_API_KEY"],
-    passos: [
-      "Gerar a chave em aistudio.google.com/apikey (tem cota gratuita)",
-      "Sem chave o robô continua respondendo pelo motor interno, só que limitado a pergunta prevista",
-      "O treinamento do painel vale para os dois — a chave muda quem interpreta, não a política",
-    ],
   },
 ];
 

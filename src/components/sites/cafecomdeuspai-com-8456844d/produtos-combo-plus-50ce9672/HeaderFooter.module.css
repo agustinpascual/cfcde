@@ -92,3 +92,25 @@
 .footerColumn summary{font-size:16px;font-weight:500;line-height:24px}
 .footerColumn li,.helpText{font-size:14px;line-height:21px}
 @media(max-width:767px){.footerColumn summary{font-size:13px;line-height:20px}.footerColumn li,.helpText{font-size:12px;line-height:18px}}
+
+/* ===== Cabeçalho sobreposto (home) =====
+   Sai do fluxo e flutua sobre o banner. Texto e ícones em branco, porque o
+   herói é escurecido por baixo. O gradiente sutil no topo garante contraste
+   mesmo se a foto tiver uma área clara logo abaixo do menu. */
+/* O posicionamento passou para o contêiner .sobreposto; aqui fica só a
+   aparência. */
+.sobreposto { position: absolute; top: 0; right: 0; left: 0; z-index: 30; }
+.headerTransparente {
+  border-bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.42) 0%, rgba(0,0,0,.12) 70%, transparent 100%);
+  color: #fff;
+}
+.headerTransparente a,
+.headerTransparente button,
+.headerTransparente svg { color: #fff; }
+.headerTransparente svg { stroke: currentColor; }
+/* O logo é preto com o "fé" em cobre; sobre o banner escuro ele some.
+   O filtro o deixa branco preservando a forma. */
+.headerTransparente .logo,
+.headerTransparente .logoLink img { filter: brightness(0) invert(1); }
+.headerTransparente .cartCount { background: #fff; color: #151515; }

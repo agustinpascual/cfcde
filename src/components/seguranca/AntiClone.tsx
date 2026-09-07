@@ -23,7 +23,8 @@ const OFICIAIS = (process.env.NEXT_PUBLIC_DOMINIOS_OFICIAIS ?? "")
 function permitido(host: string) {
   if (!OFICIAIS.length) return true;
   if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) return true;
-  if (host.endsWith(".vercel.app")) return true;
+  /* Removido o passe livre para *.vercel.app: o site saiu da Vercel, e
+     aquela regra deixava qualquer um subir uma cópia lá e servi-la. */
   return OFICIAIS.some((oficial) => host === oficial || host.endsWith(`.${oficial}`));
 }
 

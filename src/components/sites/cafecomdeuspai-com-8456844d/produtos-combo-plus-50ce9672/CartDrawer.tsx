@@ -19,10 +19,20 @@ export default function CartDrawer({open,quantity,onClose,onQuantityChange,produ
  useEffect(()=>{if(!open)return;const overflow=document.body.style.overflow;const escape=(e:KeyboardEvent)=>{if(e.key==="Escape")onClose()};document.body.style.overflow="hidden";window.addEventListener("keydown",escape);return()=>{document.body.style.overflow=overflow;window.removeEventListener("keydown",escape)}},[open,onClose]);
  const remove=()=>{setHasItem(false);onQuantityChange(0)};
  const decrease=()=>qty<=1?remove():onQuantityChange(qty-1);
+ /* Mesma chave que o checkout lê em `localStorage.getItem("cdp-cupom")`.
+    Sem gravar aqui, o cupom aplicado na sacola existia só no estado do React:
+    o cliente via o desconto, clicava em Finalizar compra e o checkout abria
+    com o preço cheio. */
+ const CHAVE_CUPOM = "cdp-cupom";
  const apply=()=>{
   const codigo=coupon.trim().toUpperCase();
-  if(!cupomValido(codigo,productSlug)){setCupomAplicado("");setCouponStatus("invalid");return}
+  if(!cupomValido(codigo,productSlug)){
+   setCupomAplicado("");setCouponStatus("invalid");
+   try{localStorage.removeItem(CHAVE_CUPOM)}catch{}
+   return
+  }
   setCupomAplicado(codigo);setCoupon(codigo);setCouponStatus("valid");
+  try{localStorage.setItem(CHAVE_CUPOM,codigo)}catch{}
  };
  const subtotal=hasItem?unitPrice*qty:0;
  /* Mesma regra do checkout (lib/promocoes): aqui é só vitrine, quem cobra é a API. */

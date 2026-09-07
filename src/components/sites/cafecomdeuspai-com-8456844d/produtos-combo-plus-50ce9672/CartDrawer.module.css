@@ -52,3 +52,56 @@
   .empty h3{font-size:15px}
   .empty p{font-size:10px}
 }
+
+/* ===== Desktop: proporções próprias =====
+   O restante do arquivo foi desenhado para telas de celular e vinha sendo
+   usado igual no computador — 738px de largura, título de 36px, preço de
+   32px e um rodapé de altura FIXA (616px) que abria um vão morto entre o
+   cupom e o total. Aqui a gaveta vira um painel lateral de verdade. */
+@media (min-width: 561px) {
+  .drawer { width: 430px; border-top-width: 2px; }
+
+  .header { min-height: 64px; padding: 0 20px; }
+  .header h2 { font-size: 19px; }
+  .bag { left: 20px; width: 26px; height: 26px; }
+  .iconButton { right: 12px; width: 38px; height: 38px; }
+  .iconButton svg { width: 22px; height: 22px; }
+
+  .content { padding: 20px 20px 0; }
+  .product { grid-template-columns: 96px minmax(0, 1fr) 32px; gap: 14px; padding-bottom: 18px; }
+  .imageWrap { width: 96px; height: 96px; border-radius: 0 0 10px 10px; }
+  .productInfo h3 { margin-bottom: 6px; font-size: 15px; line-height: 1.35; }
+  .productInfo p { margin-bottom: 10px; font-size: 19px; }
+  .productInfo label { margin-bottom: 6px; font-size: 12.5px; }
+
+  .stepper { width: 108px; height: 36px; grid-template-columns: 32px 1fr 32px; border-radius: 10px; }
+  .stepper button { width: 26px; height: 26px; }
+  .stepper button svg { width: 14px; height: 14px; }
+  .stepper span { font-size: 15px; }
+  .remove { width: 32px; height: 32px; }
+  .remove svg { width: 20px; height: 20px; }
+
+  /* height:auto derruba os 616px fixos — o rodapé volta a acompanhar o conteúdo. */
+  .footer { height: auto; padding: 16px 20px 20px; }
+  .summary, .total { font-size: 16px; }
+  .summary strong, .total strong { font-size: 18px; }
+
+  .footer .coupon { margin: 18px 0 0; }
+  .coupon > label { margin-bottom: 7px; font-size: 12.5px; }
+  .coupon > div { height: 46px; grid-template-columns: minmax(0, 1fr) 96px; border-radius: 10px; }
+  .coupon input { padding: 0 14px; font-size: 14px; }
+  .coupon > div button { font-size: 14px; }
+  .coupon p { font-size: 12.5px; }
+
+  .footer .total { margin-top: 18px; margin-bottom: 16px; }
+  .checkout, .footer .continue { height: 48px; border-radius: 10px; font-size: 15px; }
+  .footer .continue { margin-top: 10px; border-width: 2px; }
+
+  .empty h3 { font-size: 19px; }
+  .empty p { font-size: 14px; }
+  .empty svg { width: 44px; height: 44px; margin-bottom: 12px; }
+}
+
+/* Mesma origem da moldura do checkout: faixa verde-petróleo no topo da
+   gaveta. Trocada pelo latão da marca. */
+.drawer { border-top-color: #b89967; }

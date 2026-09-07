@@ -5,16 +5,13 @@ import { useState } from "react";
 import { MobilePurchaseBar, ShippingCalculator } from "../shared/ProductPurchaseTools";
 import StockUrgency, { type EstoqueLote } from "../shared/StockUrgency";
 import { assetRoot, desconto, galeria, moeda, parcelas, type Oferta, type Produto } from "./produto";
+import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
 import styles from "./ProductPage.module.css";
 
-const products = [
-  ["combo-2.webp", "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + COPO", "R$89,90", "4 de R$22,48"],
-  ["combo-3.webp", "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + MARCA-TEXTO", "R$64,90", "4 de R$16,23"],
-  ["combo-4.webp", "2 LIVROS CAFÉ COM DEUS PAI VOL. 6 (BROCHURA) + 2 COPOS", "R$179,90", "4 de R$44,98"],
-  ["combo-5.webp", "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + PLANNER + MARCA-TEXTO", "R$129,90", "4 de R$32,48"],
-  ["combo-6.webp", "PLANNER CAFÉ COM DEUS PAI + CANECA", "R$159,90", "4 de R$39,98"],
-  ["combo-7.webp", "2 CANECAS + 2 LATAS DE CAFÉ GOURMET", "R$259,90", "4 de R$64,98"],
-];
+/* A esteira de recomendação trazia os combos do vol.6 fixos no código.
+   Agora sai do catálogo, na categoria Lançamento, e o produto que está
+   aberto na tela nunca se recomenda a si mesmo. */
+const recomendados = PRODUCTS.filter((p) => p.category === "Lançamento").slice(0, 8);
 
 export type ProductPageProps = {
   produto: Produto;
@@ -25,6 +22,8 @@ export type ProductPageProps = {
 };
 
 export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque }: ProductPageProps) {
+  /* Galeria do próprio produto quando houver; senão, a compartilhada. */
+  const fotos = produto.galeria ?? galeria;
   const [selected, setSelected] = useState(0);
   const abatimento = desconto(oferta);
   /* Com mais de um pacote, a escolha substitui o seletor de quantidade —
@@ -43,7 +42,7 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
         <div className={styles.productGrid}>
           <div className={styles.gallery}>
             <div className={styles.thumbs} aria-label="Imagens do produto">
-              {galeria.map((file, index) => (
+              {fotos.map((file, index) => (
                 <button className={selected === index ? styles.thumbActive : ""} key={file} onClick={() => setSelected(index)} aria-label={`Ver imagem ${index + 1}`}>
                   <Image src={`${assetRoot}/${file}`} alt="" width={72} height={72} />
                 </button>
@@ -51,9 +50,9 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
             </div>
             <div className={styles.galleryMain}>
               <div className={styles.mainImage}>
-                <Image src={`${assetRoot}/${galeria[selected]}`} alt={produto.nome} fill priority sizes="(max-width: 767px) 100vw, 58vw" />
+                <Image src={`${assetRoot}/${fotos[selected]}`} alt={produto.nome} fill priority sizes="(max-width: 767px) 100vw, 58vw" />
               </div>
-              <div className={styles.dots} aria-hidden="true">{galeria.map((file, index) => <button key={file} className={selected === index ? styles.dotActive : ""} onClick={() => setSelected(index)} />)}</div>
+              <div className={styles.dots} aria-hidden="true">{fotos.map((file, index) => <button key={file} className={selected === index ? styles.dotActive : ""} onClick={() => setSelected(index)} />)}</div>
               <ShippingCalculator />
             </div>
           </div>
@@ -113,6 +112,15 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
           <span>Descrição do Produto</span><span>{descriptionOpen ? "−" : "+"}</span>
         </button>
         {descriptionOpen && <div className={styles.descriptionBody}>
+          {produto.descricao
+            ? produto.descricao.map((par, i) => (
+                <p key={i}>
+                  {par.forte ? <strong>{par.forte}</strong> : null}
+                  {par.forte && par.texto ? <br /> : null}
+                  {par.texto}
+                </p>
+              ))
+            : <>
           <p><strong>*NÃO INCLUI CAIXA PERSONALIZADA*</strong></p>
           <p>Este combo especial inclui:</p>
           <p><strong>Livro Café com Deus Pai – Volume 6 (BROCHURA):</strong><br />Um convite diário para desfrutar da melhor companhia que um ser humano pode ter: Deus Pai. Receba porções de amor que irão renovar a sua fé e fortalecer sua caminhada espiritual.</p>
@@ -128,7 +136,7 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
           <p><strong>Detalhes:</strong></p>
           <p>- Autor: Junior Rostirola</p><p>- Editora: Vélos</p><p>- Ano de publicação: 2025</p><p>- Formato: brochura</p><p>- Dimensões: 29.0 x 31.3 x 17.5 cm</p><p>- Peso aproximado do combo: 2.870 kg</p><p>- Idioma: Português</p>
           <p>SKU: COMBO520</p>
-          <p>As imagens exibidas são meramente ilustrativas e têm o propósito de representar o produto de forma aproximada.</p>
+          <p>As imagens exibidas são meramente ilustrativas e têm o propósito de representar o produto de forma aproximada.</p></>}
         </div>}
       </section>
 
@@ -138,10 +146,12 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
 
       <section className={styles.recommendations}>
         <p>QUEM VIU, VIU TAMBÉM</p><h2>Escolhidos especialmente para você</h2>
-        <div className={styles.rail}>{products.map(([image, name, price, part]) => <article key={name}>
-          <div className={styles.cardImage}><Image src={`${assetRoot}/${image}`} alt={name} fill sizes="240px" /></div>
-          <h3>{name}</h3><strong>{price}</strong><span>{part}</span>
-        </article>)}</div>
+        <div className={styles.rail}>{recomendados.map((item) => (
+          <a key={item.slug} href={`/produtos/${item.slug}`}>
+            <div className={styles.cardImage}><Image src={item.image} alt={item.name} fill sizes="240px" /></div>
+            <h3>{item.name}</h3><strong>{item.price}</strong><span>{item.installment}</span>
+          </a>
+        ))}</div>
       </section>
 
       <MobilePurchaseBar name={produto.nome} price={moeda(oferta.preco)} originalPrice={oferta.comparado ? moeda(oferta.comparado) : null} installment={parcelas(oferta.preco)} quantity={quantity} onDecrease={() => setQuantity(q => Math.max(1, q - 1))} onIncrease={() => setQuantity(q => q + 1)} onBuy={() => onBuy(quantity)} />
