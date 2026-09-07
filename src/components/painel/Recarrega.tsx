@@ -6,8 +6,17 @@ import { useEffect } from "react";
 export default function Recarrega({ segundos = 15 }: { segundos?: number }) {
   const router = useRouter();
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), segundos * 1000);
-    return () => clearInterval(id);
+    const atualizar = () => {
+      if (document.visibilityState !== "hidden") router.refresh();
+    };
+    const id = setInterval(atualizar, segundos * 1000);
+    window.addEventListener("focus", atualizar);
+    document.addEventListener("visibilitychange", atualizar);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", atualizar);
+      document.removeEventListener("visibilitychange", atualizar);
+    };
   }, [router, segundos]);
   return null;
 }

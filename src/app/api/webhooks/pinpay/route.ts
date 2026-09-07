@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { ler } from "@/lib/config-integracoes";
-import { consultarPix } from "@/lib/pinpay";
+import { consultarPix, type PixStatus } from "@/lib/pinpay";
 import { confirmarPorEmail, depois, registrarCompraNoPixel } from "@/lib/confirmar-pedido";
 import { entregarAcessoApp } from "@/lib/entrega-app";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
@@ -76,13 +76,17 @@ export async function POST(req: Request) {
      à PinPay qual é o status de verdade e agimos por ele. Um aviso forjado
      dizendo "aprovado" cai aqui e vira o status real (pendente), sem efeito. */
   let evento = event;
-  if (!confiavel) {
+  let pixConfirmado: PixStatus | undefined;
+  // O UUID do webhook pode diferir do código PIX devolvido na criação.
+  // A consulta resolve esse UUID para o ID e a referência salvos no pedido.
+  if (idTransacao || !confiavel) {
     if (!idTransacao) {
       console.warn("[pinpay] aviso sem id de transação — ignorado");
       return NextResponse.json({ ok: true, ignorado: "sem_id" });
     }
     try {
-      const pix = await consultarPix(idTransacao);
+      const pix = await consultarPix(idTransacao, AbortSignal.timeout(8000));
+      pixConfirmado = pix;
       const real = STATUS_PARA_EVENTO[String(pix.status)];
       if (event !== real) {
         console.info(`[pinpay] aviso dizia "${event}", a API diz "${pix.status}" — vale a API`);
@@ -101,8 +105,9 @@ export async function POST(req: Request) {
   }
 
   const db = supabaseAdmin();
-  const pixId = (data?.transaction_id ?? data?.id) as string | undefined;
-  const ref = data?.external_reference as string | undefined;
+  const pixId = pixConfirmado?.id ?? idTransacao;
+  const ref = pixConfirmado?.external_reference ?? pixConfirmado?.metadata?.external_reference ??
+    (confiavel ? data?.external_reference as string | undefined : undefined);
 
   /* Idempotente: a PinPay reenvia o mesmo evento, e marcar como pago duas
      vezes tem que dar no mesmo. */
@@ -110,7 +115,7 @@ export async function POST(req: Request) {
     if (!db) throw new Error("Supabase não configurado");
     const alvo = db.from("pedidos").update({
       status,
-      ...(pago ? { pago_em: new Date().toISOString() } : {}),
+      ...(pago ? { pago_em: pixConfirmado?.paid_at ?? pixConfirmado?.updated_at ?? new Date().toISOString() } : {}),
     });
     const filtro = pixId ? alvo.eq("pix_id", pixId)
                  : ref ? alvo.eq("referencia", ref) : null;
@@ -123,11 +128,14 @@ export async function POST(req: Request) {
   }
 
   // guarda o evento cru, para auditoria
+  let eventoGravado: number | string | undefined;
   if (db) {
-    await db.from("eventos_webhook").insert({
+    const { data: registro, error } = await db.from("eventos_webhook").insert({
       provedor: "pinpay", evento: event ?? "desconhecido",
-      pix_id: pixId ?? null, payload: envelope, processado: true,
-    });
+      pix_id: idTransacao ?? pixId ?? null, payload: envelope, processado: false,
+    }).select("id").single();
+    if (error) console.error("[pinpay] falha ao registrar webhook:", error.message);
+    eventoGravado = registro?.id;
   }
 
   switch (evento) {
@@ -163,6 +171,11 @@ export async function POST(req: Request) {
       break;
     default:
       console.info("[pinpay] evento ignorado:", event, referencia);
+  }
+
+  if (db && eventoGravado !== undefined) {
+    const { error } = await db.from("eventos_webhook").update({ processado: true }).eq("id", eventoGravado);
+    if (error) console.error("[pinpay] falha ao concluir auditoria:", error.message);
   }
 
   // responder 2xx rápido evita reenvio

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import FormRastreio from "@/components/painel/FormRastreio";
+import Recarrega from "@/components/painel/Recarrega";
 import { lerAoVivo, lerPedido, moeda } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
@@ -60,6 +61,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <Casca atual="/painel/pedidos" titulo={pedido.referencia}
       subtitulo={`Criado em ${quando(pedido.criado_em)}`} aoVivo={vivos.length}>
+      {pedido.metodo_pagamento === "pix" && <Recarrega segundos={5} />}
       <p className={d.voltar}>
         <Link href="/painel/pedidos">← Voltar para os pedidos</Link>
         <Link href={`/painel/pedidos/${id}/recibo`} className={d.linkRecibo}>Recibo de compra</Link>

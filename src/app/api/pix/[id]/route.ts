@@ -47,11 +47,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     }
 
     const pix = await consultarPix(id, AbortSignal.timeout(8000));
+    if (pedido && (pix.amount !== pedido.valor_centavos ||
+        (pix.external_reference && pix.external_reference !== pedido.referencia))) {
+      throw new Error("Dados da transação divergem do pedido");
+    }
     // A consulta é a alternativa quando o webhook demora ou não chega.
     // Só a transição gravada por esta requisição dispara as integrações.
     if (db && referencia && (pix.status === "approved" || pix.status === "paid")) {
       const { data: atualizado, error } = await db.from("pedidos").update({
-        status: "aprovado", pago_em: pix.paid_at ?? new Date().toISOString(),
+        status: "aprovado", pago_em: pix.paid_at ?? pix.updated_at ?? new Date().toISOString(),
       }).eq("pix_id", id).eq("metodo_pagamento", "pix")
         .in("status", ["pendente", "expirado", "falhou"])
         .select("referencia").maybeSingle();

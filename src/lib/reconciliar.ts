@@ -33,7 +33,7 @@ export async function reconciliarPendentes(limite = 100): Promise<ResultadoRecon
   const prazo = Date.now() + 40_000;
 
   const { data: pendentes, error: erroLeitura } = await db.from("pedidos")
-    .select("referencia,pix_id,status")
+    .select("referencia,pix_id,status,valor_centavos")
     .eq("status", "pendente")
     .eq("metodo_pagamento", "pix")
     .not("pix_id", "is", null)
@@ -54,13 +54,17 @@ export async function reconciliarPendentes(limite = 100): Promise<ResultadoRecon
     r.verificados++;
     try {
       const pix = await consultarPix(p.pix_id as string, AbortSignal.timeout(8000));
+      if (pix.amount !== p.valor_centavos ||
+          (pix.external_reference && pix.external_reference !== p.referencia)) {
+        throw new Error("Dados da transação divergem do pedido");
+      }
       const novo = MAPA[pix.status];
       if (!novo || novo === "pendente") continue;   // ainda em aberto
 
       const aprovado = novo === "aprovado";
       const { data: atualizado, error } = await db.from("pedidos").update({
         status: novo,
-        ...(aprovado ? { pago_em: pix.paid_at ?? new Date().toISOString() } : {}),
+        ...(aprovado ? { pago_em: pix.paid_at ?? pix.updated_at ?? new Date().toISOString() } : {}),
       }).eq("referencia", p.referencia).eq("status", "pendente")
         .eq("metodo_pagamento", "pix").select("referencia").maybeSingle();
 

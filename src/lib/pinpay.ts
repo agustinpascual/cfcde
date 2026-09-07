@@ -23,6 +23,9 @@ export type PixStatus = {
   status: "pending" | "approved" | "expired" | string;
   amount: number;
   paid_at?: string;
+  updated_at?: string;
+  external_reference?: string;
+  metadata?: { external_reference?: string };
   customer?: { name: string; document: string };
 };
 
@@ -85,5 +88,22 @@ export function criarPix(dados: {
   return chamar<PixCriado>("/pix", { method: "POST", body: JSON.stringify(dados) });
 }
 
-export const consultarPix = (id: string, signal?: AbortSignal) =>
-  chamar<PixStatus>(`/pix/${encodeURIComponent(id)}`, { method: "GET", signal });
+export async function consultarPix(id: string, signal?: AbortSignal): Promise<PixStatus> {
+  try {
+    return await chamar<PixStatus>(`/pix/${encodeURIComponent(id)}`, { method: "GET", signal });
+  } catch (error) {
+    // Alguns adquirentes devolvem um código PIX na criação, mas /pix/{id}
+    // só aceita o UUID interno enviado pelo webhook. A listagem traz o código.
+    if ((error as { status?: number }).status !== 404 || !/^PIX[A-Z0-9]+$/.test(id)) throw error;
+    for (let offset = 0; offset < 1000; offset += 100) {
+      const pagina = await chamar<{ data: (PixStatus & { payment_method: string })[] }>(
+        `/transactions?method=pix&limit=100&offset=${offset}`, { method: "GET", signal },
+      );
+      if (!Array.isArray(pagina.data)) throw new Error("Listagem de transações inválida");
+      const encontrado = pagina.data.find((pix) => pix.id === id && pix.payment_method === "pix");
+      if (encontrado) return encontrado;
+      if (pagina.data.length < 100) break;
+    }
+    throw error;
+  }
+}
