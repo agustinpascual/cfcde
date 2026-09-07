@@ -20,6 +20,12 @@ export const CUPONS: Record<string, Cupom> = {
 
 export const normalizarCupom = (codigo: string) => codigo.trim().toUpperCase();
 
+/* Centavos que faltam para o total fechar no real cheio de baixo.
+   A adquirente da PinPay arredonda o valor da transação; para o Pix nunca cair
+   com centavos, descemos o total até o real inteiro e essa sobra entra como
+   desconto — o cliente nunca paga centavos nem paga mais que os 5%. */
+export const sobraAteRealCheio = (totalCentavos: number) => ((totalCentavos % 100) + 100) % 100;
+
 export function cupomValido(codigo: string, produtoSlug: string) {
   const cupom = CUPONS[normalizarCupom(codigo)];
   if (!cupom) return null;
@@ -34,22 +40,31 @@ export type Descontos = {
   totalCentavos: number;
 };
 
-/* O Pix incide sobre o valor já com cupom — é o que a pessoa vai pagar. */
+/* O Pix incide sobre o valor já com cupom — é o que a pessoa vai pagar.
+   `freteCentavos` entra na conta só para arredondar o TOTAL (produto + frete)
+   ao real cheio; sem ele, o SEDEX (R$20,32) deixaria centavos no valor final. */
 export function calcularDescontos({
   subtotalCentavos,
   produtoSlug,
   cupom = "",
   pagamento,
+  freteCentavos = 0,
 }: {
   subtotalCentavos: number;
   produtoSlug: string;
   cupom?: string;
   pagamento?: "pix" | "cartao";
+  freteCentavos?: number;
 }): Descontos {
   const valido = cupom ? cupomValido(cupom, produtoSlug) : null;
   const cupomCentavos = valido ? Math.round(subtotalCentavos * valido.percentual) : 0;
   const aposCupom = subtotalCentavos - cupomCentavos;
-  const pixCentavos = pagamento === "pix" ? Math.round(aposCupom * DESCONTO_PIX) : 0;
+  let pixCentavos = 0;
+  if (pagamento === "pix") {
+    const pixNominal = Math.round(aposCupom * DESCONTO_PIX);
+    const totalNominal = aposCupom - pixNominal + freteCentavos;
+    pixCentavos = pixNominal + sobraAteRealCheio(totalNominal);   // total sem centavos
+  }
   return {
     cupomAplicado: valido ? normalizarCupom(cupom) : null,
     cupomCentavos,

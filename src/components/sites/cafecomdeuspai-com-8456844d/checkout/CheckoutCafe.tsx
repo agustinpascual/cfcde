@@ -103,6 +103,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
     produtoSlug: product.slug,
     cupom: cupomAplicado,
     pagamento: payment === "pix" ? "pix" : "cartao",
+    freteCentavos: shippingFeeCents,
   });
   const totalCents = product.priceCents - descontos.totalCentavos + shippingFeeCents;
 

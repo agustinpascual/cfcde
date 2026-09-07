@@ -1,5 +1,5 @@
 import "server-only";
-import { calcularDescontos } from "./promocoes";
+import { calcularDescontos, sobraAteRealCheio } from "./promocoes";
 
 /* Tabela de preços autoritativa. O checkout envia apenas o índice do kit e a
    quantidade; o valor cobrado é calculado AQUI. Se viesse do cliente, daria
@@ -26,7 +26,9 @@ export function calcularTotal(kitIndex: number, qtd: number, frete: IdFrete) {
   if (!opcao) throw new Error("Forma de envio inválida");
 
   const subtotal = kit.centavos * qtd;
-  const desconto = Math.round(subtotal * DESCONTO_PIX);   // PIX sempre 5%
+  const descontoNominal = Math.round(subtotal * DESCONTO_PIX);   // PIX sempre 5%
+  const totalNominal = subtotal - descontoNominal + opcao.centavos;
+  const desconto = descontoNominal + sobraAteRealCheio(totalNominal);   // total sem centavos
   const total = subtotal - desconto + opcao.centavos;
   return { kit, subtotal, desconto, frete: opcao, total };
 }
@@ -69,6 +71,7 @@ export function calcularTotalCafe(
     produtoSlug,
     cupom: opcoes.cupom,
     pagamento: opcoes.pagamento,
+    freteCentavos: freteSelecionado.centavos,
   });
   return {
     kit: produto,
