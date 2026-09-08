@@ -8,9 +8,9 @@ function requisicao(caminho, cf = { country: "BR", city: "Itajaí" }, opcoes) {
   return req;
 }
 
-test("bloqueia loja, checkout e criação de PIX em Itajaí", () => {
+test("bloqueia loja, checkout e criação de PIX nas três cidades configuradas", () => {
   for (const caminho of ["/", "/produtos/combo-plus2027", "/produto/box-plus2027", "/checkout", "/api/pix"]) {
-    for (const city of ["Itajaí", "Itajai", "ITAJAÍ", " Itajai "]) {
+    for (const city of ["Itajaí", "Itajai", "ITAJAÍ", " Itajai ", "Navegantes", "NAVEGANTES", "Balneário Camboriú", "Balneario Camboriu", "BALNEÁRIO CAMBORIÚ"]) {
       const resposta = bloqueioRegional(requisicao(caminho, { city, country: "BR" }));
       assert.equal(resposta?.status, 403, `${city} ${caminho}`);
       assert.equal(resposta.headers.get("cache-control"), "private, no-store");
@@ -26,8 +26,10 @@ test("bloqueia POST de PIX e todos os dispositivos sem depender do user-agent", 
 });
 
 test("preserva painel e integrações, sem liberar prefixos parecidos", () => {
-  for (const caminho of ["/painel", "/painel/entrar", "/api/painel/entrar", "/api/webhooks/pinpay", "/api/cron/avisos-pix", "/_next/static/app.js", "/sites/logo.webp"]) {
-    assert.equal(bloqueioRegional(requisicao(caminho)), null, caminho);
+  for (const city of ["Itajaí", "Navegantes", "Balneário Camboriú"]) {
+    for (const caminho of ["/painel", "/painel/entrar", "/api/painel/entrar", "/api/webhooks/pinpay", "/api/cron/avisos-pix", "/_next/static/app.js", "/sites/logo.webp"]) {
+      assert.equal(bloqueioRegional(requisicao(caminho, { country: "BR", city })), null, `${city} ${caminho}`);
+    }
   }
   for (const caminho of ["/painel-falso", "/api/painel-falso", "/api/webhooks-falso"]) {
     assert.equal(bloqueioRegional(requisicao(caminho))?.status, 403, caminho);
@@ -35,7 +37,7 @@ test("preserva painel e integrações, sem liberar prefixos parecidos", () => {
 });
 
 test("outras cidades e ausência de geolocalização não são bloqueadas", () => {
-  for (const cf of [{ country: "BR", city: "Navegantes" }, { country: "BR", city: "São Paulo" }, { country: "US", city: "Itajai" }, {}, null]) {
+  for (const cf of [{ country: "BR", city: "Camboriú" }, { country: "BR", city: "Itapema" }, { country: "BR", city: "São Paulo" }, { country: "US", city: "Itajai" }, {}, null]) {
     assert.equal(bloqueioRegional(requisicao("/", cf)), null);
   }
 });

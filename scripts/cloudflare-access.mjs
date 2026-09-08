@@ -3,9 +3,11 @@ const normalizar = (valor) => String(valor ?? "")
 
 const dentroDe = (caminho, raiz) => caminho === raiz || caminho.startsWith(`${raiz}/`);
 
+const cidadesBloqueadas = new Set(["itajai", "navegantes", "balneario camboriu"]);
+
 /** Usa metadados confiáveis do Worker, nunca headers enviados pelo visitante. */
 export function bloqueioRegional(request) {
-  if (request.cf?.country !== "BR" || normalizar(request.cf?.city) !== "itajai") return null;
+  if (request.cf?.country !== "BR" || !cidadesBloqueadas.has(normalizar(request.cf?.city))) return null;
 
   const caminho = new URL(request.url).pathname;
   // Mantém o painel autenticado e as integrações operacionais. Arquivos
