@@ -15,7 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     /* As páginas de produto são o que traz busca — prioridade acima das
        institucionais. */
     pagina("/produtos/combo-plus", "weekly", 0.9),
-    pagina("/produtos/box-plus2027", "weekly", 0.9),
+    pagina("/produto/box-plus2027", "weekly", 0.9),
     ...PRODUCTS.map(({ slug }) => pagina(`/produtos/${slug}`, "weekly", 0.8)),
     pagina("/vitrine", "weekly", 0.6),
     pagina("/duvidas-frequentes", "monthly", 0.6),

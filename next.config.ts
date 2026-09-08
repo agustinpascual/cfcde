@@ -23,7 +23,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/produtos/combo-plus2027",
-        destination: "/produtos/box-plus2027",
+        destination: "/produto/box-plus2027",
+        permanent: true,
+      },
+      {
+        source: "/produtos/box-plus2027",
+        destination: "/produto/box-plus2027",
         permanent: true,
       },
     ];

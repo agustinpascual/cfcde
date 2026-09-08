@@ -14,7 +14,7 @@ const slides = [
     mobileImage: `${assetRoot}/asset-005-v3.webp`,
     alt: "Você faz parte desta história — faça parte do grupo exclusivo Café com Deus Pai",
     titulo: "Sim, Deus deseja tomar café com você",
-    href: "/produtos/box-plus2027" as string | null,
+    href: "/produto/box-plus2027" as string | null,
     button: "Conheça" as string | null,
   },
 ];
