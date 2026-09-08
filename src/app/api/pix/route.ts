@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   try {
     const cobranca = await criarPix({
       amount: valores.total,
-      description: `Pedido ${pedido} · ${valores.kit.nome}`,
+      description: `Pedido #${pedido}`,
       customer: { name: nome, email, document: { number: documento } },
       metadata: { external_reference: pedido, checkout_url: `${origem}/checkout` },
     });

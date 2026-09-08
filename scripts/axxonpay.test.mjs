@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { conferirPagamentoAxxon, ehAxxon, idAxxon, idRemotoAxxon, lerPagamentoAxxon, statusAxxon } from "../src/lib/axxonpay-protocolo.ts";
-import { tentativaPagamento, concluirTentativa } from "../src/lib/tentativa-pagamento.ts";
+import { tentativaPagamento, concluirTentativa, liberarTentativaEncerrada } from "../src/lib/tentativa-pagamento.ts";
+import { urlWebhookAxxon } from "../src/lib/axxonpay-webhook.ts";
 
 test("normaliza criação e consulta sem converter valores por suposição", () => {
   const p = { id: "payment_uuid", amount: 2500, status: "PENDING", paymentMethod: "pix" };
@@ -50,6 +51,32 @@ test("endpoint antigo não lê body nem grava cartão", async () => {
   assert.equal(r.status, 410);
   const fonte = readFileSync(new URL("../src/app/api/cartao-sandbox/route.ts", import.meta.url), "utf8");
   assert.doesNotMatch(fonte, /supabase|\.json\(\)|\.text\(\)|console\./);
+});
+test("navegador só libera tentativa encerrada, sem apagar identificador mais recente", () => {
+  const banco = new Map();
+  Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: {
+    getItem: chave => banco.get(chave) ?? null, setItem: (chave, valor) => banco.set(chave, valor), removeItem: chave => banco.delete(chave),
+  } });
+  try {
+    const inicial = tentativaPagamento("teste", "pix");
+    for (const resposta of [{}, { codigo: "TIMEOUT" }, { codigo: "DADOS_DIVERGENTES" }]) {
+      assert.equal(liberarTentativaEncerrada("teste", "pix", inicial, resposta), false);
+      assert.equal(tentativaPagamento("teste", "pix"), inicial);
+    }
+    const encerrada = { codigo: "TENTATIVA_ENCERRADA_SEM_COBRANCA" };
+    assert.equal(liberarTentativaEncerrada("teste", "pix", inicial, encerrada), true);
+    const nova = tentativaPagamento("teste", "pix");
+    assert.notEqual(nova, inicial);
+    assert.equal(liberarTentativaEncerrada("teste", "pix", inicial, encerrada), false);
+    assert.equal(tentativaPagamento("teste", "pix"), nova);
+  } finally { delete globalThis.sessionStorage; }
+});
+test("webhook exige HTTPS e mantém destino oficial quando não há override", () => {
+  assert.equal(urlWebhookAxxon("https://loja.example"), "https://loja.example/api/webhooks/axxonpay");
+  for (const destino of ["http://loja.example/hook", "https://user:senha@loja.example/hook", "https://loja.example/#hook", "inválido"]) {
+    assert.throws(() => urlWebhookAxxon("https://loja.example", destino));
+  }
+  assert.throws(() => urlWebhookAxxon());
 });
 test("checkout não envia mais cartão ao simulador antigo", () => {
   const fonte = readFileSync(new URL("../src/components/sites/cafecomdeuspai-com-8456844d/checkout/CheckoutCafe.tsx", import.meta.url), "utf8");

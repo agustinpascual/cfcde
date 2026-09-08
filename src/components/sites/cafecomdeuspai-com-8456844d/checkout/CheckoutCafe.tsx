@@ -9,7 +9,7 @@ import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/Met
 import { calcularDescontos, cupomValido, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
 import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
-import { tentativaPagamento } from "@/lib/tentativa-pagamento";
+import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
@@ -71,7 +71,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   const [phone, setPhone] = useState("");
   const [cep, setCep] = useState("");
   const [address, setAddress] = useState<Address>(emptyAddress);
-  const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ready" | "partial" | "error">("idle");
   const [shippingMethod, setShippingMethod] = useState<"pac" | "sedex" | null>(null);
   const [offers, setOffers] = useState(false);
   const [error, setError] = useState("");
@@ -122,17 +122,22 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
     fetch(`/api/cep?cep=${cep}`, { signal: controller.signal })
       .then(async response => {
         const data = await response.json();
+        if (controller.signal.aborted) return;
         if (!response.ok) throw new Error(data.error || "CEP não encontrado.");
+        const campo = (valor: unknown) => typeof valor === "string" ? valor.trim() : "";
+        const encontrado = {
+          street: campo(data.street), neighborhood: campo(data.neighborhood),
+          city: campo(data.city), state: campo(data.state),
+        };
         setAddress(current => ({
           ...current,
-          street: data.street ?? "",
+          ...encontrado,
           // O complemento é sempre informado pelo cliente (apto, bloco etc.).
           complement: "",
-          neighborhood: data.neighborhood ?? "",
-          city: data.city ?? "",
-          state: data.state ?? "",
         }));
-        setCepStatus("ready");
+        // Mantém o modo manual mesmo depois de digitar: não desmonta os
+        // campos enquanto o cliente está completando o endereço.
+        setCepStatus(Object.values(encontrado).every(Boolean) ? "ready" : "partial");
       })
       .catch(error => {
         if (error.name !== "AbortError") setCepStatus("error");
@@ -167,6 +172,10 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
       setError("Digite o CEP com 8 números.");
       return;
     }
+    if (cepStatus === "loading") {
+      setError("Aguarde a consulta do CEP terminar.");
+      return;
+    }
     if (!shippingMethod) {
       setError("Escolha uma forma de entrega para continuar.");
       return;
@@ -179,8 +188,11 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
       setError("Digite o telefone com DDD.");
       return;
     }
-    if (!address.street || (!withoutNumber && !address.number) || !address.neighborhood || !address.city || !address.state) {
-      setError("Preencha todos os campos obrigatórios do endereço.");
+    const obrigatorios: [keyof Address, string][] = [["street", "rua"], ["neighborhood", "bairro"], ["city", "cidade"], ["state", "estado"]];
+    if (!withoutNumber) obrigatorios.push(["number", "número (ou marque Sem número)"]);
+    const faltando = obrigatorios.filter(([campo]) => !address[campo].trim()).map(([, nome]) => nome);
+    if (faltando.length) {
+      setError(`Preencha os campos do endereço: ${faltando.join(", ")}.`);
       return;
     }
     if (![11, 14].includes(documentDigits.length)) {
@@ -233,9 +245,13 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   async function generatePix() {
     setGeneratingPix(true); setPaymentError(""); setPixCharge(null);
     try {
-      const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, tentativa: tentativaPagamento(product.slug, "pix") }), signal: AbortSignal.timeout(35000) });
+      const tentativa = tentativaPagamento(product.slug, "pix");
+      const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, tentativa }), signal: AbortSignal.timeout(35000) });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.erro || "Não foi possível gerar o PIX.");
+      if (!response.ok) {
+        liberarTentativaEncerrada(product.slug, "pix", tentativa, data);
+        throw new Error(data.erro || "Não foi possível gerar o PIX.");
+      }
       setPixCharge(data);
       pixel("AddPaymentInfo", { ...dadosProdutoPixel(product.slug, product.name, data.total), payment_method: "pix" });
       /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
@@ -300,8 +316,8 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
                     <input className={styles.input} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Sobrenome" autoComplete="family-name" aria-label="Sobrenome" />
                     <input className={`${styles.input} ${styles.fullRow}`} value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="Telefone com DDD" inputMode="tel" autoComplete="tel" aria-label="Telefone com DDD" />
                   </div>
-                  <p className={`${styles.cepMessage} ${cepStatus === "error" ? styles.cepError : ""}`}>{cepStatus === "loading" ? "Buscando endereço..." : cepStatus === "error" ? "CEP não encontrado. Preencha o endereço manualmente." : ""}</p>
-                  {cepStatus === "ready" ? <div className={styles.addressCard}><MapPin aria-hidden="true" /><div><span>{address.street}</span><b>CEP {cep} - {address.neighborhood}</b><span>{address.city} - {address.state}</span></div><button type="button" onClick={changeCep}>Alterar</button></div> : cepStatus === "error" ? <div className={styles.addressEdit}><input className={styles.input} value={address.street} onChange={e => updateAddress("street", e.target.value)} placeholder="Endereço" aria-label="Endereço" /><input className={styles.input} value={address.neighborhood} onChange={e => updateAddress("neighborhood", e.target.value)} placeholder="Bairro" aria-label="Bairro" /><input className={styles.input} value={address.city} onChange={e => updateAddress("city", e.target.value)} placeholder="Cidade" aria-label="Cidade" /><input className={styles.input} value={address.state} onChange={e => updateAddress("state", e.target.value.toUpperCase().slice(0,2))} placeholder="Estado" aria-label="Estado" /></div> : null}
+                  <p role="status" className={`${styles.cepMessage} ${cepStatus === "error" ? styles.cepError : ""}`}>{cepStatus === "loading" ? "Buscando endereço..." : cepStatus === "partial" ? "CEP encontrado. Complete os campos do endereço que não foram preenchidos automaticamente." : cepStatus === "error" ? "Não foi possível buscar o CEP. Preencha o endereço manualmente." : ""}</p>
+                  {cepStatus === "ready" ? <div className={styles.addressCard}><MapPin aria-hidden="true" /><div><span>{address.street}</span><b>CEP {cep} - {address.neighborhood}</b><span>{address.city} - {address.state}</span></div><button type="button" onClick={changeCep}>Alterar</button></div> : cepStatus === "partial" || cepStatus === "error" ? <div className={styles.addressEdit}><input className={styles.input} value={address.street} onChange={e => updateAddress("street", e.target.value)} placeholder="Rua / Endereço" aria-label="Endereço" autoComplete="address-line1" required /><input className={styles.input} value={address.neighborhood} onChange={e => updateAddress("neighborhood", e.target.value)} placeholder="Bairro" aria-label="Bairro" required /><input className={styles.input} value={address.city} onChange={e => updateAddress("city", e.target.value)} placeholder="Cidade" aria-label="Cidade" autoComplete="address-level2" required /><input className={styles.input} value={address.state} onChange={e => updateAddress("state", e.target.value.toUpperCase().slice(0,2))} placeholder="Estado" aria-label="Estado" autoComplete="address-level1" maxLength={2} required /></div> : null}
                   <div className={styles.numberField}><input className={styles.input} value={address.number} disabled={withoutNumber} onChange={e => updateAddress("number", e.target.value)} placeholder="Número" autoComplete="address-line2" aria-label="Número" /><label><input type="checkbox" checked={withoutNumber} onChange={e => { setWithoutNumber(e.target.checked); if (e.target.checked) updateAddress("number", ""); }} /> Sem número</label></div>
                   <input className={styles.input} value={address.complement} onChange={e => updateAddress("complement", e.target.value)} placeholder="Apto, Bloco, Referência, etc. (opcional)" aria-label="Complemento" />
                   <div className={styles.invoiceData}><h3>Dados para nota fiscal <CircleHelp aria-label="Informações da nota fiscal" /></h3><input className={styles.input} value={documentNumber} onChange={e => setDocumentNumber(formatDocument(e.target.value))} placeholder="CPF ou CNPJ" inputMode="numeric" aria-label="CPF ou CNPJ" /><label className={styles.sameData}><input type="checkbox" checked={sameInvoiceData} onChange={e => setSameInvoiceData(e.target.checked)} /> Usar as mesmas informações da entrega</label></div>

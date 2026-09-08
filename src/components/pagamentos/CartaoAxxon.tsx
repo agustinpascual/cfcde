@@ -2,7 +2,7 @@
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import { acompanharPix } from "@/lib/acompanhar-pix";
-import { tentativaPagamento, concluirTentativa } from "@/lib/tentativa-pagamento";
+import { tentativaPagamento, concluirTentativa, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
 import s from "./cartao.module.css";
 
 type DadosCartao = { number: string; holderName: string; expMonth: string; expYear: string; cvv: string };
@@ -53,7 +53,10 @@ export default function CartaoAxxon({ publicKey, payload, total }: {
       const r = await fetch("/api/pagamentos/cartao", { method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...payload, cardHash: hash, installments: parcelas, tentativa }), signal: AbortSignal.timeout(35000) });
       const dados = await r.json();
-      if (!r.ok) throw new Error(dados.erro || "Não foi possível processar o cartão.");
+      if (!r.ok) {
+        liberarTentativaEncerrada(payload.produto, "cartao", tentativa, dados);
+        throw new Error(dados.erro || "Não foi possível processar o cartão.");
+      }
       setId(dados.id); setStatus("processing"); setMensagem("Pagamento enviado. Aguardando confirmação do gateway…");
       if (dados.nextAction) {
         const e = payload.endereco;

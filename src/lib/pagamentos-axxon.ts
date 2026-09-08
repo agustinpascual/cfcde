@@ -6,10 +6,12 @@ import { conferirPagamentoAxxon, idAxxon, statusAxxon, type PagamentoAxxon } fro
 import { calcularTotalCafe } from "./precos";
 import { confirmarPorEmail, depois, registrarCompraNoPixel, enviarPixPorEmail } from "./confirmar-pedido";
 import { entregarAcessoApp } from "./entrega-app";
+import { urlWebhookAxxon } from "./axxonpay-webhook";
 
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const texto = (valor: unknown) => typeof valor === "string" ? valor.trim().slice(0, 200) : "";
 const respostaErro = (erro: string, status = 422) => Response.json({ erro }, { status });
+const tentativaEncerrada = (erro: string) => Response.json({ erro, codigo: "TENTATIVA_ENCERRADA_SEM_COBRANCA" }, { status: 409 });
 
 export async function respostaAxxon(p: PagamentoAxxon, referencia: string) {
   const qr = p.qrCode ?? "";
@@ -78,6 +80,10 @@ export async function processarAxxon(body: Record<string, unknown>, metodo: "pix
   let valores;
   try { valores = calcularTotalCafe(texto(body.produto), Number(body.qtd), texto(body.frete), { cupom: texto(body.cupom), pagamento: metodo }); }
   catch { return respostaErro("Produto, quantidade ou frete inválido."); }
+  // Falha de configuração não pode deixar uma reserva pendente no banco.
+  let postbackUrl: string;
+  try { postbackUrl = urlWebhookAxxon(process.env.NEXT_PUBLIC_SITE_URL, process.env.AXXONPAY_WEBHOOK_URL); }
+  catch (erro) { return respostaErro((erro as Error).message, 503); }
   const db = supabaseAdmin();
   if (!db) return respostaErro("Pagamento temporariamente indisponível.", 503);
   try {
@@ -92,26 +98,29 @@ export async function processarAxxon(body: Record<string, unknown>, metodo: "pix
     });
     if (reserva) {
       if (reserva.code !== "23505") throw new Error("Reserva indisponível");
-      const { data: existente, error } = await db.from("pedidos").select("pix_id,valor_centavos,metodo_pagamento,cliente_documento,cliente_email")
+      const { data: existente, error } = await db.from("pedidos").select("pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email")
         .eq("referencia", referencia).maybeSingle();
       if (error || !existente) throw new Error("Reserva indisponível");
+      // Somente falha confirmada sem ID libera um identificador novo. Não
+      // sobrescreve o comprador nem recicla uma referência já enviada à API.
+      if (!existente.pix_id && existente.status === "falhou") {
+        return tentativaEncerrada("A tentativa anterior foi encerrada sem cobrança. Confira os dados e clique novamente para iniciar uma nova tentativa.");
+      }
       if (existente.valor_centavos !== valores.total || existente.metodo_pagamento !== metodo || existente.cliente_documento !== documento || existente.cliente_email !== email) {
-        return respostaErro("Já existe uma tentativa com outros dados. Confira o pedido anterior antes de tentar novamente.", 409);
+        return respostaErro("CPF/CNPJ, e-mail, valor ou forma de pagamento foram alterados após iniciar esta tentativa. A cobrança anterior precisa ser conferida antes de gerar outra; contate o atendimento.", 409);
       }
       if (!existente.pix_id) return respostaErro("A tentativa anterior está em conferência. Não gere outra cobrança; aguarde ou contate o atendimento.", 409);
       const p = await consultarPagamentoAxxon(existente.pix_id.slice(6));
       await sincronizarAxxon(p);
       return Response.json(await respostaAxxon(p, referencia));
     }
-    const origem = process.env.NEXT_PUBLIC_SITE_URL;
-    if (!origem || new URL(origem).protocol !== "https:") throw new Error("URL pública não configurada");
     const p = await criarPagamentoAxxon({
-      amount: valores.total, paymentMethod: metodo === "pix" ? "pix" : "credit_card", description: `Pedido ${referencia} · ${valores.kit.nome}`,
+      amount: valores.total, paymentMethod: metodo === "pix" ? "pix" : "credit_card", description: `Pedido #${referencia}`,
       ...(metodo === "cartao" ? { installments: parcelas, card: { hash } } : {}),
       customer: { name: nome, email, phone: celular, document: { number: documento, type: documento.length === 11 ? "cpf" : "cnpj" },
         address: { street: texto(endereco.logradouro), number: texto(endereco.numero), neighborhood: texto(endereco.bairro),
           city: texto(endereco.localidade), state: texto(endereco.uf), zipCode: digitos(endereco.cep) } },
-      metadata: { external_reference: referencia }, postbackUrl: new URL("/api/webhooks/axxonpay", origem).toString(),
+      metadata: { external_reference: referencia }, postbackUrl,
     });
     if (p.amount !== valores.total) throw new Error("Valor retornado divergente");
     const { error } = await db.from("pedidos").update({ pix_id: idAxxon(p.id) }).eq("referencia", referencia);
@@ -124,7 +133,14 @@ export async function processarAxxon(body: Record<string, unknown>, metodo: "pix
       freteTipo: valores.frete.nome, totalCentavos: valores.total, brcode: p.qrCode,
     }));
     return Response.json(resposta);
-  } catch {
+  } catch (erro) {
+    if ((erro as { documentoInvalido?: boolean } | null)?.documentoInvalido === true) {
+      const { data: encerrado, error } = await db.from("pedidos").update({ status: "falhou" })
+        .eq("referencia", referencia).eq("status", "pendente").is("pix_id", null).select("referencia").maybeSingle();
+      if (!error && encerrado) {
+        return tentativaEncerrada("A AxxonPay recusou o CPF/CNPJ informado e não criou a cobrança. Corrija o documento antes de tentar novamente.");
+      }
+    }
     // Nunca tenta outro gateway após timeout: a primeira cobrança pode existir.
     return respostaErro("Não foi possível concluir agora. A tentativa foi preservada para conferência; não repita em outro gateway.", 503);
   }

@@ -14,7 +14,15 @@ export async function chamarAxxon(caminho: string, init: RequestInit = {}) {
       "axxon-gateway-publickey": publica, "axxon-gateway-secretkey": secreta },
   });
   // Não registra corpo de requisição/resposta, tokens nem dados do comprador.
-  if (!resposta.ok) throw Object.assign(new Error(`AxxonPay respondeu HTTP ${resposta.status}.`), { status: resposta.status });
+  if (!resposta.ok) {
+    // Somente a rejeição explícita de documento, observada na API, permite
+    // encerrar a reserva. Timeout, 5xx e erros desconhecidos são indeterminados.
+    const erro = resposta.status === 400 ? await resposta.json().catch(() => null) : null;
+    const documentoInvalido = caminho === "/direct/payment" && init.method === "POST"
+      && !erro?.id && !erro?.data?.id
+      && erro?.errorMessage === "customer.document: O número do documento (CPF/CNPJ) é inválido.";
+    throw Object.assign(new Error(`AxxonPay respondeu HTTP ${resposta.status}.`), { status: resposta.status, documentoInvalido });
+  }
   return resposta.json() as Promise<unknown>;
 }
 
