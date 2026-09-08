@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
+import AcessosDispositivos from "@/components/painel/AcessosDispositivos";
+import Recarrega from "@/components/painel/Recarrega";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import { AreaTempo, BarrasH } from "@/components/painel/Grafico";
 import FiltroPeriodo from "@/components/painel/FiltroPeriodo";
 import { estadoInstalacao, configurado, lerAoVivo, lerFunil, lerResumo, lerVendasPorDia, moeda, resolverPeriodo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
+import { contarDispositivos } from "@/lib/dispositivos";
 import s from "@/components/painel/painel.module.css";
 
 export const metadata: Metadata = { title: "Vendas", robots: { index: false, follow: false } };
@@ -40,10 +43,13 @@ export default async function Page({ searchParams }: {
     { rotulo: "Compras", valor: funil.compras, nota: pct(funil.compras) },
   ];
 
-  const porDispositivo = ["desktop", "mobile", "tablet"].map((d) => ({
-    rotulo: d === "desktop" ? "Computador" : d === "mobile" ? "Celular" : "Tablet",
-    valor: vivos.filter((v) => v.dispositivo === d).length,
-  }));
+  const dispositivosOnline = contarDispositivos(vivos);
+  const porDispositivo = [
+    { rotulo: "Computadores", valor: dispositivosOnline.computador },
+    { rotulo: "Celulares", valor: dispositivosOnline.celular },
+    { rotulo: "Tablets", valor: dispositivosOnline.tablet },
+    { rotulo: "Não identificado", valor: dispositivosOnline.outros },
+  ];
 
   const ticket = resumo.pedidos_pagos ? resumo.receita_centavos / resumo.pedidos_pagos : 0;
 
@@ -56,6 +62,7 @@ export default async function Page({ searchParams }: {
     <Casca atual="/painel" titulo="Vendas" subtitulo={`Resumo do desempenho · ${periodo.rotulo}`} aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
       <AvisoConfig faltando={faltando} />
+      <Recarrega segundos={15} />
 
       <FiltroPeriodo de={periodo.de} ate={periodo.ate} />
 
@@ -66,6 +73,8 @@ export default async function Page({ searchParams }: {
         <Kpi rotulo="Aguardando pagamento" valor={String(resumo.pedidos_pendentes)} nota="PIX gerado sem confirmação" />
         <Kpi rotulo="Online agora" valor={String(vivos.length)} nota={`${vivos.filter((v) => v.pagina?.startsWith("/checkout")).length} no checkout`} vivo />
       </div>
+
+      <AcessosDispositivos periodo={periodo} online={vivos} />
 
       <div className={s.grade}>
         <section className={s.cartao}>

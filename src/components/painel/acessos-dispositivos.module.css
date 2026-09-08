@@ -1,0 +1,28 @@
+.bloco { margin: 20px 0; overflow: hidden; border: 1px solid var(--cdp-borda, #e6e1da); border-radius: 14px; background: #fff; }
+.cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px; }
+.cabecalho h2 { margin: 0; color: var(--cdp-tinta, #282621); font-size: 17px; font-weight: 750; }
+.cabecalho p { margin: 6px 0 0; color: var(--cdp-tinta-2, #736d64); font-size: 12px; line-height: 1.5; }
+.total { flex-shrink: 0; padding: 7px 11px; border-radius: 999px; background: var(--cdp-fundo, #f6f4ef); color: var(--cdp-tinta-2, #736d64); font-size: 12px; font-weight: 650; }
+.grade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--cdp-borda, #e6e1da); }
+.item { min-width: 0; padding: 20px; }
+.item + .item { border-left: 1px solid var(--cdp-borda, #e6e1da); }
+.rotulo { display: flex; align-items: center; gap: 8px; color: var(--cdp-tinta-2, #736d64); }
+.rotulo svg { flex-shrink: 0; }
+.rotulo h3 { margin: 0; font-size: 12px; font-weight: 650; }
+.valor { display: flex; align-items: baseline; gap: 10px; margin: 14px 0 5px; font-variant-numeric: tabular-nums; }
+.valor strong { color: var(--cdp-tinta, #282621); font-size: 30px; line-height: 1.2; font-weight: 750; }
+.valor span { color: var(--cdp-tinta-2, #736d64); font-size: 12px; }
+.detalhe { margin: 0; color: var(--cdp-tinta-2, #736d64); font-size: 11px; line-height: 1.5; }
+.online { display: flex; align-items: center; gap: 6px; margin: 15px 0 0; color: #2f6b4f; font-size: 11px; font-weight: 650; }
+.online i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.aviso { margin: 0; padding: 0 20px 16px; color: var(--cdp-tinta-2, #736d64); font-size: 12px; }
+@media (max-width: 900px) {
+  .grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .item:nth-child(3) { border-left: 0; }
+  .item:nth-child(n + 3) { border-top: 1px solid var(--cdp-borda, #e6e1da); }
+}
+@media (max-width: 480px) {
+  .cabecalho { align-items: flex-start; flex-direction: column; gap: 10px; padding: 16px; }
+  .item { padding: 16px 12px; }
+  .valor strong { font-size: 27px; }
+}
