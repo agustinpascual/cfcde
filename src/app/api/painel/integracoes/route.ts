@@ -11,6 +11,9 @@ export async function POST(req: Request) {
   if (!(await autenticado())) {
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
+  if (req.headers.get("origin") !== new URL(req.url).origin) {
+    return NextResponse.json({ erro: "Origem inválida." }, { status: 403 });
+  }
 
   const corpo = await req.json().catch(() => null);
   const chave = corpo?.chave as ChaveConfig | undefined;
@@ -21,6 +24,9 @@ export async function POST(req: Request) {
   }
   if (valor.length > 2000) {
     return NextResponse.json({ erro: "Valor longo demais." }, { status: 400 });
+  }
+  if (chave === "PAGAMENTOS_GATEWAYS") {
+    return NextResponse.json({ erro: "Use o seletor de gateways para validar e ativar." }, { status: 400 });
   }
 
   try {

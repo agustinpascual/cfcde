@@ -77,7 +77,7 @@ async function chamar<T>(caminho: string, init?: RequestInit): Promise<T> {
 export const contaPinpay = () =>
   chamar<{ name?: string; email?: string; environment?: string }>("/account", { method: "GET" });
 
-export const verificarCredencial = () => chamar<unknown>("/balance", { method: "GET" });
+export const verificarCredencial = () => chamar<unknown>("/balance", { method: "GET", signal: AbortSignal.timeout(8000) });
 
 export function criarPix(dados: {
   amount: number;               // centavos, mínimo 100

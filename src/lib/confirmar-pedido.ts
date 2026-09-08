@@ -49,7 +49,7 @@ export async function confirmarPorEmail(referencia: string): Promise<{ ok: boole
   if (!data) return { ok: false, motivo: "pedido_nao_encontrado" };
 
   const pedido = data as Record<string, unknown>;
-  if (pedido.status !== "aprovado" || pedido.metodo_pagamento !== "pix") {
+  if (pedido.status !== "aprovado" || !["pix", "cartao"].includes(String(pedido.metodo_pagamento))) {
     return { ok: false, motivo: "pedido_nao_aprovado_pix" };
   }
   const email = String(pedido.cliente_email ?? "").trim();
@@ -155,7 +155,7 @@ export async function registrarCompraNoPixel(referencia: string): Promise<void> 
   const { data, error } = await db.from("pedidos")
     .select("referencia,valor_centavos,pago_em,cliente_email,cliente_telefone,cliente_nome,endereco")
     .eq("referencia", referencia).eq("status", "aprovado")
-    .eq("metodo_pagamento", "pix").maybeSingle();
+    .in("metodo_pagamento", ["pix", "cartao"]).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return;
 

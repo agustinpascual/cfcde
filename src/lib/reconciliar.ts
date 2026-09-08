@@ -1,7 +1,10 @@
 import "server-only";
 import { confirmarPorEmail, depois, registrarCompraNoPixel } from "./confirmar-pedido";
 import { entregarAcessoApp } from "./entrega-app";
-import { consultarPix } from "./pinpay";
+import { consultarPix } from "./gateways-pix";
+import { ehAxxon, idRemotoAxxon } from "./axxonpay-protocolo";
+import { consultarPagamentoAxxon } from "./axxonpay";
+import { sincronizarAxxon } from "./pagamentos-axxon";
 import { supabaseAdmin } from "./supabase/servidor";
 
 /* Rede de segurança do pagamento. O webhook é o caminho normal, mas ele pode
@@ -35,7 +38,7 @@ export async function reconciliarPendentes(limite = 100): Promise<ResultadoRecon
   const { data: pendentes, error: erroLeitura } = await db.from("pedidos")
     .select("referencia,pix_id,status,valor_centavos")
     .eq("status", "pendente")
-    .eq("metodo_pagamento", "pix")
+    .in("metodo_pagamento", ["pix", "cartao"])
     .not("pix_id", "is", null)
     .order("pix_conferido_em", { ascending: true, nullsFirst: true })
     .order("criado_em", { ascending: true })
@@ -48,11 +51,17 @@ export async function reconciliarPendentes(limite = 100): Promise<ResultadoRecon
     const { data: reservado, error: erroReserva } = await db.from("pedidos")
       .update({ pix_conferido_em: new Date().toISOString() })
       .eq("referencia", p.referencia).eq("status", "pendente")
-      .eq("metodo_pagamento", "pix").select("referencia").maybeSingle();
+      .in("metodo_pagamento", ["pix", "cartao"]).select("referencia").maybeSingle();
     if (erroReserva) { r.erros++; continue; }
     if (!reservado) continue;
     r.verificados++;
     try {
+      if (ehAxxon(p.pix_id)) {
+        const resultado = await sincronizarAxxon(await consultarPagamentoAxxon(idRemotoAxxon(p.pix_id), AbortSignal.timeout(8000)));
+        if (MAPA[resultado.status]) r.atualizados++;
+        if (resultado.status === "approved") r.aprovados++;
+        continue;
+      }
       const pix = await consultarPix(p.pix_id as string, AbortSignal.timeout(8000));
       if (pix.amount !== p.valor_centavos ||
           (pix.external_reference && pix.external_reference !== p.referencia)) {

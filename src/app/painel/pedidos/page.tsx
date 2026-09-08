@@ -21,7 +21,7 @@ const ROTULO: Record<string, string> = {
   aprovado: "Pago", pendente: "Aguardando", falhou: "Falhou",
   recusado: "Recusado", expirado: "Expirado", estornado: "Estornado",
 };
-const formaPagamento = (metodo: string) => metodo === "cartao_sandbox" ? "Cartão sandbox" : "PIX";
+const formaPagamento = (metodo: string) => metodo === "cartao" ? "Cartão · AxxonPay" : metodo === "cartao_sandbox" ? "Cartão sandbox" : "PIX";
 const quando = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",

@@ -9,6 +9,7 @@ import { supabaseAdmin } from "./supabase/servidor";
 
 export const CHAVES = [
   "PINPAY_TOKEN", "PINPAY_WEBHOOK_SECRET",
+  "AXXONPAY_PUBLIC_KEY", "AXXONPAY_SECRET_KEY", "PAGAMENTOS_GATEWAYS",
   "RESEND_API_KEY", "RESEND_REMETENTE",
   "ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN",
   "GEMINI_API_KEY",
@@ -32,6 +33,7 @@ const PUBLICOS: ChaveConfig[] = [
   "EMPRESA_RAZAO_SOCIAL", "EMPRESA_CNPJ", "EMPRESA_IE",
   "EMPRESA_ENDERECO", "EMPRESA_TELEFONE", "EMPRESA_LOGO",
   "CORREIOS_URL",
+  "PAGAMENTOS_GATEWAYS",
 ];
 
 let cache: { em: number; valores: Map<string, string> } | null = null;
@@ -43,7 +45,7 @@ async function doBanco(): Promise<Map<string, string>> {
   const db = supabaseAdmin();
   if (db && temChaveMestra()) {
     const { data, error } = await db.from("configuracoes").select("chave,valor_cifrado");
-    if (error) console.error("[config] leitura:", error.message);
+    if (error) throw new Error("Não foi possível consultar as configurações. Nenhum gateway alternativo será selecionado.");
     for (const linha of data ?? []) {
       const v = decifrar(linha.valor_cifrado);
       if (v) valores.set(linha.chave, v);
@@ -67,12 +69,14 @@ export async function salvar(chave: ChaveConfig, valor: string, por: string) {
   if (!temChaveMestra()) throw new Error("CHAVE_MESTRA não configurada");
 
   if (!valor.trim()) {
-    await db.from("configuracoes").delete().eq("chave", chave);
+    const { error } = await db.from("configuracoes").delete().eq("chave", chave);
+    if (error) throw new Error("Não foi possível remover a configuração.");
   } else {
-    await db.from("configuracoes").upsert(
+    const { error } = await db.from("configuracoes").upsert(
       { chave, valor_cifrado: cifrar(valor.trim()), atualizado_por: por },
       { onConflict: "chave" }
     );
+    if (error) throw new Error("Não foi possível salvar a configuração.");
   }
   limparCache();
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import { enviarUm, emailValido } from "./email";
-import { consultarPix } from "./pinpay";
+import { consultarPix } from "./gateways-pix";
 import { supabaseAdmin } from "./supabase/servidor";
 
 const LIMITE = 30;

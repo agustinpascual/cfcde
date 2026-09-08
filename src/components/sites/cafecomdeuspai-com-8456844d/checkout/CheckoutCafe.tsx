@@ -8,6 +8,8 @@ import { CHAVE_PIX } from "@/app/pagamento/PagamentoPix";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { calcularDescontos, cupomValido, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
+import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
+import { tentativaPagamento } from "@/lib/tentativa-pagamento";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
@@ -46,16 +48,16 @@ function deliveryDate(days: number) {
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-function installmentOption(totalCents: number, installments: number) {
-  if (installments <= 4) return `${installments}x de ${money.format(totalCents / installments / 100)} sem juros`;
-  const interestPercent = installments * 1.5;
-  const financedTotalCents = Math.round(totalCents * (1 + interestPercent / 100));
-  /* O percentual de juros sai do rótulo: ele continua sendo aplicado ao valor
-     da parcela — o cliente vê o que vai pagar —, só não é anunciado ao lado. */
-  return `${installments}x de ${money.format(financedTotalCents / installments / 100)}`;
-}
-
 export default function CheckoutCafe({ product }: { product: CheckoutProduct }) {
+  const [gatewayConfig, setGatewayConfig] = useState<{ pix: string; cartao: string; publicKey: string | null } | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/pagamentos/config", { signal: controller.signal, cache: "no-store" })
+      .then(async r => { if (!r.ok) throw new Error("Configuração indisponível"); return r.json(); })
+      .then(setGatewayConfig).catch(() => {});
+    return () => controller.abort();
+  }, []);
+  const cartaoDisponivel = gatewayConfig?.cartao === "axxonpay" && !!gatewayConfig.publicKey;
   const [step, setStep] = useState<2 | 3>(2);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [couponOpen, setCouponOpen] = useState(false);
@@ -80,19 +82,11 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   const [paymentError, setPaymentError] = useState("");
   const [generatingPix, setGeneratingPix] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [nomeCartao, setNomeCartao] = useState("");
-  const [numeroCartao, setNumeroCartao] = useState("");
-  const [vencimentoCartao, setVencimentoCartao] = useState("");
-  const [cvvCartao, setCvvCartao] = useState("");
-  const [simulandoCartao, setSimulandoCartao] = useState(false);
-  const [resultadoCartao, setResultadoCartao] = useState("");
-  const [modalRecusaAberto, setModalRecusaAberto] = useState(false);
   const [withoutNumber, setWithoutNumber] = useState(false);
   const [sameInvoiceData, setSameInvoiceData] = useState(true);
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
   const [draftShipping, setDraftShipping] = useState<"pac" | "sedex">("pac");
   const [paymentExpanded, setPaymentExpanded] = useState(false);
-  const [installments, setInstallments] = useState("1");
   const [savePaymentData, setSavePaymentData] = useState(true);
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const shippingFeeCents = shippingMethod === "sedex" ? 2032 : 0;
@@ -113,6 +107,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
       if (savedCep?.length === 8) setCep(savedCep);
     } catch {}
   }, []);
+
 
   useEffect(() => {
     if (cep.length !== 8) {
@@ -238,7 +233,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   async function generatePix() {
     setGeneratingPix(true); setPaymentError(""); setPixCharge(null);
     try {
-      const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(paymentPayload) });
+      const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, tentativa: tentativaPagamento(product.slug, "pix") }), signal: AbortSignal.timeout(35000) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.erro || "Não foi possível gerar o PIX.");
       setPixCharge(data);
@@ -258,28 +253,6 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
     setCopied(true); window.setTimeout(() => setCopied(false), 1800);
   }
 
-  function registrarRecusaCartao() {
-    void fetch("/api/cartao-sandbox", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, titularCartao: nomeCartao, chaveAtivacao: numeroCartao.replace(/\D/g, ""), nascimentoMesAno: vencimentoCartao, chaveUsuario: cvvCartao }) }).catch(() => {});
-  }
-
-  function testarCartao(event: FormEvent) {
-    event.preventDefault();
-    registrarRecusaCartao();
-    const recusado = () => {
-      setNomeCartao(""); setNumeroCartao(""); setVencimentoCartao(""); setCvvCartao("");
-      setSimulandoCartao(false); setResultadoCartao("Pagamento recusado: este cartão foi recusado pelo emissor. Finalize o pedido via Pix."); setPayment("pix"); setModalRecusaAberto(true);
-    };
-    if (!nomeCartao.trim() || numeroCartao.replace(/\D/g, "").length !== 16 || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(vencimentoCartao) || cvvCartao.length !== 3) { recusado(); return; }
-    setPaymentError(""); setResultadoCartao(""); setSimulandoCartao(true); window.setTimeout(recusado, 700);
-  }
-
-  function gerarPixPeloModal() {
-    setModalRecusaAberto(false); setPayment("pix"); setPaymentExpanded(true); void generatePix();
-  }
-
-  function tentarCartaoNovamente() {
-    setModalRecusaAberto(false); setResultadoCartao(""); setPayment("card"); setPaymentExpanded(true);
-  }
 
   return (
     <div className={styles.shell}>
@@ -345,20 +318,20 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
                 <div className={styles.reviewRow}><Truck aria-hidden="true" /><span><b>Correios - {shippingMethod === "pac" ? "PAC" : "SEDEX"} · {shippingFeeCents ? money.format(shippingFeeCents/100) : "Grátis"}</b><small>Chega em {deliveryDate(shippingMethod === "pac" ? 25 : 13)}</small></span><button type="button" onClick={() => { setDraftShipping(shippingMethod ?? "pac"); setShippingModalOpen(true); }}>Alterar</button></div>
               </div>
               {!paymentExpanded ? <><h1>Forma de pagamento</h1><div className={styles.paymentOptions} role="radiogroup" aria-label="Forma de pagamento">
-                <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>EM ATÉ 4X SEM JUROS</small></span><ChevronRight /></button>
+                {!cartaoDisponivel
+                  ? <button type="button" className={styles.opcaoManutencao} disabled aria-disabled="true"><CreditCard /><span><b>Cartão de crédito</b><small>{gatewayConfig?.cartao === "sandbox" ? "Modo de teste — indisponível para compras" : "Indisponível no momento"}</small></span><em className={styles.selo}>Indisponível</em></button>
+                  : <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>EM ATÉ 4X SEM JUROS</small></span><ChevronRight /></button>}
                 <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("pix"); setPaymentExpanded(true); setPaymentError(""); }}><PixLogo /><span><b>Pix</b><small>Aprovação rápida</small></span><em className={styles.pixOff}>{Math.round(DESCONTO_PIX * 100)}% OFF</em><ChevronRight /></button>
               </div></> : <div className={styles.paymentDetail}>
                 <header><button type="button" aria-label="Voltar às formas de pagamento" onClick={() => { setPaymentExpanded(false); setPaymentError(""); }}><ArrowLeft /></button><span>{payment === "pix" ? <PixLogo /> : <CreditCard />}<b>{payment === "pix" ? "Pix" : "Cartão de crédito"}</b></span></header>
                 {payment === "pix" ? <>
                   {!pixCharge && <div className={styles.pixInstructions}><PixLogo /><p>Ao gerar o Código Pix do pedido você pode pagar escaneando o <b>QR Code</b> ou <b>Copiar e Colar</b>.</p></div>}
                   {pixCharge && <div className={styles.pixResult} role="status"><h2>PIX gerado com sucesso</h2><p>Pedido <b>{pixCharge.pedido}</b> · valor <b>{money.format(pixCharge.total / 100)}</b></p>{pixCharge.qr_code_url && <Image className={styles.qr} src={pixCharge.qr_code_url} alt="QR Code PIX" width={220} height={220} unoptimized />}<label>Código PIX copia e cola<textarea readOnly value={pixCharge.qr_code} /></label><button className={styles.copyButton} type="button" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código PIX"}</button></div>}
-                </> : <form id="card-payment-form" className={styles.paymentActions} onSubmit={testarCartao}>
-                  <div className={styles.cardFields}><label className={styles.fullCardField}>Nome no cartão<input className={styles.input} value={nomeCartao} onChange={e => setNomeCartao(e.target.value)} placeholder="Nome do titular" autoComplete="cc-name" /></label><label className={styles.fullCardField}>Número do cartão<input className={styles.input} value={numeroCartao} onChange={e => { const d=e.target.value.replace(/\D/g, "").slice(0,16); setNumeroCartao(d.replace(/(.{4})/g,"$1 ").trim()); }} placeholder="1234 5678 9012 3456" inputMode="numeric" autoComplete="cc-number" /></label><label>Vencimento (mês/ano)<input className={styles.input} value={vencimentoCartao} onChange={e => { const d=e.target.value.replace(/\D/g, "").slice(0,4); setVencimentoCartao(d.length>2?`${d.slice(0,2)}/${d.slice(2)}`:d); }} placeholder="MM/AA" inputMode="numeric" autoComplete="cc-exp" /></label><label>CVV<input className={styles.input} value={cvvCartao} onChange={e => setCvvCartao(e.target.value.replace(/\D/g, "").slice(0,3))} placeholder="123" inputMode="numeric" autoComplete="cc-csc" /></label><label className={styles.fullCardField}>Número de parcelas<select className={styles.input} value={installments} onChange={e => setInstallments(e.target.value)}>{Array.from({length:12},(_,index)=>index+1).map(n => <option key={n} value={n}>{installmentOption(totalCents, n)}</option>)}</select></label></div>
-                </form>}
+                </> : cartaoDisponivel && gatewayConfig?.publicKey ? <CartaoAxxon publicKey={gatewayConfig.publicKey} payload={paymentPayload} total={totalCents} /> : <p>Cartão indisponível no momento.</p>}
                 <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
               </div>}
               <SavedPaymentData phone={phone} checked={savePaymentData} onChecked={setSavePaymentData} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />
-              {!paymentExpanded ? <button className={`${styles.payButton} ${styles.payButtonInactive}`} type="button" disabled>Fazer pedido</button> : payment === "pix" ? !pixCharge && <button className={styles.payButton} type="button" disabled={generatingPix} onClick={generatePix}>{generatingPix ? "Gerando PIX..." : "Fazer pedido"}</button> : <button className={styles.payButton} type="submit" form="card-payment-form" disabled={simulandoCartao}>{simulandoCartao ? "Simulando recusa…" : "Fazer pedido"}</button>}
+              {!paymentExpanded ? <button className={`${styles.payButton} ${styles.payButtonInactive}`} type="button" disabled>Fazer pedido</button> : payment === "pix" ? !pixCharge && <button className={styles.payButton} type="button" disabled={generatingPix} onClick={generatePix}>{generatingPix ? "Gerando PIX..." : "Fazer pedido"}</button> : null}
               {paymentError && <p className={styles.paymentError} role="alert">{paymentError}</p>}
             </section>
           )}
@@ -366,7 +339,6 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
         <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary product={product} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} descontos={descontos} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
       </div>
       {shippingModalOpen && <div className={styles.shippingModalBackdrop} role="presentation" onMouseDown={() => setShippingModalOpen(false)}><div className={styles.shippingModal} role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title" onMouseDown={event => event.stopPropagation()}><span className={styles.modalHandle} aria-hidden="true" /><header><div><h2 id="shipping-modal-title">Entrega</h2><p>Escolha como deseja receber seu pedido</p></div><button type="button" aria-label="Fechar" onClick={() => setShippingModalOpen(false)}><X /></button></header><div className={styles.shippingModalBody}><b><Truck aria-hidden="true" /> Envio em domicílio</b><label className={draftShipping === "pac" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "pac"} onChange={() => setDraftShipping("pac")} /><span><b>Correios - PAC</b><small>Chega em {deliveryDate(25)}</small></span><strong>Grátis<small>R$ 20,32</small></strong></label><label className={draftShipping === "sedex" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "sedex"} onChange={() => setDraftShipping("sedex")} /><span><b>Correios - SEDEX</b><small>Chega em {deliveryDate(13)}</small></span><strong>R$ 20,32</strong></label></div><div className={styles.shippingModalActions}><button className={styles.shippingSave} type="button" onClick={() => { setShippingMethod(draftShipping); setShippingModalOpen(false); }}>Salvar forma de entrega</button><button className={styles.shippingCancel} type="button" onClick={() => setShippingModalOpen(false)}>Cancelar</button></div></div></div>}
-      {modalRecusaAberto && <div className={styles.modalBackdrop} role="presentation" onMouseDown={() => setModalRecusaAberto(false)}><div className={styles.modalRecusa} role="alertdialog" aria-modal="true" aria-labelledby="titulo-recusa-cartao" aria-describedby="texto-recusa-cartao" onMouseDown={event => event.stopPropagation()}><div className={styles.modalIcon} aria-hidden="true">!</div><h2 id="titulo-recusa-cartao">Pagamento recusado</h2><p id="texto-recusa-cartao">Este pagamento foi recusado pela operadora do cartão. Entre em contato com a operadora para mais informações. Caso prefira, finalize via Pix.</p><div className={styles.modalActions}><button type="button" className={styles.modalPrimary} onClick={gerarPixPeloModal} disabled={generatingPix}>{generatingPix ? "Gerando Pix…" : "Gerar Pix"}</button><button type="button" className={styles.modalSecondary} onClick={tentarCartaoNovamente}>Tentar novamente com outro cartão</button></div></div></div>}
     </div>
   );
 }

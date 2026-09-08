@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import FormIntegracao from "@/components/painel/FormIntegracao";
+import GatewaysPagamento from "@/components/painel/GatewaysPagamento";
+import { lerGateways } from "@/lib/gateways-config";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { estadoDasChaves, type ChaveConfig } from "@/lib/config-integracoes";
 import { temChaveMestra } from "@/lib/cofre";
@@ -14,6 +16,9 @@ export const metadata: Metadata = { title: "Integrações", robots: { index: fal
 export const dynamic = "force-dynamic";
 
 const NOTAS: Record<ChaveConfig, string> = {
+  AXXONPAY_PUBLIC_KEY: "Public Key pk_ da integração AxxonPay",
+  AXXONPAY_SECRET_KEY: "Secret Key sk_ da integração AxxonPay — somente no servidor",
+  PAGAMENTOS_GATEWAYS: "Seleção de gateways, gerenciada pelo formulário acima",
   PINPAY_TOKEN: "Chave secreta sk_live_ ou sk_test_ da PinPay",
   PINPAY_WEBHOOK_SECRET: "Signing Secret whsec_ do endpoint cadastrado",
   RESEND_API_KEY: "Chave re_ da Resend",
@@ -36,6 +41,13 @@ const NOTAS: Record<ChaveConfig, string> = {
 };
 
 const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: string[] }[] = [
+  {
+    nome: "AxxonPay", papel: "PIX e cartão tokenizado pelo SDK oficial",
+    chaves: ["AXXONPAY_PUBLIC_KEY", "AXXONPAY_SECRET_KEY"],
+    passos: ["Obtenha Public Key e Secret Key na área de integrações da AxxonPay, não a senha de login.",
+      "Configure o webhook normalizado para https://cafecomdeusepai.com/api/webhooks/axxonpay.",
+      "Salve as chaves e selecione o gateway acima. Antes de cobrar clientes, homologue PIX, cartão e 3DS com a AxxonPay."],
+  },
   {
     nome: "PinPay", papel: "Cobranças PIX e webhook de pagamento",
     chaves: ["PINPAY_TOKEN", "PINPAY_WEBHOOK_SECRET"],
@@ -106,6 +118,7 @@ export default async function Page() {
       )}
 
       <div className={i.lista}>
+        <GatewaysPagamento inicial={await lerGateways()} editavel={temChaveMestra()} />
         {SERVICOS.map((serv) => {
           const estados = serv.chaves.map((c) => porChave.get(c)!).filter(Boolean);
           const preenchidas = estados.filter((e) => e.preenchida).length;

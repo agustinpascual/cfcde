@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { consultarPix } from "@/lib/pinpay";
+import { consultarPix } from "@/lib/gateways-pix";
+import { ehAxxon, idRemotoAxxon } from "@/lib/axxonpay-protocolo";
+import { consultarPagamentoAxxon } from "@/lib/axxonpay";
+import { sincronizarAxxon } from "@/lib/pagamentos-axxon";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { confirmarPorEmail, depois, registrarCompraNoPixel } from "@/lib/confirmar-pedido";
 import { entregarAcessoApp } from "@/lib/entrega-app";
@@ -17,6 +20,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ erro: "ID inválido" }, { status: 400 });
   }
   try {
+    if (ehAxxon(id)) {
+      const p = await consultarPagamentoAxxon(idRemotoAxxon(id), AbortSignal.timeout(8000));
+      const resultado = await sincronizarAxxon(p);
+      return NextResponse.json({ id, ...resultado, amount: p.amount, paid_at: p.confirmedAt ?? null }, { headers: { "Cache-Control": "no-store" } });
+    }
     /* Quando já pagou, a página de pagamento vira tela de agradecimento e
        precisa do rastreio. Só o código sai daqui — nenhum dado do comprador.
        O id é um UUID não adivinhável, então isso não vaza pedido de ninguém. */

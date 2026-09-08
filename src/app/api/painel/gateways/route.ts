@@ -1,0 +1,21 @@
+import { autenticado } from "@/lib/painel-auth";
+import { configGatewaysValida } from "@/lib/gateways-config";
+import { salvar } from "@/lib/config-integracoes";
+import { validarAxxon, configuracaoAdquirenteAxxon } from "@/lib/axxonpay";
+import { verificarCredencial } from "@/lib/pinpay";
+
+export async function POST(req: Request) {
+  if (!(await autenticado())) return Response.json({ erro: "Não autenticado." }, { status: 401 });
+  if (req.headers.get("origin") !== new URL(req.url).origin) return Response.json({ erro: "Origem inválida." }, { status: 403 });
+  const config: unknown = await req.json().catch(() => null);
+  if (!configGatewaysValida(config)) return Response.json({ erro: "Seleção inválida." }, { status: 400 });
+  try {
+    if (config.pix === "axxonpay" || config.cartao === "axxonpay") await validarAxxon();
+    if (config.pix === "pinpay") await verificarCredencial();
+    if (config.cartao === "axxonpay") await configuracaoAdquirenteAxxon();
+    await salvar("PAGAMENTOS_GATEWAYS", JSON.stringify({ pix: config.pix, cartao: config.cartao }), "painel");
+    return Response.json({ ok: true });
+  } catch (erro) {
+    return Response.json({ erro: (erro as Error).message }, { status: 503 });
+  }
+}

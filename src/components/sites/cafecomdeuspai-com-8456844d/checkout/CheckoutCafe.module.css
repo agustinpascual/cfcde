@@ -181,3 +181,23 @@
      como estava antes desta sessão, exatamente como o cliente pediu. */
   .cardFields .input.input.input { font-size: 14px; }
 }
+
+/* Cartão em manutenção: mesma caixa das opções, porém apagada e sem seta. */
+.opcaoManutencao.opcaoManutencao {
+  grid-template-columns: 23px 1fr auto;
+  opacity: .6;
+  cursor: not-allowed;
+}
+.opcaoManutencao .selo {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #8a6f42;
+  background: #f5edde;
+  border: 1px solid #e4d3b3;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}

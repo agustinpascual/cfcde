@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { criarPix } from "@/lib/pinpay";
+import { lerGateways } from "@/lib/gateways-config";
+import { processarAxxon } from "@/lib/pagamentos-axxon";
 import { excedeu, ipDe } from "@/lib/limite";
 import { calcularTotal, calcularTotalCafe, type IdFrete } from "@/lib/precos";
 import { ler } from "@/lib/config-integracoes";
@@ -39,6 +41,9 @@ export async function POST(req: Request) {
   }
 
   const nome = String(body.nome ?? "").trim();
+  try {
+    if ((await lerGateways()).pix === "axxonpay") return processarAxxon(body, "pix");
+  } catch { return NextResponse.json({ erro: "Configuração de pagamentos indisponível." }, { status: 503 }); }
   const email = String(body.email ?? "").trim();
   const documento = soDigitos(body.documento);
   const kitIndex = Number(body.kitIndex);

@@ -1,0 +1,8 @@
+.bloco { margin: 20px 0; }
+.form { display: grid; gap: 16px; }
+.bloco p { font-size: 13px; line-height: 1.6; }
+.form label { display: grid; gap: 8px; font-size: 13px; }
+.form input, .form select { min-width: 0; width: 100%; padding: 13px; border: 1px solid #c9c9c9; border-radius: 8px; background: #fff; color: #202020; font-size: 16px; }
+.linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bloco button { width: 100%; padding: 17px; border: 0; border-radius: 8px; background: #282621; color: #fff; cursor: pointer; }
+.bloco button:disabled { opacity: .55; cursor: not-allowed; }

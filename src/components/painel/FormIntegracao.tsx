@@ -89,7 +89,7 @@ export default function FormIntegracao({ estado, nota }: { estado: EstadoChave; 
       ) : (
         <div className={i.campoLinha}>
           {/* autoFocus: quem clicou em Alterar quer digitar agora. */}
-          <input className={i.campoInput} value={valor} onChange={(e) => setValor(e.target.value)}
+          <input type={/(_TOKEN|_SECRET|_API_KEY|SECRET_KEY)$/.test(estado.chave) ? "password" : "text"} className={i.campoInput} value={valor} onChange={(e) => setValor(e.target.value)}
             placeholder={estado.preenchida ? "colar a nova chave" : "colar aqui"}
             autoComplete="off" spellCheck={false} disabled={!estado.editavel} autoFocus />
           <button type="submit" className={i.btnPrimario}
