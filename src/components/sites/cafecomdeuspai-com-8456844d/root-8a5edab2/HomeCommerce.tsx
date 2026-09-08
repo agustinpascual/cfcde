@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { type CSSProperties, useRef } from "react";
 import styles from "./HomeCommerce.module.css";
 import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
@@ -102,8 +103,8 @@ export default function HomeCommerce() {
         <div className={styles.bannerGrid}>
           {/* O banner é o COMBO VOLUME 7; apontar para /combo-plus levava ao combo do
               vol.6 — quem clicasse caía num produto diferente do anunciado. */}
-          <a href="/produtos/combo-plus2027" aria-label="Conheça o Combo Plus 2027"><Image src={`${assets}/asset-010-v3.webp`} alt="Combo Plus 2027 · Café com Deus Pai volume 7" fill sizes="(max-width: 720px) 100vw, 50vw" /></a>
-          <a href="/categoria/lancamento" aria-label="Ver todos os lançamentos"><Image src={`${assets}/asset-011-v3.webp`} alt="Lançamentos Café com Deus Pai" fill sizes="(max-width: 720px) 100vw, 50vw" /></a>
+          <Link href="/produtos/box-plus2027" aria-label="Conheça o Combo Plus 2027"><Image src={`${assets}/asset-010-v3.webp`} alt="Combo Plus 2027 · Café com Deus Pai volume 7" fill sizes="(max-width: 720px) 100vw, 50vw" /></Link>
+          <Link href="/categoria/lancamento" aria-label="Ver todos os lançamentos"><Image src={`${assets}/asset-011-v3.webp`} alt="Lançamentos Café com Deus Pai" fill sizes="(max-width: 720px) 100vw, 50vw" /></Link>
         </div>
       </section>
 

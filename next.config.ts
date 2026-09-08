@@ -19,6 +19,16 @@ const nextConfig: NextConfig = {
   // não anuncia a stack
   productionBrowserSourceMaps: false,
 
+  async redirects() {
+    return [
+      {
+        source: "/produtos/combo-plus2027",
+        destination: "/produtos/box-plus2027",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     /* CSP: 'unsafe-inline' em script continua necessário para o bootstrap do
        Next; o resto é fechado. connect-src libera só ViaCEP e Supabase, que
