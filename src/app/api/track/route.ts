@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { excedeu, ipDe } from "@/lib/limite";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { detectarDispositivo } from "@/lib/dispositivos";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,12 +17,6 @@ const TIPOS = new Set(["pageview", "secao", "checkout", "pix_gerado", "pix_copia
 const PRIVADAS = ["/painel"];
 const privada = (caminho: string | null) => Boolean(caminho && PRIVADAS.some((p) => caminho.startsWith(p)));
 const txt = (v: unknown, max = 120) => (typeof v === "string" ? v.slice(0, max) : null);
-
-function dispositivoDe(ua: string) {
-  if (/iPad|Tablet/i.test(ua)) return "tablet";
-  if (/Mobi|Android|iPhone/i.test(ua)) return "mobile";
-  return "desktop";
-}
 
 export async function POST(req: Request) {
   // o heartbeat legítimo é a cada 20s; 40/min já cobre várias abas
@@ -51,6 +46,8 @@ export async function POST(req: Request) {
   const decodifica = (v: string | null) => { try { return v ? decodeURIComponent(v) : null; } catch { return v; } };
   const lat = Number(h.get("x-vercel-ip-latitude"));
   const lng = Number(h.get("x-vercel-ip-longitude"));
+  const toques = Number(corpo.toques);
+  const plataforma = txt(corpo.plataforma, 50);
 
   const sessaoLinha = {
     sessao,
@@ -61,7 +58,7 @@ export async function POST(req: Request) {
     pais: h.get("x-vercel-ip-country") ?? "BR",
     latitude: Number.isFinite(lat) ? lat : null,
     longitude: Number.isFinite(lng) ? lng : null,
-    dispositivo: dispositivoDe(h.get("user-agent") ?? ""),
+    dispositivo: detectarDispositivo(h.get("user-agent") ?? "", plataforma, Number.isFinite(toques) ? toques : 0),
     referencia: txt(corpo.referencia, 200),
     visto_em: new Date().toISOString(),
     ...(corpo.tipo === "pix_copiado" ? { copiou_pix: true } : {}),

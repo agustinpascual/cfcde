@@ -13,6 +13,11 @@
 .valor strong { color: var(--cdp-tinta, #282621); font-size: 30px; line-height: 1.2; font-weight: 750; }
 .valor span { color: var(--cdp-tinta-2, #736d64); font-size: 12px; }
 .detalhe { margin: 0; color: var(--cdp-tinta-2, #736d64); font-size: 11px; line-height: 1.5; }
+.tipos { display: grid; gap: 9px; margin: 16px 0 0; font-size: 11px; line-height: 1.5; }
+.tipos > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.tipos dt { color: var(--cdp-tinta-2, #736d64); }
+.tipos dd { margin: 0; color: var(--cdp-tinta, #282621); font-weight: 700; font-variant-numeric: tabular-nums; }
+.nota { margin: 0; padding: 14px 20px; border-top: 1px solid var(--cdp-borda, #e6e1da); color: var(--cdp-tinta-2, #736d64); font-size: 11px; line-height: 1.6; }
 .online { display: flex; align-items: center; gap: 6px; margin: 15px 0 0; color: #2f6b4f; font-size: 11px; font-weight: 650; }
 .online i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .aviso { margin: 0; padding: 0 20px 16px; color: var(--cdp-tinta-2, #736d64); font-size: 12px; }

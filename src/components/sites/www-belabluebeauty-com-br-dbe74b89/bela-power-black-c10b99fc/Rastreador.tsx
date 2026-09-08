@@ -27,6 +27,14 @@ function idDaSessao() {
   }
 }
 
+function ambienteDoDispositivo() {
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+  return {
+    plataforma: nav.userAgentData?.platform || navigator.platform || undefined,
+    toques: navigator.maxTouchPoints || 0,
+  };
+}
+
 export function registrar(tipo: string, dados?: Record<string, unknown>) {
   try {
     if (!rastreavel(location.pathname)) return;
@@ -37,6 +45,7 @@ export function registrar(tipo: string, dados?: Record<string, unknown>) {
        trilha do visitante ao pedido na tela de detalhe. */
     const corpo = JSON.stringify({
       sessao, tipo, pagina: location.pathname, dados,
+      ...ambienteDoDispositivo(),
       ...(typeof dados?.pedido === "string" ? { pedido: dados.pedido } : {}),
     });
     // sendBeacon sobrevive à navegação; fetch é o plano B
@@ -59,6 +68,7 @@ export default function Rastreador() {
         sessao, tipo, pagina: pathname,
         secao: secaoAtual.current || undefined,
         referencia: document.referrer || undefined,
+        ...ambienteDoDispositivo(),
         ...extra,
       });
       void fetch("/api/track", {

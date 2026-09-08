@@ -1,7 +1,7 @@
 import { Monitor, Smartphone, Tablet, HelpCircle } from "lucide-react";
 import type { Periodo, Sessao } from "./dados";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
-import { contarDispositivos, GRUPOS_DISPOSITIVOS, type GrupoDispositivo } from "@/lib/dispositivos";
+import { contarDispositivos, TIPOS_DISPOSITIVOS, type GrupoDispositivo } from "@/lib/dispositivos";
 import s from "./acessos-dispositivos.module.css";
 
 async function lerContagens(periodo: Periodo) {
@@ -14,18 +14,22 @@ async function lerContagens(periodo: Periodo) {
 
   try {
     // COUNT no banco evita o limite de 1.000 linhas das consultas de dados.
-    const [total, ...grupos] = await Promise.all([
+    const [total, ...tipos] = await Promise.all([
       consulta(),
-      ...GRUPOS_DISPOSITIVOS.map((grupo) => consulta().in("dispositivo", grupo.valores)),
+      ...TIPOS_DISPOSITIVOS.map((tipo) => consulta().eq("dispositivo", tipo.id)),
     ]);
-    for (const resultado of [total, ...grupos]) {
+    for (const resultado of [total, ...tipos]) {
       if (resultado.error) throw new Error(resultado.error.message);
       if (resultado.count === null) throw new Error("Contagem indisponível");
     }
     const contagens: Record<GrupoDispositivo, number> = { celular: 0, computador: 0, tablet: 0, outros: 0 };
-    GRUPOS_DISPOSITIVOS.forEach((grupo, i) => { contagens[grupo.id] = grupos[i].count ?? 0; });
+    const detalhes = TIPOS_DISPOSITIVOS.map((tipo, i) => {
+      const quantidade = tipos[i].count ?? 0;
+      contagens[tipo.grupo] += quantidade;
+      return { ...tipo, quantidade };
+    });
     contagens.outros = Math.max(0, (total.count ?? 0) - contagens.celular - contagens.computador - contagens.tablet);
-    return { total: total.count ?? 0, contagens };
+    return { total: total.count ?? 0, contagens, detalhes };
   } catch (erro) {
     console.error("[painel] acessos_dispositivos:", (erro as Error).message);
     return null;
@@ -33,10 +37,10 @@ async function lerContagens(periodo: Periodo) {
 }
 
 const categorias = [
-  { id: "celular", titulo: "Celulares", detalhe: "iPhone, Android e outros", Icone: Smartphone },
-  { id: "computador", titulo: "Computadores", detalhe: "Windows, Mac e Linux", Icone: Monitor },
-  { id: "tablet", titulo: "Tablets", detalhe: "iPad, Android e outros", Icone: Tablet },
-  { id: "outros", titulo: "Não identificado", detalhe: "Dispositivo não informado", Icone: HelpCircle },
+  { id: "celular", titulo: "Celulares", Icone: Smartphone },
+  { id: "computador", titulo: "Computadores", Icone: Monitor },
+  { id: "tablet", titulo: "Tablets", Icone: Tablet },
+  { id: "outros", titulo: "Não identificado", Icone: HelpCircle },
 ] as const;
 const numero = (valor: number) => valor.toLocaleString("pt-BR");
 
@@ -56,19 +60,29 @@ export default async function AcessosDispositivos({ periodo, online }: { periodo
       {!resumo && <p className={s.aviso} role="status">Não foi possível carregar os acessos do período. Tente atualizar a página.</p>}
       {resumo?.total === 0 && <p className={s.aviso}>Nenhuma sessão iniciada neste período.</p>}
       <div className={s.grade}>
-        {categorias.map(({ id, titulo, detalhe, Icone }) => {
+        {categorias.map(({ id, titulo, Icone }) => {
           const quantidade = resumo?.contagens[id];
           const percentual = resumo && resumo.total > 0 ? ((quantidade ?? 0) / resumo.total) * 100 : 0;
           return (
             <article key={id} className={s.item}>
               <div className={s.rotulo}><Icone size={19} aria-hidden /><h3>{titulo}</h3></div>
               <div className={s.valor}><strong>{quantidade === undefined ? "—" : numero(quantidade)}</strong><span>{resumo ? `${percentual.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%` : "—"}</span></div>
-              <p className={s.detalhe}>{detalhe}</p>
+              {id === "outros" ? <p className={s.detalhe}>Dispositivo não informado ou não reconhecido.</p> : (
+                <dl className={s.tipos}>
+                  {TIPOS_DISPOSITIVOS.filter((tipo) => tipo.grupo === id).map((tipo) => (
+                    <div key={tipo.id}>
+                      <dt>{tipo.rotulo}</dt>
+                      <dd>{resumo ? numero(resumo.detalhes.find((item) => item.id === tipo.id)?.quantidade ?? 0) : "—"}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
               <p className={s.online}><i aria-hidden />{numero(vivos[id])} online agora</p>
             </article>
           );
         })}
       </div>
+      <p className={s.nota}>As quantidades representam sessões, não aparelhos únicos. O mesmo aparelho pode iniciar mais de uma sessão. Registros antigos sem sistema informado aparecem como “não especificado”.</p>
     </section>
   );
 }
