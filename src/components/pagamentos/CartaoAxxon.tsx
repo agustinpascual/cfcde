@@ -1,5 +1,6 @@
 "use client";
 import Script from "next/script";
+import { useRouter } from "next/navigation";
 import { LoaderCircle, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { acompanharPix } from "@/lib/acompanhar-pix";
@@ -7,6 +8,7 @@ import { luhn } from "@/lib/cartao";
 import { concluirTentativa, liberarTentativaEncerrada, tentativaPagamento } from "@/lib/tentativa-pagamento";
 import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
+import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
 import s from "./cartao.module.css";
 
 /* Cartão AxxonPay com adquirente Bloopi (decisão do lojista em docs/axxonpay.md).
@@ -45,6 +47,8 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   const [fase3ds, setFase3ds] = useState<"idle" | "abrindo" | "desafio" | "conferindo" | "erro">("idle");
   const [autenticacaoFalhou, setAutenticacaoFalhou] = useState(false);
   const [podeRepetir, setPodeRepetir] = useState(false);
+  const router = useRouter();
+  const redirecionando = useRef(false);
   const form = useRef<HTMLFormElement>(null);
   const numero = useRef<HTMLInputElement>(null), titular = useRef<HTMLInputElement>(null);
   const validade = useRef<HTMLInputElement>(null), cvv = useRef<HTMLInputElement>(null);
@@ -73,9 +77,24 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       if (novo === "approved") {
         concluirTentativa(payload.produto, "cartao");
         registrar("compra", { pedido: cobranca.pedido, total: cobranca.total });
+        if (!redirecionando.current) {
+          redirecionando.current = true;
+          try {
+            salvarPagamentoParaTela({
+              id: cobranca.id, pedido: dados.pedido ?? cobranca.pedido,
+              total: cobranca.total, metodo: "cartao", confirmado: true,
+              codigo_rastreio: dados.codigo_rastreio ?? null,
+            });
+            router.replace("/pagamento");
+          } catch {
+            // Storage bloqueado: não navega para uma tela sem contexto; a
+            // confirmação aprovada continua visível no próprio checkout.
+            redirecionando.current = false;
+          }
+        }
       }
     });
-  }, [cobranca, status, fase3ds, payload.produto]);
+  }, [cobranca, status, fase3ds, payload.produto, router]);
 
   // Depois de uma autenticação incompleta, dá tempo para a consulta revelar
   // uma aprovação tardia antes de oferecer nova tentativa (evita cobrar duas vezes).

@@ -22,7 +22,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
     const violacoes = [], erros = [], externos = new Set();
     const postsCartao = [];
-    let cobrancas = 0, postsAcs = 0;
+    let cobrancas = 0, postsAcs = 0, liberarAprovacao = false;
     await context.addInitScript(() => document.addEventListener("securitypolicyviolation", e => console.log(`CSPVIOLATION ${e.violatedDirective} ${e.blockedURI}`)));
     await context.route("**/*", async route => {
       const req = route.request(), url = new URL(req.url());
@@ -48,7 +48,9 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
       }
       if (url.pathname === "/api/pagamentos/config") return route.fulfill({ json: { pix: "axxonpay", cartao: "axxonpay", publicKey, cartaoDisponivel: true, parcelas: 4 } });
       if (url.pathname === "/api/cep") return route.fulfill({ json: { street: "Praça da Sé", neighborhood: "Sé", city: "São Paulo", state: "SP" } });
-      if (url.pathname.startsWith("/api/pix/")) return route.fulfill({ json: { id: "axxon_teste", status: "pending" } });
+      if (url.pathname.startsWith("/api/pix/")) return route.fulfill({ json: liberarAprovacao
+        ? { id: "axxon_teste", status: "approved", pedido: "100001", codigo_rastreio: null }
+        : { id: "axxon_teste", status: "pending" } });
       return route.continue();
     });
     const page = await context.newPage();
@@ -132,5 +134,17 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.deepEqual(violacoes, [], "sem violações de CSP");
     assert.deepEqual(erros, [], "sem erros de página");
     assert.equal(cobrancas, 0, "nenhum PIX gerado");
+
+    // A consulta autenticada aprova: o cartão segue para a mesma tela final
+    // do PIX e nunca leva PAN/CVV para o sessionStorage.
+    liberarAprovacao = true;
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await page.waitForURL("**/pagamento", { timeout: 10000 });
+    await page.getByRole("heading", { name: "Obrigado pela sua compra!" }).waitFor();
+    assert.match(await page.getByRole("status").innerText(), /pedido 100001/);
+    const storage = await page.evaluate(() => sessionStorage.getItem("cdp:pagamento") ?? "");
+    assert.doesNotMatch(storage, /4111|Cliente Teste|"cvv"/i, "tela final não persiste cartão");
+    const animacao = await page.getByRole("status").evaluate(el => getComputedStyle(el).animationName);
+    assert.notEqual(animacao, "none", "confirmação entra com animação");
   } finally { await browser.close(); }
 });

@@ -117,15 +117,45 @@
   .valor { font-size: 29px; }
 }
 
-/* Tela de agradecimento, depois que o PIX cai. */
-.sucesso { text-align: center; padding: 10px 0 4px; }
+/* Tela de agradecimento compartilhada por PIX e cartão. A animação é curta:
+   confirma a mudança de estado sem atrasar nem competir com o pedido. */
+.sucesso { text-align: center; padding: 18px 0 8px; animation: sucessoEntrada .55s cubic-bezier(.2,.8,.2,1) both; }
+.sucessoAnimacao { position: relative; width: 112px; height: 88px; margin: 0 auto 8px; }
 .sucessoIcone {
-  display: grid; place-items: center; width: 62px; height: 62px; margin: 0 auto 14px;
-  border-radius: 50%; background: #e9f2ec; color: #2f6b4f;
+  position: absolute; inset: 13px 25px; display: grid; place-items: center;
+  width: 62px; height: 62px; border-radius: 50%; background: #e9f2ec; color: #2f6b4f;
+  box-shadow: 0 10px 30px rgba(47,107,79,.18);
+  animation: sucessoPop .65s cubic-bezier(.18,.89,.32,1.28) both;
 }
+.sucessoIcone::before {
+  content: ""; position: absolute; inset: -7px; border: 2px solid rgba(47,107,79,.2);
+  border-radius: inherit; animation: sucessoOnda .85s .18s ease-out both;
+}
+.sucessoIcone svg path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: sucessoCheck .45s .35s ease-out forwards; }
+.brilho {
+  position: absolute; width: 7px; height: 7px; border-radius: 50%;
+  background: #b89967; opacity: 0; animation: sucessoBrilho .75s .28s ease-out both;
+}
+.brilho:nth-child(1) { left: 8px; top: 40px; --x: -12px; --y: 2px; }
+.brilho:nth-child(2) { left: 24px; top: 8px; width: 5px; height: 5px; --x: -7px; --y: -10px; }
+.brilho:nth-child(3) { right: 24px; top: 6px; --x: 8px; --y: -9px; }
+.brilho:nth-child(4) { right: 7px; top: 42px; width: 5px; height: 5px; --x: 13px; --y: 2px; }
+.brilho:nth-child(5) { left: 26px; bottom: 2px; --x: -6px; --y: 10px; }
+.brilho:nth-child(6) { right: 22px; bottom: 4px; width: 5px; height: 5px; --x: 7px; --y: 10px; }
 .sucessoTitulo { font-size: 26px; font-weight: 800; letter-spacing: -.6px; line-height: 1.2; }
 .sucessoTexto { font-size: 15px; color: #57504a; margin-top: 8px; }
 .sucessoTexto b { color: #151515; font-variant-numeric: tabular-nums; }
+
+@keyframes sucessoEntrada { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sucessoPop { 0% { opacity: 0; transform: scale(.55) rotate(-8deg); } 70% { opacity: 1; transform: scale(1.08) rotate(2deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes sucessoOnda { from { opacity: .8; transform: scale(.72); } to { opacity: 0; transform: scale(1.35); } }
+@keyframes sucessoCheck { to { stroke-dashoffset: 0; } }
+@keyframes sucessoBrilho { 0% { opacity: 0; transform: translate(0,0) scale(.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x),var(--y)) scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sucesso, .sucessoIcone, .sucessoIcone::before, .brilho { animation: none; }
+  .sucessoIcone svg path { animation: none; stroke-dashoffset: 0; }
+}
 
 .rastreioRotulo {
   font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;

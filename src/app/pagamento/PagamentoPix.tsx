@@ -6,17 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { urlRastreio } from "@/lib/rastreio";
 import { acompanharPix } from "@/lib/acompanhar-pix";
+import { lerPagamentoDaTela, type PagamentoNavegacao } from "@/lib/pagamento-navegacao";
 import s from "./pagamento.module.css";
 
 /* A cobrança viaja pelo sessionStorage: ela já está na mão do navegador
    quando o checkout termina, e assim a página abre sem uma segunda ida ao
    servidor. Se a aba for fechada, o cliente volta pelo e-mail. */
-export const CHAVE_PIX = "cdp:pix";
-
-export type Cobranca = {
-  id: string; pedido: string; total: number;
-  qr_code: string; qr_code_url: string | null; expires_at?: string;
-};
+export type Cobranca = PagamentoNavegacao;
 
 const LOGO = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -49,15 +45,23 @@ export default function PagamentoPix() {
      hidratação. É o caso legítimo de setState em efeito. */
   useEffect(() => {
     try {
-      const bruto = sessionStorage.getItem(CHAVE_PIX);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (bruto) setCobranca(JSON.parse(bruto) as Cobranca);
+      const pagamento = lerPagamentoDaTela();
+      /* A leitura depende do sessionStorage e só pode acontecer depois da
+         montagem. Os dois estados derivam do mesmo snapshot persistido. */
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (pagamento) {
+        setCobranca(pagamento);
+        if (pagamento.confirmado) {
+          setPago({ rastreio: pagamento.codigo_rastreio ?? null, pedido: pagamento.pedido });
+        }
+      }
+      /* eslint-enable react-hooks/set-state-in-effect */
     } catch { /* storage bloqueado — cai na tela de "não encontramos" */ }
     setCarregando(false);
   }, []);
 
   useEffect(() => {
-    if (!cobranca) return;
+    if (!cobranca || cobranca.metodo !== "pix") return;
     abertoEm.current = Date.now();
     registrar("pix_gerado", { pedido: cobranca.pedido, total: cobranca.total });
 
@@ -114,10 +118,10 @@ export default function PagamentoPix() {
       <div className={s.tela}>
         <Cabecalho />
         <div className={s.vazio}>
-          <p className={s.vazioTitulo}>Não encontramos um PIX aberto</p>
+          <p className={s.vazioTitulo}>Não encontramos um pagamento aberto</p>
           <p className={s.vazioTexto}>
-            O código fica guardado só nesta aba. Se você a fechou ou recarregou de
-            outro lugar, faça o pedido de novo — nada foi cobrado.
+            Os dados desta etapa ficam guardados só nesta aba. Se você a fechou ou
+            abriu em outro dispositivo, confira também o e-mail do pedido.
           </p>
           <Link href="/checkout" className={s.vazioBotao}>Voltar ao checkout</Link>
         </div>
@@ -131,11 +135,15 @@ export default function PagamentoPix() {
         <Cabecalho />
         <main className={s.corpo}>
           <div className={s.sucesso} role="status">
-            <span className={s.sucessoIcone} aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            </span>
+            <div className={s.sucessoAnimacao} aria-hidden="true">
+              <span className={s.brilho} /><span className={s.brilho} /><span className={s.brilho} />
+              <span className={s.brilho} /><span className={s.brilho} /><span className={s.brilho} />
+              <span className={s.sucessoIcone}>
+                <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </span>
+            </div>
             <h1 className={s.sucessoTitulo}>Obrigado pela sua compra!</h1>
             <p className={s.sucessoTexto}>
               Pagamento confirmado{pago.pedido ? <> · pedido <b>{pago.pedido}</b></> : null}.

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import * as cartao from "../src/lib/cartao.ts";
+import { CHAVE_PAGAMENTO, lerPagamentoDaTela, salvarPagamentoParaTela } from "../src/lib/pagamento-navegacao.ts";
 
 // Rotas reais transpiladas com dependências simuladas: sem rede, banco ou cartão real.
 function modulo(caminho, deps) {
@@ -32,6 +33,30 @@ test("validarCartao normaliza e recusa sem ecoar o valor", () => {
   assert.equal(cartao.luhn("4111111111111111"), true);
   assert.equal(cartao.luhn("4111111111111111a"), false);
   assert.deepEqual(cartao.semCartao({ nome: "x", cartao: cartaoTeste, cardHash: "t", cvv: "1", card: {}, numeroCartao: "1", chaveAtivacao: "1" }), { nome: "x" });
+});
+
+test("navegação pós-cartão persiste somente o resumo não sensível", () => {
+  const memoria = new Map();
+  const anterior = globalThis.sessionStorage;
+  Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: {
+    getItem: chave => memoria.get(chave) ?? null,
+    setItem: (chave, valor) => memoria.set(chave, valor),
+  } });
+  try {
+    salvarPagamentoParaTela({
+      id: "axxon_teste", pedido: "234051", total: 1000, metodo: "cartao", confirmado: true,
+      cartao: cartaoTeste, email: "cliente@example.com",
+    });
+    const bruto = memoria.get(CHAVE_PAGAMENTO);
+    assert.doesNotMatch(bruto, /4111|123|cliente@example/);
+    assert.deepEqual(lerPagamentoDaTela(), {
+      id: "axxon_teste", pedido: "234051", total: 1000, metodo: "cartao", confirmado: true,
+      qr_code: "", qr_code_url: null,
+    });
+  } finally {
+    if (anterior === undefined) delete globalThis.sessionStorage;
+    else Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: anterior });
+  }
 });
 
 function rotaCartao({ origem = true, limite = false, gateways = { pix: "axxonpay", cartao: "axxonpay" }, processar } = {}) {
@@ -156,7 +181,7 @@ test("checkout: cartão em componente próprio, sem campos de cartão no formul�
   assert.doesNotMatch(checkout, /cc-number|cc-csc|cvv|numeroCartao|\/api\/pagamentos\/cartao|cartao-sandbox|chaveAtivacao/);
   assert.match(checkout, /fetch\("\/api\/pix"/);
   const componente = fonte("../src/components/pagamentos/CartaoAxxon.tsx");
-  for (const exigido of [/useRef<HTMLInputElement>/, /autoComplete="cc-number"/, /autoComplete="cc-csc"/, /type="password"/, /fetch\("\/api\/pagamentos\/cartao"/, /handleNextAction\(/, /form\.current\?\.reset\(\)/, /acompanharPix\(/, /https:\/\/app\.axxonpay\.com\.br\/v1\/js\/sdk\.js/]) {
+  for (const exigido of [/useRef<HTMLInputElement>/, /autoComplete="cc-number"/, /autoComplete="cc-csc"/, /type="password"/, /fetch\("\/api\/pagamentos\/cartao"/, /handleNextAction\(/, /form\.current\?\.reset\(\)/, /acompanharPix\(/, /salvarPagamentoParaTela\(/, /router\.replace\("\/pagamento"\)/, /https:\/\/app\.axxonpay\.com\.br\/v1\/js\/sdk\.js/]) {
     assert.match(componente, exigido);
   }
   assert.doesNotMatch(componente, /console\.|localStorage|sessionStorage\.setItem|setNumero|setCvv|setValidade|setTitular/, "cartão nunca vai a state, storage ou console");

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, LockKeyhole, Mail, MapPin, Truck, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CHAVE_PIX } from "@/app/pagamento/PagamentoPix";
+import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { calcularDescontos, cupomValido, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
@@ -288,7 +288,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
       /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
          código e o passo a passo. Guardar no sessionStorage evita uma
          segunda ida ao servidor — o dado já está aqui. */
-      try { sessionStorage.setItem(CHAVE_PIX, JSON.stringify(data)); } catch { /* storage bloqueado */ }
+      try { salvarPagamentoParaTela({ ...data, metodo: "pix", confirmado: data.status === "approved" || data.status === "paid" }); } catch { /* storage bloqueado */ }
       router.push("/pagamento");
     } catch (error) { setPaymentError(error instanceof Error ? error.message : "Não foi possível gerar o PIX."); }
     finally { setGeneratingPix(false); }
