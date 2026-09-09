@@ -9,11 +9,14 @@ export async function chamarAxxon(caminho: string, init: RequestInit & { cartao?
   const [publica, secreta] = await Promise.all([ler("AXXONPAY_PUBLIC_KEY"), ler("AXXONPAY_SECRET_KEY")]);
   if (!publica || !secreta) throw new Error("Configure as chaves da AxxonPay em Integrações.");
   const resposta = await fetch(`${BASE}${caminho}`, {
-    ...init, cache: "no-store", redirect: "error",
+    ...init, cache: "no-store", redirect: "manual",
     signal: init.signal ?? AbortSignal.timeout(20000),
     headers: { "content-type": "application/json", "accept": "application/json",
       "axxon-gateway-publickey": publica, "axxon-gateway-secretkey": secreta },
   });
+  if (resposta.status >= 300 && resposta.status < 400) {
+    throw new Error("AxxonPay tentou redirecionar a requisição.");
+  }
   // Não registra corpo de requisição/resposta, tokens, cartão nem dados do comprador.
   if (!resposta.ok) {
     // No PIX, somente a rejeição explícita de documento, observada na API,
@@ -43,8 +46,11 @@ export async function configuracaoAdquirenteAxxon() {
     return { publica, provider: configCache.provider, modo: configCache.modo };
   }
   const r = await fetch(`https://app.axxonpay.com.br/api/v1/public/gateway-config/public/gateway-config?publicKey=${encodeURIComponent(publica)}`, {
-    cache: "no-store", signal: AbortSignal.timeout(10000), redirect: "error",
+    cache: "no-store", signal: AbortSignal.timeout(10000), redirect: "manual",
   });
+  if (r.status >= 300 && r.status < 400) {
+    throw new Error("AxxonPay tentou redirecionar a configuração da adquirente.");
+  }
   if (!r.ok) throw new Error("Não foi possível verificar a adquirente do cartão.");
   const config = await r.json() as { provider?: string };
   const provider = String(config.provider ?? "").toLowerCase();

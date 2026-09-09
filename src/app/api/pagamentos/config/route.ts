@@ -15,6 +15,10 @@ export async function GET() {
       // Uma seleção antiga com adquirente não homologada não derruba o PIX.
       const { publica } = await configuracaoAdquirenteAxxon();
       return Response.json({ ...base, cartao: "axxonpay", publicKey: publica, cartaoDisponivel: true }, { headers });
-    } catch { return Response.json(base, { headers }); }
+    } catch (erro) {
+      console.error("[pagamentos/config] AxxonPay indisponível:",
+        erro instanceof Error ? erro.message : "erro desconhecido");
+      return Response.json(base, { headers });
+    }
   } catch { return Response.json({ erro: "Não foi possível carregar os meios de pagamento." }, { status: 503 }); }
 }
