@@ -72,6 +72,7 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
                   width={1580}
                   height={600}
                   fetchPriority={index === 0 ? "high" : undefined}
+                  loading={index === 0 ? "eager" : "lazy"}
                   sizes="100vw"
                 />
               </picture>
