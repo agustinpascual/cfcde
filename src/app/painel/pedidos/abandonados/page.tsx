@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import Recarrega from "@/components/painel/Recarrega";
 import SubAbasPedidos from "@/components/painel/SubAbasPedidos";
-import { lerAoVivo, lerCarrinhos, moeda, rotuloDispositivo } from "@/components/painel/dados";
+import { lerAoVivo, lerCarrinhosComEstado, moeda, rotuloDispositivo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
@@ -26,24 +26,33 @@ export default async function Page() {
   if (!painelConfigurado()) redirect("/painel");
   if (!(await autenticado())) redirect("/painel/entrar");
 
-  const [carrinhos, vivos] = await Promise.all([lerCarrinhos(), lerAoVivo()]);
+  const [resultado, vivos] = await Promise.all([lerCarrinhosComEstado(), lerAoVivo()]);
+  const { carrinhos, erro } = resultado;
 
   return (
     <Casca atual="/painel/pedidos" titulo="Pedidos"
-      subtitulo={carrinhos.length === 0 ? "Nenhum carrinho abandonado"
+      subtitulo={erro ? "Não foi possível consultar os carrinhos"
+        : carrinhos.length === 0 ? "Nenhum carrinho abandonado"
         : `${carrinhos.length} ${carrinhos.length === 1 ? "carrinho abandonado" : "carrinhos abandonados"} · quem preencheu dados e não pagou`}
       aoVivo={vivos.length}>
       <Recarrega segundos={15} />
       <SubAbasPedidos atual="abandonados" abandonados={carrinhos.length} />
 
+      {erro && (
+        <div className={s.aviso} role="alert">
+          <p className={s.avisoTitulo}>Falha ao carregar carrinhos</p>
+          <p>{erro} O painel tentará novamente automaticamente em até 15 segundos.</p>
+        </div>
+      )}
+
       <section className={s.cartao}>
-        {carrinhos.length === 0 ? (
+        {!erro && carrinhos.length === 0 ? (
           <p className={s.vazio}>
             Nenhum carrinho abandonado por aqui. Quando alguém preencher os dados
             no checkout e sair sem pagar, o contato aparece aqui para você recuperar
             a venda.
           </p>
-        ) : (
+        ) : carrinhos.length > 0 ? (
           <div className={s.tabelaWrap}>
             <table className={s.tabela}>
               <thead>
@@ -77,7 +86,7 @@ export default async function Page() {
               </tbody>
             </table>
           </div>
-        )}
+        ) : null}
       </section>
     </Casca>
   );

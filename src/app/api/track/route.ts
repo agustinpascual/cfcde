@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     }
     if (erroSessao) {
       console.error("[track] sessoes:", erroSessao.message);
-      return NextResponse.json({ ok: false, motivo: erroSessao.message }, { status: 202 });
+      return NextResponse.json({ ok: false, motivo: "sessao_nao_registrada" }, { status: 202 });
     }
 
     const tipo = txt(corpo.tipo, 20);
@@ -93,7 +93,10 @@ export async function POST(req: Request) {
         pagina: txt(corpo.pagina, 160),
         dados: (corpo.dados && typeof corpo.dados === "object" ? corpo.dados : {}) as object,
       });
-      if (erroEvento) console.error("[track] eventos:", erroEvento.message);
+      if (erroEvento) {
+        console.error("[track] eventos:", erroEvento.message);
+        return NextResponse.json({ ok: false, motivo: "evento_nao_registrado" }, { status: 202 });
+      }
     }
   } catch (e) {
     console.error("[track] falha ao gravar:", (e as Error).message);

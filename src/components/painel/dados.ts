@@ -380,28 +380,41 @@ export type CarrinhoAbandonado = {
   dispositivo: string | null; atualizado_em: string;
 };
 
+export type ResultadoCarrinhos = {
+  carrinhos: CarrinhoAbandonado[];
+  erro: string | null;
+};
+
 /* Carrinho abandonado = preencheu algum dado no checkout mas NÃO chegou a gerar
    o PIX. A sessão recebe `pedido_ref` quando o PIX é criado; então quem já tem
    pedido_ref saiu do abandono (virou pedido pendente, aparece na aba Pedidos).
    Junta o último `checkout_parcial` de cada sessão sem pedido. Sem contato não
    entra — não há o que recuperar. */
-export async function lerCarrinhos(limite = 100): Promise<CarrinhoAbandonado[]> {
+export async function lerCarrinhosComEstado(limite = 100): Promise<ResultadoCarrinhos> {
   const db = supabaseAdmin();
-  if (!db) return [];
+  if (!db) return { carrinhos: [], erro: "O banco de dados não está configurado neste ambiente." };
   try {
     const { data: evs, error } = await db.from("eventos")
       .select("sessao,dados,criado_em").eq("tipo", "checkout_parcial")
       .order("criado_em", { ascending: false }).limit(600);
-    if (error || !evs) return [];
+    if (error) {
+      console.error("[painel] carrinhos/eventos:", error.message);
+      return { carrinhos: [], erro: "Não foi possível consultar os eventos de checkout." };
+    }
+    if (!evs) return { carrinhos: [], erro: null };
 
     type Ev = { sessao: string; dados: Record<string, unknown> | null; criado_em: string };
     const porSessao = new Map<string, Ev>();
     for (const e of evs as Ev[]) if (!porSessao.has(e.sessao)) porSessao.set(e.sessao, e);
     const sessoes = [...porSessao.keys()];
-    if (!sessoes.length) return [];
+    if (!sessoes.length) return { carrinhos: [], erro: null };
 
-    const { data: ses } = await db.from("sessoes")
+    const { data: ses, error: erroSessoes } = await db.from("sessoes")
       .select("sessao,pedido_ref,dispositivo").in("sessao", sessoes);
+    if (erroSessoes) {
+      console.error("[painel] carrinhos/sessoes:", erroSessoes.message);
+      return { carrinhos: [], erro: "Não foi possível conferir as sessões dos carrinhos." };
+    }
     type S = { sessao: string; pedido_ref: string | null; dispositivo: string | null };
     const info = new Map((ses as S[] ?? []).map((s) => [s.sessao, s]));
 
@@ -422,11 +435,15 @@ export async function lerCarrinhos(limite = 100): Promise<CarrinhoAbandonado[]> 
         atualizado_em: e.criado_em,
       });
     }
-    return lista.slice(0, limite);
+    return { carrinhos: lista.slice(0, limite), erro: null };
   } catch (e) {
     console.error("[painel] carrinhos:", (e as Error).message);
-    return [];
+    return { carrinhos: [], erro: "A consulta dos carrinhos falhou temporariamente." };
   }
+}
+
+export async function lerCarrinhos(limite = 100): Promise<CarrinhoAbandonado[]> {
+  return (await lerCarrinhosComEstado(limite)).carrinhos;
 }
 
 /* ---------- jornada do cliente (funil por pedido) ---------- */

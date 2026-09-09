@@ -35,23 +35,62 @@ function ambienteDoDispositivo() {
   };
 }
 
-export function registrar(tipo: string, dados?: Record<string, unknown>) {
+function corpoDoEvento(tipo: string, dados?: Record<string, unknown>) {
   try {
-    if (!rastreavel(location.pathname)) return;
-    const sessao = sessionStorage.getItem(CHAVE);
-    if (!sessao) return;
+    if (!rastreavel(location.pathname)) return null;
+    /* Garante o id aqui também. Eventos disparados imediatamente depois que
+       o checkout monta não podem depender do useEffect do componente global
+       já ter criado a sessão. */
+    const sessao = idDaSessao();
+    if (!sessao) return null;
     /* `pedido` sobe para o nível de cima além de ficar em `dados`: a rota
        usa o campo raiz para gravar pedido_ref na sessão, que é o que liga a
        trilha do visitante ao pedido na tela de detalhe. */
-    const corpo = JSON.stringify({
+    return JSON.stringify({
       sessao, tipo, pagina: location.pathname, dados,
       ...ambienteDoDispositivo(),
       ...(typeof dados?.pedido === "string" ? { pedido: dados.pedido } : {}),
     });
-    // sendBeacon sobrevive à navegação; fetch é o plano B
-    if (navigator.sendBeacon) navigator.sendBeacon("/api/track", new Blob([corpo], { type: "application/json" }));
-    else void fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, body: corpo, keepalive: true });
+  } catch {
+    return null; // rastreio nunca pode quebrar a página
+  }
+}
+
+export function registrar(tipo: string, dados?: Record<string, unknown>) {
+  const corpo = corpoDoEvento(tipo, dados);
+  if (!corpo) return;
+  try {
+    // sendBeacon sobrevive à navegação, mas pode recusar a fila e retornar false.
+    const enfileirado = navigator.sendBeacon?.(
+      "/api/track",
+      new Blob([corpo], { type: "application/json" }),
+    ) ?? false;
+    if (enfileirado) return;
+    void fetch("/api/track", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: corpo, keepalive: true,
+    }).catch(() => {});
   } catch { /* rastreio nunca pode quebrar a página */ }
+}
+
+/* Para dados importantes, como carrinho abandonado, espera a confirmação da
+   API e tenta mais uma vez. A função comum acima continua sendo usada ao sair,
+   quando não há tempo para aguardar uma resposta. */
+export async function registrarConfirmado(tipo: string, dados?: Record<string, unknown>) {
+  const corpo = corpoDoEvento(tipo, dados);
+  if (!corpo) return false;
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    try {
+      const resposta = await fetch("/api/track", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: corpo, keepalive: true,
+      });
+      const retorno = await resposta.json().catch(() => null) as { ok?: unknown } | null;
+      if (resposta.ok && retorno?.ok === true) return true;
+    } catch { /* tenta novamente logo abaixo */ }
+    if (tentativa === 0) await new Promise((resolve) => window.setTimeout(resolve, 400));
+  }
+  return false;
 }
 
 export default function Rastreador() {

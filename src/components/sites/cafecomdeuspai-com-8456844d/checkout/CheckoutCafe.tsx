@@ -7,7 +7,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
-import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
+import { registrar, registrarConfirmado } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { calcularDescontosCarrinho, cupomValidoCarrinho, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
 import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
@@ -133,10 +133,17 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
      — espera 1,2 s de pausa. A compra concluída sai da lista no painel, que
      ignora sessões com pedido pago. */
   const finalizado = useRef(false);
+  const abandonoPendente = useRef<Record<string, unknown> | null>(null);
   useEffect(() => {
-    if (finalizado.current) return;
+    if (finalizado.current) {
+      abandonoPendente.current = null;
+      return;
+    }
     const contato = email.trim() || phone.replace(/\D/g, "");
-    if (!contato) return;
+    if (!contato) {
+      abandonoPendente.current = null;
+      return;
+    }
     const etapa = step === 3 ? "Pagamento"
       : cep.replace(/\D/g, "").length === 8 || address.street ? "Entrega"
       : "Contato";
@@ -153,9 +160,34 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
       produto_nome: products.map((item) => `${item.quantity}x ${item.name}`).join("; "),
       valor: totalCents,
     };
-    const id = window.setTimeout(() => registrar("checkout_parcial", dados), 1200);
+    abandonoPendente.current = dados;
+    const id = window.setTimeout(() => {
+      void registrarConfirmado("checkout_parcial", dados).then((confirmado) => {
+        if (confirmado && abandonoPendente.current === dados) abandonoPendente.current = null;
+      });
+    }, 1200);
     return () => window.clearTimeout(id);
   }, [email, firstName, lastName, phone, documentNumber, cep, address, step, products, totalCents]);
+
+  /* No celular a aba pode ser congelada sem dar tempo ao debounce. Envia o
+     último estado pendente quando a página é ocultada ou fechada. */
+  useEffect(() => {
+    const enviarPendente = () => {
+      const dados = abandonoPendente.current;
+      if (!dados || finalizado.current) return;
+      abandonoPendente.current = null;
+      registrar("checkout_parcial", dados);
+    };
+    const aoMudarVisibilidade = () => {
+      if (document.visibilityState === "hidden") enviarPendente();
+    };
+    window.addEventListener("pagehide", enviarPendente);
+    document.addEventListener("visibilitychange", aoMudarVisibilidade);
+    return () => {
+      window.removeEventListener("pagehide", enviarPendente);
+      document.removeEventListener("visibilitychange", aoMudarVisibilidade);
+    };
+  }, []);
 
   useEffect(() => {
     if (cep.length !== 8) {
@@ -304,6 +336,7 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
       }
       setPixCharge(data);
       finalizado.current = true;   // saiu do funil de abandono: PIX gerado
+      abandonoPendente.current = null;
       pixel("AddPaymentInfo", { ...dadosProdutoPixel(cartKey, productName, data.total, products.reduce((sum, item) => sum + item.quantity, 0)), payment_method: "pix" });
       /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
          código e o passo a passo. Guardar no sessionStorage evita uma
@@ -395,7 +428,7 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
                   {!pixCharge && <div className={styles.pixInstructions}><PixLogo /><p>Ao gerar o Código Pix do pedido você pode pagar escaneando o <b>QR Code</b> ou <b>Copiar e Colar</b>.</p></div>}
                   {pixCharge && <div className={styles.pixResult} role="status"><h2>PIX gerado com sucesso</h2><p>Pedido <b>{pixCharge.pedido}</b> · valor <b>{money.format(pixCharge.total / 100)}</b></p>{pixCharge.qr_code_url && <Image className={styles.qr} src={pixCharge.qr_code_url} alt="QR Code PIX" width={220} height={220} unoptimized />}<label>Código PIX copia e cola<textarea readOnly value={pixCharge.qr_code} /></label><button className={styles.copyButton} type="button" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código PIX"}</button></div>}
                 </> : cartaoDisponivel && gatewayConfig?.publicKey
-                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={{ ...paymentPayload, produto: cartKey }} produtoNome={productName} onEnviado={() => { finalizado.current = true; }} />
+                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={{ ...paymentPayload, produto: cartKey }} produtoNome={productName} onEnviado={() => { finalizado.current = true; abandonoPendente.current = null; }} />
                   : <p>Cartão indisponível no momento. Nenhum dado de cartão foi solicitado.</p>}
                 <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
               </div>}
