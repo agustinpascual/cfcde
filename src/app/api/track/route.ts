@@ -6,9 +6,9 @@ import { detectarDispositivo } from "@/lib/dispositivos";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/* Recebe os pings do rastreador do site.
-   A localização vem dos headers que o Vercel injeta a partir do IP — não
-   guardamos o IP em si, só cidade/UF e coordenadas aproximadas. */
+/* Recebe os pings do rastreador do site. A produção roda na Cloudflare, mas
+   o fallback dos headers da Vercel mantém o mesmo código utilizável nos dois
+   ambientes. O IP só é gravado quando a migration 0025 está instalada. */
 
 const TIPOS = new Set(["pageview", "secao", "comprar", "checkout", "checkout_parcial", "pix_gerado", "pix_copiado", "voltou", "compra", "saida"]);
 
@@ -44,8 +44,8 @@ export async function POST(req: Request) {
 
   const h = req.headers;
   const decodifica = (v: string | null) => { try { return v ? decodeURIComponent(v) : null; } catch { return v; } };
-  const lat = Number(h.get("x-vercel-ip-latitude"));
-  const lng = Number(h.get("x-vercel-ip-longitude"));
+  const lat = Number(h.get("cf-iplatitude") ?? h.get("x-vercel-ip-latitude"));
+  const lng = Number(h.get("cf-iplongitude") ?? h.get("x-vercel-ip-longitude"));
   const toques = Number(corpo.toques);
   const plataforma = txt(corpo.plataforma, 50);
 
@@ -53,9 +53,9 @@ export async function POST(req: Request) {
     sessao,
     pagina: txt(corpo.pagina, 160),
     secao: txt(corpo.secao, 80),
-    cidade: decodifica(h.get("x-vercel-ip-city")),
-    uf: h.get("x-vercel-ip-country-region"),
-    pais: h.get("x-vercel-ip-country") ?? "BR",
+    cidade: decodifica(h.get("cf-ipcity") ?? h.get("x-vercel-ip-city")),
+    uf: h.get("cf-region-code") ?? h.get("x-vercel-ip-country-region"),
+    pais: h.get("cf-ipcountry") ?? h.get("cf-country") ?? h.get("x-vercel-ip-country") ?? "BR",
     latitude: Number.isFinite(lat) ? lat : null,
     longitude: Number.isFinite(lng) ? lng : null,
     dispositivo: detectarDispositivo(h.get("user-agent") ?? "", plataforma, Number.isFinite(toques) ? toques : 0),
@@ -69,8 +69,16 @@ export async function POST(req: Request) {
   try {
     /* O supabase-js devolve o erro no objeto, não lança. Sem checar,
        a rota respondia ok:true mesmo com a tabela inexistente. */
-    const { error: erroSessao } = await db
+    let { error: erroSessao } = await db
       .from("sessoes").upsert(sessaoLinha, { onConflict: "sessao" });
+    /* Produções antigas podem ainda não ter `sessoes.ip`. O rastreamento
+       principal não deve parar por causa desse recurso opcional: repete sem
+       o IP, enquanto o painel de instalação aponta exatamente a migration. */
+    if (erroSessao && ["42703", "PGRST204"].includes(erroSessao.code) && erroSessao.message.includes("ip")) {
+      const semIp = { ...sessaoLinha } as Partial<typeof sessaoLinha>;
+      delete semIp.ip;
+      ({ error: erroSessao } = await db.from("sessoes").upsert(semIp, { onConflict: "sessao" }));
+    }
     if (erroSessao) {
       console.error("[track] sessoes:", erroSessao.message);
       return NextResponse.json({ ok: false, motivo: erroSessao.message }, { status: 202 });

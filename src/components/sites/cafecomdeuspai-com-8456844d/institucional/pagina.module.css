@@ -1,0 +1,49 @@
+.hero {
+  display: grid;
+  min-height: 260px;
+  place-items: center;
+  padding: 54px 24px;
+  background: linear-gradient(135deg, #eee8dd, #faf8f4);
+  color: #20201e;
+  text-align: center;
+}
+
+.hero div { max-width: 780px; }
+.hero p { margin: 0 0 12px; color: #806c49; font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.hero h1 { margin: 0; font: 500 clamp(34px, 5vw, 58px)/1.05 var(--font-instrument-sans), serif; }
+.hero span { display: block; margin-top: 16px; color: #5f5d58; font-size: 17px; line-height: 1.55; }
+
+.main {
+  width: min(100% - 40px, 940px);
+  min-height: 360px;
+  margin: 0 auto;
+  padding: 64px 0 90px;
+  color: #33322f;
+  font: 400 16px/1.75 var(--font-work-sans), Arial, sans-serif;
+}
+
+.main h2 { margin: 42px 0 12px; color: #20201e; font-size: 25px; line-height: 1.25; }
+.main h2:first-child { margin-top: 0; }
+.main p { margin: 0 0 18px; }
+.main a { color: inherit; }
+.main ul { margin: 12px 0 24px; padding-left: 22px; }
+.main li { margin: 8px 0; }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 28px 0; }
+.card, .highlight { padding: 24px; border: 1px solid #ded9cf; border-radius: 10px; background: #faf8f4; }
+.card h2, .card h3 { margin: 0 0 10px; font-size: 19px; }
+.card p:last-child, .highlight p:last-child { margin-bottom: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 0 22px; border-radius: 5px; background: #1f1f1d; color: #fff!important; font-weight: 650; text-decoration: none; }
+.buttonSecondary { background: #eee8dd; color: #292824!important; }
+.faq { border-top: 1px solid #ded9cf; }
+.faq details { border-bottom: 1px solid #ded9cf; }
+.faq summary { padding: 20px 4px; cursor: pointer; color: #222; font-weight: 650; }
+.faq details p { padding: 0 4px 20px; }
+
+@media (max-width: 720px) {
+  .hero { min-height: 210px; padding: 40px 20px; }
+  .hero span { font-size: 15px; }
+  .main { width: min(100% - 32px, 940px); padding: 44px 0 68px; font-size: 15px; }
+  .cards { grid-template-columns: 1fr; }
+}

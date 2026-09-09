@@ -1,38 +1,23 @@
 import type { Metadata } from "next";
+import PaginaInstitucional from "@/components/sites/cafecomdeuspai-com-8456844d/institucional/PaginaInstitucional";
+import s from "@/components/sites/cafecomdeuspai-com-8456844d/institucional/pagina.module.css";
 import { metadadosPagina } from "@/lib/seo";
-import PaginaInstitucional from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/PaginaInstitucional";
-import s from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/pagina.module.css";
 
 export const metadata: Metadata = metadadosPagina({
-  titulo: "Sobre nós — Bela Blue Beauty",
-  descricao: "Quem somos, nossa missão, visão e valores. Loja de produtos para emagrecimento e beauty.",
+  titulo: "Sobre nós — Café com Deus Pai",
+  descricao: "Conheça a loja oficial Café com Deus Pai e o propósito de nossos produtos.",
   caminho: "/sobre",
 });
 
-const VALORES = [
-  { titulo: "Missão", texto: "Entregar com excelência um resultado visível, transformador e satisfatório promovendo saúde física e mental, aliados ao bem estar e beleza." },
-  { titulo: "Visão", texto: "Buscar o mais alto nível de crescimento e desenvolvimento a cada dia, estar entre as maiores e melhores empresas, sendo referência de emagrecimento saudável e estética no Brasil." },
-  { titulo: "Valores", texto: "Respeito, integração e harmonização com ecossistema, associados a responsabilidade, ética e amor por aquilo que fazemos." },
-];
-
 export default function Page() {
   return (
-    <PaginaInstitucional titulo="Sobre nós" subtitulo="Quem somos e o que nos move.">
-      <h2>Quem somos nós</h2>
-      <p>Loja de produtos para emagrecimento e beauty.</p>
-
+    <PaginaInstitucional titulo="Sobre nós" subtitulo="Produtos que acompanham momentos de fé, reflexão e conexão com Deus Pai.">
+      <h2>Nossa história</h2>
+      <p>Café com Deus Pai nasceu como um convite para transformar a rotina em um encontro diário com Deus. A loja oficial reúne devocionais, livros de oração, canecas, cafés e presentes ligados a essa experiência.</p>
       <div className={s.cards}>
-        {VALORES.map((v) => (
-          <div key={v.titulo} className={s.card}>
-            <p className={s.cardTitulo}>{v.titulo}</p>
-            <p>{v.texto}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className={s.assinatura}>
-        <p className={s.assinaturaMarca}>BELA BLUE BEAUTY®</p>
-        <p className={s.assinaturaFrase}>O produto certo para a transformação que você precisa.</p>
+        <div className={s.card}><h2>Propósito</h2><p>Ajudar cada pessoa a reservar um momento do dia para leitura, oração e reflexão.</p></div>
+        <div className={s.card}><h2>Cuidado</h2><p>Selecionar produtos com identidade, acabamento cuidadoso e informações claras.</p></div>
+        <div className={s.card}><h2>Comunidade</h2><p>Compartilhar uma jornada de fé que já faz parte da rotina de muitas famílias.</p></div>
       </div>
     </PaginaInstitucional>
   );

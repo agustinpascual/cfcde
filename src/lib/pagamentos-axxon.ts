@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { supabaseAdmin } from "./supabase/servidor";
 import { criarPagamentoAxxon, consultarPagamentoAxxon, configuracaoAdquirenteAxxon } from "./axxonpay";
 import { conferirPagamentoAxxon, idAxxon, statusAxxon, type PagamentoAxxon } from "./axxonpay-protocolo";
-import { calcularTotalCafe } from "./precos";
+import { calcularCarrinhoCafe, type ItemCarrinhoCafe } from "./precos";
 import { confirmarPorEmail, depois, registrarCompraNoPixel, enviarPixPorEmail } from "./confirmar-pedido";
 import { entregarAcessoApp } from "./entrega-app";
 import { urlWebhookAxxon } from "./axxonpay-webhook";
@@ -16,6 +16,14 @@ const respostaErro = (erro: string, status = 422) => Response.json({ erro }, { s
 const tentativaEncerrada = (erro: string, renovar = false) => Response.json({
   erro, codigo: "TENTATIVA_ENCERRADA_SEM_COBRANCA", ...(renovar ? { renovar: true } : {}),
 }, { status: 409 });
+
+function itensDoCorpo(body: Record<string, unknown>): ItemCarrinhoCafe[] {
+  if (!Array.isArray(body.itens)) return [{ produto: texto(body.produto), qtd: Number(body.qtd) }];
+  return body.itens.map((item) => {
+    const linha = item && typeof item === "object" && !Array.isArray(item) ? item as Record<string, unknown> : {};
+    return { produto: texto(linha.produto), qtd: Number(linha.qtd) };
+  });
+}
 
 export async function respostaAxxon(p: PagamentoAxxon, referencia: string) {
   const qr = p.qrCode ?? "";
@@ -119,7 +127,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   if (metodo === "cartao" && !cartao && (!hash || hash.length > 4096)) return respostaErro("Dados do cartão ausentes. Recarregue o checkout.", 400);
 
   let valores;
-  try { valores = calcularTotalCafe(texto(body.produto), Number(body.qtd), texto(body.frete), { cupom: texto(body.cupom), pagamento: metodo }); }
+  try { valores = calcularCarrinhoCafe(itensDoCorpo(body), texto(body.frete), { cupom: texto(body.cupom), pagamento: metodo }); }
   catch { return respostaErro("Produto, quantidade ou frete inválido."); }
   // Falha de configuração não pode deixar uma reserva pendente no banco.
   let postbackUrl: string;
@@ -156,7 +164,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       const { error: reserva } = await db.from("pedidos").insert({
         id: tentativa, referencia, status: "pendente", metodo_pagamento: metodo,
         valor_centavos: valores.total, subtotal_centavos: valores.subtotal, desconto_centavos: valores.desconto,
-        frete_centavos: valores.frete.centavos, frete_tipo: valores.frete.nome, kit: valores.kit.nome, quantidade: Number(body.qtd),
+        frete_centavos: valores.frete.centavos, frete_tipo: valores.frete.nome, kit: valores.kit.nome, quantidade: valores.quantidadeTotal,
         cliente_nome: nome, cliente_email: email, cliente_documento: documento, cliente_telefone: celular,
         endereco: Object.fromEntries(["logradouro", "numero", "complemento", "bairro", "localidade", "uf", "cep"].map(campo => [campo, texto(endereco[campo])])),
       });
@@ -196,7 +204,8 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     if (!reservou) throw new Error("Não foi possível reservar um número de seis dígitos");
     etapa = "criacao";
     const criado = await criarPagamentoAxxon({
-      amount: valores.total, paymentMethod: metodo === "pix" ? "pix" : "credit_card", description: `Pedido #${referencia}`,
+      amount: valores.total, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
+      description: `Café com Deus Pai - ${valores.kit.nome} - Pedido #${referencia}`.slice(0, 200),
       ...(metodo === "cartao" ? { installments: parcelas, card: cartao ?? { hash } } : {}),
       customer: { name: nome, email, phone: celular, document: { number: documento, type: documento.length === 11 ? "cpf" : "cnpj" },
         address: { street: texto(endereco.logradouro), number: texto(endereco.numero), neighborhood: texto(endereco.bairro),
@@ -228,7 +237,8 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     // Criação/3DS não são aprovação: confirma por GET autenticado ou webhook.
     const resposta = await respostaAxxon(p, referencia);
     if (metodo === "pix" && p.qrCode) depois(enviarPixPorEmail({
-      referencia, clienteNome: nome, clienteEmail: email, itens: [{ descricao: valores.kit.nome, quantidade: Number(body.qtd), totalCentavos: valores.subtotal }],
+      referencia, clienteNome: nome, clienteEmail: email,
+      itens: valores.itens.map((item) => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos })),
       subtotalCentavos: valores.subtotal, descontoCentavos: valores.desconto, freteCentavos: valores.frete.centavos,
       freteTipo: valores.frete.nome, totalCentavos: valores.total, brcode: p.qrCode,
     }));

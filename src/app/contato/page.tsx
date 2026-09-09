@@ -1,32 +1,29 @@
 import type { Metadata } from "next";
+import PaginaInstitucional from "@/components/sites/cafecomdeuspai-com-8456844d/institucional/PaginaInstitucional";
+import s from "@/components/sites/cafecomdeuspai-com-8456844d/institucional/pagina.module.css";
+import { RASTREIO_BASE } from "@/lib/rastreio";
 import { metadadosPagina } from "@/lib/seo";
-import PaginaInstitucional from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/PaginaInstitucional";
-import FormContato from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/FormContato";
-import s from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/pagina.module.css";
-import { WHATSAPP_LINK, WHATSAPP_NUMERO } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/contato";
 
 export const metadata: Metadata = metadadosPagina({
-  titulo: "Fale conosco — Bela Blue Beauty",
-  descricao: "Envie sua mensagem para o time da Bela Blue Beauty ou fale direto no WhatsApp.",
+  titulo: "Fale conosco — Café com Deus Pai",
+  descricao: "Canais de atendimento da loja oficial Café com Deus Pai.",
   caminho: "/contato",
 });
 
 export default function Page() {
   return (
-    <PaginaInstitucional
-      titulo="Fale conosco"
-      subtitulo="Preencha o formulário e nosso time entra em contato. Se preferir, chame no WhatsApp."
-    >
-      <div className={s.destaque}>
-        <p>
-          Atendimento de segunda a sexta, das 8h às 18h, e sábado das 8h às 16h.
-          WhatsApp <strong>{WHATSAPP_NUMERO}</strong>.
-        </p>
-        <a className={s.wpp} href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
+    <PaginaInstitucional titulo="Fale conosco" subtitulo="Precisa de ajuda com uma compra, entrega ou produto? Fale com nosso atendimento.">
+      <div className={s.highlight}>
+        <h2>Central de atendimento</h2>
+        <p>Tenha em mãos o número do pedido e o e-mail usado na compra para agilizar a consulta.</p>
+        <p><strong>SAC: (47) 3224-9292</strong></p>
+        <div className={s.actions}>
+          <a className={s.button} href="https://wa.me/554732249292" target="_blank" rel="noopener noreferrer">Falar pelo WhatsApp</a>
+          <a className={`${s.button} ${s.buttonSecondary}`} href={RASTREIO_BASE} target="_blank" rel="noopener noreferrer">Rastrear pedido</a>
+        </div>
       </div>
-
-      <h2>Envie uma mensagem</h2>
-      <FormContato />
+      <h2>Antes de entrar em contato</h2>
+      <p>O código de rastreamento é enviado ao e-mail informado no checkout depois que o pedido é despachado. Confira também as pastas de spam e lixeira.</p>
     </PaginaInstitucional>
   );
 }

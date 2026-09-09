@@ -16,17 +16,35 @@ const comboPlus = {
   originalPrice: "R$513,90",
 };
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ produto?: string | string[] }> }) {
-  const rawSlug = (await searchParams).produto;
-  const slug = typeof rawSlug === "string" ? rawSlug : "combo-plus";
+function resolverProduto(slug: string) {
   const oferta = OFERTAS_POR_SLUG[slug];
   const catalogProduct = getProductBySlug(slug);
-  const product = oferta ? oferta : catalogProduct ? {
+  return oferta ? oferta : catalogProduct ? {
     slug: catalogProduct.slug,
     name: catalogProduct.name,
     image: catalogProduct.image,
     priceCents: catalogProduct.priceCents,
     originalPrice: catalogProduct.originalPrice,
-  } : comboPlus;
-  return <CheckoutCafe product={product} />;
+  } : null;
+}
+
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ produto?: string | string[]; itens?: string | string[] }> }) {
+  const params = await searchParams;
+  const rawSlug = params.produto;
+  const slug = typeof rawSlug === "string" ? rawSlug : "combo-plus";
+  const bruto = typeof params.itens === "string" ? params.itens : "";
+  const quantidades = new Map<string, number>();
+  for (const trecho of bruto.split(",").slice(0, 20)) {
+    const separador = trecho.lastIndexOf(":");
+    const itemSlug = separador > 0 ? trecho.slice(0, separador) : "";
+    const quantidade = Number(trecho.slice(separador + 1));
+    if (!resolverProduto(itemSlug) || !Number.isInteger(quantidade) || quantidade < 1 || quantidade > 20) continue;
+    quantidades.set(itemSlug, Math.min(20, (quantidades.get(itemSlug) ?? 0) + quantidade));
+  }
+  const products = [...quantidades].flatMap(([itemSlug, quantity]) => {
+    const product = resolverProduto(itemSlug);
+    return product ? [{ ...product, quantity }] : [];
+  });
+  if (!products.length) products.push({ ...(resolverProduto(slug) ?? comboPlus), quantity: 1 });
+  return <CheckoutCafe products={products} />;
 }

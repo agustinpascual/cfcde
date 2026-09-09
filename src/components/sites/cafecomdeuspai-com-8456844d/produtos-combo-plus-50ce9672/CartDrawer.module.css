@@ -105,3 +105,6 @@
 /* Mesma origem da moldura do checkout: faixa verde-petróleo no topo da
    gaveta. Trocada pelo latão da marca. */
 .drawer { border-top-color: #b89967; }
+
+.productList { display: flex; flex-direction: column; gap: 18px; }
+.productList .product:last-child { border-bottom: 0; }

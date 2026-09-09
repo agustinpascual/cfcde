@@ -116,7 +116,7 @@ export default async function Page({ searchParams }: {
       <div className={`${s.kpis} ${s.kpisCompactos}`}>
         <Kpi rotulo="Receita hoje" valor={moeda(resumo.receita_hoje_centavos)} nota={`${resumo.pedidos_hoje} pedidos hoje`} />
         <Kpi rotulo="Ticket médio" valor={moeda(ticket)} nota="por pedido pago" />
-        <Kpi rotulo="Aguardando pagamento" valor={String(resumo.pedidos_pendentes)} nota="PIX gerado sem confirmação" />
+        <Kpi rotulo="Aguardando pagamento" valor={String(resumo.pedidos_pendentes)} nota="pagamento ainda sem confirmação" />
         <Kpi rotulo="Conversão" valor={`${conversao.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`} nota={`compras · ${periodo.rotulo.toLowerCase()}`} />
       </div>
 

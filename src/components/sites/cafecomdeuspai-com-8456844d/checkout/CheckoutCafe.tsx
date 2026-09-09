@@ -1,21 +1,23 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, LockKeyhole, Mail, MapPin, Truck, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
-import { calcularDescontos, cupomValido, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
+import { calcularDescontosCarrinho, cupomValidoCarrinho, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
 import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
 import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
+const SAVED_CONTACT_KEY = "cdp-checkout-contact";
 
-type CheckoutProduct = { slug: string; name: string; image: string; priceCents: number; originalPrice: string | null };
+type CheckoutProduct = { slug: string; name: string; image: string; priceCents: number; originalPrice: string | null; quantity: number };
 type PixCharge = { id: string; pedido: string; total: number; qr_code: string; qr_code_url: string | null; expires_at?: string; status?: string };
 
 type Address = {
@@ -49,7 +51,11 @@ function deliveryDate(days: number) {
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-export default function CheckoutCafe({ product }: { product: CheckoutProduct }) {
+export default function CheckoutCafe({ products }: { products: CheckoutProduct[] }) {
+  const product = products[0];
+  const subtotalCents = products.reduce((total, item) => total + item.priceCents * item.quantity, 0);
+  const cartKey = products.map((item) => `${item.slug}:${item.quantity}`).join("|");
+  const productName = products.length === 1 ? product.name : `${products.length} produtos`;
   const [gatewayConfig, setGatewayConfig] = useState<{ pix: string; cartao: string; publicKey: string | null; cartaoDisponivel?: boolean; parcelas?: number } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
@@ -87,26 +93,39 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
   const [draftShipping, setDraftShipping] = useState<"pac" | "sedex">("pac");
   const [paymentExpanded, setPaymentExpanded] = useState(false);
-  const [savePaymentData, setSavePaymentData] = useState(true);
+  const [savePaymentData, setSavePaymentData] = useState(false);
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const shippingFeeCents = shippingMethod === "sedex" ? 2032 : 0;
   /* Mesma conta do servidor (lib/promocoes): cupom primeiro, Pix sobre o
      valor já com cupom. Quem cobra é a API, isto aqui só mostra. */
-  const descontos = calcularDescontos({
-    subtotalCentavos: product.priceCents,
-    produtoSlug: product.slug,
+  const descontos = calcularDescontosCarrinho({
+    itens: products.map((item) => ({ produtoSlug: item.slug, subtotalCentavos: item.priceCents * item.quantity })),
     cupom: cupomAplicado,
     pagamento: payment === "pix" ? "pix" : "cartao",
     freteCentavos: shippingFeeCents,
   });
-  const totalCents = product.priceCents - descontos.totalCentavos + shippingFeeCents;
+  const totalCents = subtotalCents - descontos.totalCentavos + shippingFeeCents;
 
   useEffect(() => {
     try {
       const savedCep = localStorage.getItem(LAST_CEP_KEY)?.replace(/\D/g, "").slice(0, 8);
       if (savedCep?.length === 8) setCep(savedCep);
+      const savedContact = JSON.parse(localStorage.getItem(SAVED_CONTACT_KEY) ?? "null") as { email?: unknown; phone?: unknown } | null;
+      if (savedContact && typeof savedContact.email === "string" && typeof savedContact.phone === "string") {
+        setEmail(savedContact.email);
+        setPhone(formatPhone(savedContact.phone));
+        setSavePaymentData(true);
+      }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (step !== 3) return;
+    try {
+      if (savePaymentData) localStorage.setItem(SAVED_CONTACT_KEY, JSON.stringify({ email: email.trim(), phone: phone.replace(/\D/g, "") }));
+      else localStorage.removeItem(SAVED_CONTACT_KEY);
+    } catch {}
+  }, [step, savePaymentData, email, phone]);
 
   /* Carrinho abandonado: salva o que a pessoa já preencheu e em que etapa
      parou, para o painel poder recuperar a venda. Só grava com e-mail ou
@@ -130,13 +149,13 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
       cep: cep.replace(/\D/g, "") || null,
       cidade: address.city || null,
       uf: address.state || null,
-      produto: product.slug,
-      produto_nome: product.name,
+      produto: products.map((item) => `${item.quantity}x ${item.slug}`).join(", "),
+      produto_nome: products.map((item) => `${item.quantity}x ${item.name}`).join("; "),
       valor: totalCents,
     };
     const id = window.setTimeout(() => registrar("checkout_parcial", dados), 1200);
     return () => window.clearTimeout(id);
-  }, [email, firstName, lastName, phone, documentNumber, cep, address, step, product.slug, product.name, totalCents]);
+  }, [email, firstName, lastName, phone, documentNumber, cep, address, step, products, totalCents]);
 
   useEffect(() => {
     if (cep.length !== 8) {
@@ -233,7 +252,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
 
   function applyCoupon() {
     const codigo = coupon.trim().toUpperCase();
-    const valido = cupomValido(codigo, product.slug);
+    const valido = cupomValidoCarrinho(codigo, products.map((item) => item.slug));
     if (!valido) {
       setCupomAplicado("");
       setCouponMessage(codigo ? "Cupom inválido para este produto." : "Digite um cupom.");
@@ -251,19 +270,20 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
     let salvo: string | null = null;
     try { salvo = localStorage.getItem("cdp-cupom"); } catch {}
     const codigo = (daUrl || salvo || "").trim().toUpperCase();
-    if (!codigo || !cupomValido(codigo, product.slug)) return;
+    if (!codigo || !cupomValidoCarrinho(codigo, products.map((item) => item.slug))) return;
     setCoupon(codigo);
     setCupomAplicado(codigo);
     setCouponOpen(true);
     setCouponMessage(`Cupom ${codigo} aplicado.`);
-  }, [product.slug]);
+  }, [products]);
 
   const cartaoDisponivel = gatewayConfig?.cartaoDisponivel === true && Boolean(gatewayConfig.publicKey);
   const paymentPayload = {
     cupom: cupomAplicado,
     loja: "cafecomdeuspai",
     produto: product.slug,
-    qtd: 1,
+    qtd: product.quantity,
+    itens: products.map((item) => ({ produto: item.slug, qtd: item.quantity })),
     frete: shippingMethod,
     nome: `${firstName.trim()} ${lastName.trim()}`,
     email,
@@ -275,16 +295,16 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
   async function generatePix() {
     setGeneratingPix(true); setPaymentError(""); setPixCharge(null);
     try {
-      const tentativa = tentativaPagamento(product.slug, "pix");
+      const tentativa = tentativaPagamento(cartKey, "pix");
       const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, tentativa }), signal: AbortSignal.timeout(35000) });
       const data = await response.json();
       if (!response.ok) {
-        liberarTentativaEncerrada(product.slug, "pix", tentativa, data);
+        liberarTentativaEncerrada(cartKey, "pix", tentativa, data);
         throw new Error(data.erro || "Não foi possível gerar o PIX.");
       }
       setPixCharge(data);
       finalizado.current = true;   // saiu do funil de abandono: PIX gerado
-      pixel("AddPaymentInfo", { ...dadosProdutoPixel(product.slug, product.name, data.total), payment_method: "pix" });
+      pixel("AddPaymentInfo", { ...dadosProdutoPixel(cartKey, productName, data.total, products.reduce((sum, item) => sum + item.quantity, 0)), payment_method: "pix" });
       /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
          código e o passo a passo. Guardar no sessionStorage evita uma
          segunda ida ao servidor — o dado já está aqui. */
@@ -303,8 +323,8 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
 
   return (
     <div className={styles.shell}>
-      <EventoMeta evento="InitiateCheckout" umaVezPor={product.slug} dados={dadosProdutoPixel(product.slug, product.name, totalCents)} />
-      <header className={styles.logoHeader}><a href="/"><Image src={logo} alt="Café com Deus Pai" width={663} height={746} priority /></a></header>
+      <EventoMeta evento="InitiateCheckout" umaVezPor={cartKey} dados={dadosProdutoPixel(cartKey, productName, totalCents, products.reduce((sum, item) => sum + item.quantity, 0))} />
+      <header className={styles.logoHeader}><Link href="/"><Image src={logo} alt="Café com Deus Pai" width={663} height={746} priority /></Link></header>
 
       <button className={styles.mobileSummaryToggle} type="button" onClick={() => setSummaryOpen(v => !v)} aria-expanded={summaryOpen}>
         <span><ChevronDown className={summaryOpen ? styles.rotated : ""} /> Ver detalhes do pedido</span><strong>{money.format(totalCents / 100)}</strong>
@@ -358,7 +378,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
             </form>
           ) : (
             <section className={styles.payment}>
-              <div className={styles.trackingNotice}>O código de rastreio do seu pedido estará disponível em até 5 dias úteis na área do cliente em “Detalhes do pedido” “Entrega”.</div>
+              <div className={styles.trackingNotice}>Depois que o pedido for despachado, o código de rastreamento será enviado ao e-mail informado na compra. Confira também as pastas de spam e lixeira.</div>
               <div className={styles.checkoutReview}>
                 <div className={styles.reviewRow}><Mail aria-hidden="true" /><span>{email}</span></div>
                 <div className={styles.reviewRow}><MapPin aria-hidden="true" /><span>{address.street}, {withoutNumber ? "S/N" : address.number}{address.complement ? `, ${address.complement}` : ""}<small>CEP {cep.slice(0,5)}-{cep.slice(5)} · {address.neighborhood}<br />{address.city} - {address.state}</small></span><button type="button" onClick={() => { setStep(2); window.scrollTo({top:0,behavior:"smooth"}); }}>Alterar</button></div>
@@ -375,27 +395,28 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
                   {!pixCharge && <div className={styles.pixInstructions}><PixLogo /><p>Ao gerar o Código Pix do pedido você pode pagar escaneando o <b>QR Code</b> ou <b>Copiar e Colar</b>.</p></div>}
                   {pixCharge && <div className={styles.pixResult} role="status"><h2>PIX gerado com sucesso</h2><p>Pedido <b>{pixCharge.pedido}</b> · valor <b>{money.format(pixCharge.total / 100)}</b></p>{pixCharge.qr_code_url && <Image className={styles.qr} src={pixCharge.qr_code_url} alt="QR Code PIX" width={220} height={220} unoptimized />}<label>Código PIX copia e cola<textarea readOnly value={pixCharge.qr_code} /></label><button className={styles.copyButton} type="button" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código PIX"}</button></div>}
                 </> : cartaoDisponivel && gatewayConfig?.publicKey
-                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={paymentPayload} produtoNome={product.name} onEnviado={() => { finalizado.current = true; }} />
+                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={{ ...paymentPayload, produto: cartKey }} produtoNome={productName} onEnviado={() => { finalizado.current = true; }} />
                   : <p>Cartão indisponível no momento. Nenhum dado de cartão foi solicitado.</p>}
                 <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
               </div>}
-              <SavedPaymentData phone={phone} checked={savePaymentData} onChecked={setSavePaymentData} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />
+              <SavedPaymentData checked={savePaymentData} onChecked={setSavePaymentData} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />
               {!paymentExpanded ? <button className={`${styles.payButton} ${styles.payButtonInactive}`} type="button" disabled>Fazer pedido</button> : payment === "pix" ? !pixCharge && <button className={styles.payButton} type="button" disabled={generatingPix} onClick={generatePix}>{generatingPix ? "Gerando PIX..." : "Fazer pedido"}</button> : null}
               {paymentError && <p className={styles.paymentError} role="alert">{paymentError}</p>}
             </section>
           )}
         </main>
-        <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary product={product} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} descontos={descontos} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
+        <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary products={products} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} descontos={descontos} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
       </div>
       {shippingModalOpen && <div className={styles.shippingModalBackdrop} role="presentation" onMouseDown={() => setShippingModalOpen(false)}><div className={styles.shippingModal} role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title" onMouseDown={event => event.stopPropagation()}><span className={styles.modalHandle} aria-hidden="true" /><header><div><h2 id="shipping-modal-title">Entrega</h2><p>Escolha como deseja receber seu pedido</p></div><button type="button" aria-label="Fechar" onClick={() => setShippingModalOpen(false)}><X /></button></header><div className={styles.shippingModalBody}><b><Truck aria-hidden="true" /> Envio em domicílio</b><label className={draftShipping === "pac" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "pac"} onChange={() => setDraftShipping("pac")} /><span><b>Correios - PAC</b><small>Chega em {deliveryDate(25)}</small></span><strong>Grátis<small>R$ 20,32</small></strong></label><label className={draftShipping === "sedex" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "sedex"} onChange={() => setDraftShipping("sedex")} /><span><b>Correios - SEDEX</b><small>Chega em {deliveryDate(13)}</small></span><strong>R$ 20,32</strong></label></div><div className={styles.shippingModalActions}><button className={styles.shippingSave} type="button" onClick={() => { setShippingMethod(draftShipping); setShippingModalOpen(false); }}>Salvar forma de entrega</button><button className={styles.shippingCancel} type="button" onClick={() => setShippingModalOpen(false)}>Cancelar</button></div></div></div>}
     </div>
   );
 }
 
-function OrderSummary({ product, shippingMethod, shippingFeeCents, descontos }: { product: CheckoutProduct; shippingMethod: "pac" | "sedex" | null; shippingFeeCents: number; descontos: Descontos }) {
-  const price = money.format(product.priceCents / 100);
-  const total = money.format((product.priceCents - descontos.totalCentavos + shippingFeeCents) / 100);
-  return <div><div className={styles.product}><Image src={product.image} alt={product.name} width={128} height={128} /><div><b>{product.name} × 1</b></div><div className={styles.productPrice}>{product.originalPrice && <span><s>{product.originalPrice}</s></span>}<strong>{price}</strong></div></div>
+function OrderSummary({ products, shippingMethod, shippingFeeCents, descontos }: { products: CheckoutProduct[]; shippingMethod: "pac" | "sedex" | null; shippingFeeCents: number; descontos: Descontos }) {
+  const subtotalCents = products.reduce((sum, product) => sum + product.priceCents * product.quantity, 0);
+  const price = money.format(subtotalCents / 100);
+  const total = money.format((subtotalCents - descontos.totalCentavos + shippingFeeCents) / 100);
+  return <div><div className={styles.orderItems}>{products.map((product) => <div className={styles.product} key={product.slug}><Image src={product.image} alt={product.name} width={128} height={128} /><div><b>{product.name} × {product.quantity}</b></div><div className={styles.productPrice}>{product.originalPrice && product.quantity === 1 && <span><s>{product.originalPrice}</s></span>}<strong>{money.format(product.priceCents * product.quantity / 100)}</strong></div></div>)}</div>
     <div className={styles.totals}>
       <p><span>Subtotal</span><strong>{price}</strong></p>
       {descontos.cupomAplicado && <p className={styles.descontoLinha}><span>Cupom {descontos.cupomAplicado}</span><strong>− {money.format(descontos.cupomCentavos / 100)}</strong></p>}
@@ -408,8 +429,8 @@ function OrderSummary({ product, shippingMethod, shippingFeeCents, descontos }: 
 
 function PixLogo() { return <svg className={styles.pixLogo} viewBox="0 0 50 50" aria-hidden="true"><path d="M25 .039c-2.16 0-4.2.841-5.73 2.371L9.68 12h3.25c1.6 0 3.11.62 4.24 1.76l6.77 6.769a1.505 1.505 0 0 0 2.12-.01l6.77-6.759A5.96 5.96 0 0 1 37.07 12h3.25l-9.59-9.59A8.06 8.06 0 0 0 25 .039ZM7.68 14l-5.27 5.27a8.113 8.113 0 0 0 0 11.46L7.68 36h5.25c1.07 0 2.07-.42 2.83-1.17l6.769-6.769a3.506 3.506 0 0 1 4.942 0l6.769 6.769A4.04 4.04 0 0 0 37.07 36h5.25l5.27-5.27a8.113 8.113 0 0 0 0-11.46L42.32 14h-5.25c-1.07 0-2.07.42-2.83 1.17l-6.769 6.769a3.47 3.47 0 0 1-4.942 0L15.76 15.17A4.04 4.04 0 0 0 12.93 14H7.68ZM25 29.037c-.385.001-.771.148-1.061.443l-6.769 6.76A5.96 5.96 0 0 1 12.93 38H9.68l9.59 9.59a8.113 8.113 0 0 0 11.46 0L40.32 38h-3.25a5.96 5.96 0 0 1-4.24-1.76l-6.769-6.769A1.494 1.494 0 0 0 25 29.037Z" /></svg> }
 
-function SavedPaymentData({ phone, checked, onChecked, onAlter }: { phone: string; checked: boolean; onChecked: (value: boolean) => void; onAlter: () => void }) {
-  return <><div className={styles.savePayment}><label><input type="checkbox" checked={checked} onChange={e => onChecked(e.target.checked)} /> Salvar dados para <b>comprar mais rápido</b></label><p>Nas próximas compras enviaremos um código para:<br /><b>{phone}</b> <button type="button" onClick={onAlter}>Alterar</button></p><span><LockKeyhole /> Compra segura <small>☁ nuvem</small></span></div><p className={styles.saveTerms}>Ao salvar, você aceita os <a href="/politica-de-privacidade">Termos de uso</a> e <a href="/politica-de-privacidade">Política de Privacidade</a></p></>;
+function SavedPaymentData({ checked, onChecked, onAlter }: { checked: boolean; onChecked: (value: boolean) => void; onAlter: () => void }) {
+  return <><div className={styles.savePayment}><label><input type="checkbox" checked={checked} onChange={e => onChecked(e.target.checked)} /> Salvar contato para <b>comprar mais rápido</b></label><p>O e-mail e o telefone serão preenchidos automaticamente neste navegador. Dados do cartão, CPF e endereço não são salvos aqui. <button type="button" onClick={onAlter}>Alterar contato</button></p><span><LockKeyhole /> Compra segura <small>☁ nuvem</small></span></div><p className={styles.saveTerms}>Ao salvar, você aceita os <Link href="/termos-de-uso">Termos de uso</Link> e a <Link href="/politica-de-privacidade">Política de Privacidade</Link></p></>;
 }
 
 type CouponProps={couponOpen:boolean;setCouponOpen:(v:boolean)=>void;coupon:string;setCoupon:(v:string)=>void;applyCoupon:()=>void;message:string};

@@ -168,6 +168,8 @@
 }
 .pixOff { margin-left: 0; white-space: nowrap; }
 
+.orderItems { display: flex; flex-direction: column; gap: 18px; }
+
 /* O iOS dá zoom ao focar um campo com fonte menor que 16px, e ao sair do campo
    a página fica deslocada — no meio do checkout isso custa venda. Não há como
    manter 13-15px e impedir o zoom sem travar o pinch da página inteira, então
@@ -201,3 +203,8 @@
   padding: 4px 10px;
   white-space: nowrap;
 }
+
+/* Estado concluído da barra de progresso. Sem esta classe o React emitia
+   literalmente `undefined` no HTML quando o checkout avançava de etapa. */
+.step.done { color: #161616; }
+.step.done span { border-color: #725f3f; background: #eee8dd; color: #44371f; }

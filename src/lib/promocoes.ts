@@ -33,6 +33,15 @@ export function cupomValido(codigo: string, produtoSlug: string) {
   return cupom;
 }
 
+/** Um cupom de produto pode conviver com outros itens na sacola: o desconto
+ * incide somente nas linhas elegíveis, sem bloquear a compra inteira. */
+export function cupomValidoCarrinho(codigo: string, produtosSlugs: readonly string[]) {
+  const cupom = CUPONS[normalizarCupom(codigo)];
+  if (!cupom) return null;
+  if (cupom.produtos && !produtosSlugs.some((slug) => cupom.produtos!.includes(slug))) return null;
+  return cupom;
+}
+
 export type Descontos = {
   cupomAplicado: string | null;
   cupomCentavos: number;
@@ -56,8 +65,29 @@ export function calcularDescontos({
   pagamento?: "pix" | "cartao";
   freteCentavos?: number;
 }): Descontos {
-  const valido = cupom ? cupomValido(cupom, produtoSlug) : null;
-  const cupomCentavos = valido ? Math.round(subtotalCentavos * valido.percentual) : 0;
+  return calcularDescontosCarrinho({
+    itens: [{ produtoSlug, subtotalCentavos }], cupom, pagamento, freteCentavos,
+  });
+}
+
+export function calcularDescontosCarrinho({
+  itens,
+  cupom = "",
+  pagamento,
+  freteCentavos = 0,
+}: {
+  itens: readonly { produtoSlug: string; subtotalCentavos: number }[];
+  cupom?: string;
+  pagamento?: "pix" | "cartao";
+  freteCentavos?: number;
+}): Descontos {
+  const valido = cupom ? cupomValidoCarrinho(cupom, itens.map((item) => item.produtoSlug)) : null;
+  const subtotalCentavos = itens.reduce((total, item) => total + item.subtotalCentavos, 0);
+  const subtotalElegivel = valido
+    ? itens.filter((item) => !valido.produtos || valido.produtos.includes(item.produtoSlug))
+      .reduce((total, item) => total + item.subtotalCentavos, 0)
+    : 0;
+  const cupomCentavos = valido ? Math.round(subtotalElegivel * valido.percentual) : 0;
   const aposCupom = subtotalCentavos - cupomCentavos;
   let pixCentavos = 0;
   if (pagamento === "pix") {

@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
         destination: "/produto/box-plus2027",
         permanent: true,
       },
+      { source: "/fale-conosco", destination: "/contato", permanent: true },
+      { source: "/sobre-nos", destination: "/sobre", permanent: true },
+      { source: "/entregas1", destination: "/entregas", permanent: true },
+      { source: "/account/login", destination: "/contato", permanent: false },
     ];
   },
 

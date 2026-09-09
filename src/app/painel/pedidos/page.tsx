@@ -67,7 +67,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
               ? "Nenhum pedido encontrado com esses filtros. Tente outro termo ou limpe os filtros."
               : total > 0
               ? "Esta página não existe mais. Volte para a primeira."
-              : "Nenhum pedido ainda. Assim que alguém gerar um PIX no checkout, ele aparece aqui — e muda para “Pago” quando o webhook da PinPay confirmar."}
+              : "Nenhum pedido ainda. Assim que alguém iniciar um pagamento no checkout, ele aparece aqui — e muda para “Pago” quando o gateway confirmar."}
           </p>
         ) : (
           <div className={s.tabelaWrap}>

@@ -21,6 +21,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     pagina("/duvidas-frequentes", "monthly", 0.6),
     pagina("/contato", "yearly", 0.5),
     pagina("/sobre", "yearly", 0.4),
+    pagina("/sobre-o-autor", "yearly", 0.4),
+    pagina("/compras-em-atacado", "yearly", 0.3),
+    pagina("/assessoria-de-imprensa", "yearly", 0.3),
+    pagina("/entregas", "yearly", 0.3),
+    pagina("/trocas-e-devolucoes", "yearly", 0.3),
+    pagina("/termos-de-uso", "yearly", 0.3),
     pagina("/politica-de-privacidade", "yearly", 0.3),
   ];
 }

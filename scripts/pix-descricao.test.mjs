@@ -4,9 +4,11 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 
-test("PinPay recebe referência real na descrição e mantém o produto no pedido", async () => {
+test("PinPay recebe referência real, link oficial e todos os itens do pedido", async () => {
   let enviado, registrado;
-  const valores = { total: 2500, subtotal: 2500, desconto: 0, kit: { nome: "Produto teste" }, frete: { centavos: 0, nome: "PAC" } };
+  const valores = { total: 6500, subtotal: 6500, desconto: 0, kit: { nome: "1x Produto A + 2x Produto B" },
+    quantidadeTotal: 3, itens: [{ nome: "Produto A", quantidade: 1, totalCentavos: 2500 }, { nome: "Produto B", quantidade: 2, totalCentavos: 4000 }],
+    frete: { centavos: 0, nome: "PAC" } };
   const deps = {
     "next/server": { NextResponse: Response },
     qrcode: { toDataURL: async () => "QR-FICTICIO" },
@@ -17,7 +19,7 @@ test("PinPay recebe referência real na descrição e mantém o produto no pedid
     "@/lib/gateways-config": { lerGateways: async () => ({ pix: "pinpay" }) },
     "@/lib/pagamentos-axxon": { processarAxxon: () => { throw new Error("Gateway incorreto"); } },
     "@/lib/limite": { excedeu: () => false, ipDe: () => "teste" },
-    "@/lib/precos": { calcularTotal: () => valores, calcularTotalCafe: () => valores },
+    "@/lib/precos": { calcularTotal: () => valores, calcularTotalCafe: () => valores, calcularCarrinhoCafe: () => valores },
     "@/lib/config-integracoes": { ler: async () => "credencial-ficticia" },
     "@/lib/confirmar-pedido": { depois: () => {}, enviarPixPorEmail: async () => {} },
     "@/lib/numero-pedido": { novoNumeroPedido: async () => "34893" },
@@ -38,8 +40,10 @@ test("PinPay recebe referência real na descrição e mantém o produto no pedid
     nome: "Cliente Ficticio", email: "teste@example.com", documento: "00000000000", loja: "cafecomdeuspai", produto: "teste", qtd: 1, frete: "pac",
   }) }));
   assert.equal(resposta.status, 200);
-  assert.equal(enviado.description, "Pedido #34893");
+  assert.equal(enviado.description, "Café com Deus Pai - Pedido 34893");
+  assert.equal(enviado.metadata.checkout_url, "https://loja.example/checkout");
   assert.equal(enviado.metadata.external_reference, registrado.referencia);
   assert.equal((await resposta.json()).pedido, registrado.referencia);
-  assert.equal(registrado.kit, "Produto teste");
+  assert.equal(registrado.kit, "1x Produto A + 2x Produto B");
+  assert.equal(registrado.quantidade, 3);
 });

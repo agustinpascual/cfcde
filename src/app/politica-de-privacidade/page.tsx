@@ -1,53 +1,25 @@
 import type { Metadata } from "next";
+import PaginaInstitucional from "@/components/sites/cafecomdeuspai-com-8456844d/institucional/PaginaInstitucional";
+import s from "@/components/sites/cafecomdeuspai-com-8456844d/institucional/pagina.module.css";
 import { metadadosPagina } from "@/lib/seo";
-import PaginaInstitucional from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/PaginaInstitucional";
-import s from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/pagina.module.css";
-import { WHATSAPP_NUMERO, WHATSAPP_LINK } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/institucional/contato";
 
 export const metadata: Metadata = metadadosPagina({
-  titulo: "Política de privacidade — Bela Blue Beauty",
-  descricao: "Como a Bela Blue Beauty trata e protege os seus dados pessoais.",
+  titulo: "Política de privacidade — Café com Deus Pai",
+  descricao: "Como a loja Café com Deus Pai trata e protege os dados usados na compra.",
   caminho: "/politica-de-privacidade",
 });
 
 export default function Page() {
   return (
-    <PaginaInstitucional
-      titulo="Política de privacidade"
-      subtitulo="Como tratamos e protegemos as informações que você nos confia."
-    >
-      <h2>Política de privacidade</h2>
-      <p>
-        A nossa loja tem todo o respeito pela privacidade e garante o sigilo total das suas
-        informações fornecidas no momento da sua compra. Suas informações pessoais são armazenadas
-        em nosso banco de dados no intuito de estreitar o nosso relacionamento por meio de e-mails,
-        mala-direta, dentre outras maneiras de interação.
-      </p>
-
-      <div className={s.destaque}>
-        <p>
-          O número do seu cartão é usado somente no processamento da compra, de nenhuma maneira é
-          salvo em nossos arquivos após a operação. São salvos apenas os seus dados pessoais.
-        </p>
-      </div>
-
-      <p>
-        Seu endereço de e-mail é utilizado para que possamos divulgar para você as nossas promoções
-        e lançamentos, você pode cancelar a qualquer momento.
-      </p>
-
+    <PaginaInstitucional titulo="Política de privacidade" subtitulo="Como tratamos as informações necessárias para operar a loja e atender seu pedido.">
+      <h2>Dados utilizados</h2>
+      <p>Usamos as informações fornecidas durante a navegação e a compra para processar pedidos, confirmar pagamentos, realizar entregas, emitir documentos fiscais, prevenir fraudes e prestar atendimento.</p>
+      <div className={s.highlight}><p>Os dados necessários ao pagamento são transmitidos ao provedor responsável pelo processamento. O site não inclui o número completo do cartão nos dados do pedido.</p></div>
+      <h2>Segurança e funcionamento</h2>
+      <p>Também podemos usar dados técnicos, como endereço IP, navegador e eventos de navegação, para segurança, funcionamento do site e medição de desempenho. O acesso é limitado às finalidades necessárias e aos prestadores envolvidos na operação da loja.</p>
       <h2>Fale com a gente</h2>
-      <p>
-        Caso tenha dúvidas ou sugestões sobre nossa política de privacidade, sinta-se à vontade e
-        entre em contato conosco através do WhatsApp <strong>{WHATSAPP_NUMERO}</strong>.
-      </p>
-      <a className={s.wpp} href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
-        Falar no WhatsApp
-      </a>
-
-      <p style={{ marginTop: 28 }}>
-        Garantimos a segurança da sua compra e respeitamos a sua privacidade.
-      </p>
+      <p>Para dúvidas sobre privacidade ou sobre os dados de um pedido, entre em contato com o SAC pelo número <strong>(47) 3224-9292</strong>.</p>
+      <a className={s.button} href="https://wa.me/554732249292" target="_blank" rel="noopener noreferrer">Falar com o atendimento</a>
     </PaginaInstitucional>
   );
 }

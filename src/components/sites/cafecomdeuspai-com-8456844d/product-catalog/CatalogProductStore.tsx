@@ -6,7 +6,7 @@ import { ChevronDown, Minus, Plus, Star, Truck } from "lucide-react";
 import { useState } from "react";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
-import { useCartQuantity } from "../useCart";
+import { useCart } from "../useCart";
 import CartDrawer from "../produtos-combo-plus-50ce9672/CartDrawer";
 import { SiteFooter, SiteHeader } from "../produtos-combo-plus-50ce9672/HeaderFooter";
 import type { CatalogProduct } from "../shared/productCatalog";
@@ -19,11 +19,12 @@ type Props = { product: CatalogProduct };
 export default function CatalogProductStore({ product }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [cartOpen, setCartOpen] = useState(false);
-  const [cartQuantity, setCartQuantity] = useCartQuantity();
+  const cart = useCart();
   const recommendations = PRODUCTS.filter((item) => item.slug !== product.slug).slice(0, 4);
 
   function buy() {
-    setCartQuantity(quantity);
+    cart.add({ slug: product.slug, name: product.name, image: product.image,
+      priceCents: product.priceCents, originalPrice: product.originalPrice }, quantity);
     setCartOpen(true);
     pixel("AddToCart", dadosProdutoPixel(product.slug, product.name, product.priceCents * quantity, quantity));
     registrar("comprar", { produto: product.slug, nome: product.name, quantidade: quantity });
@@ -32,7 +33,7 @@ export default function CatalogProductStore({ product }: Props) {
   return (
     <div className={styles.store}>
       <EventoMeta evento="ViewContent" dados={dadosProdutoPixel(product.slug, product.name, product.priceCents)} />
-      <SiteHeader cartCount={cartQuantity} onCartClick={() => setCartOpen(true)} />
+      <SiteHeader cartCount={cart.quantity} onCartClick={() => setCartOpen(true)} />
       <main>
         <div className={styles.productTop}><Link className={styles.back} href="/">← Voltar</Link></div>
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
@@ -80,7 +81,7 @@ export default function CatalogProductStore({ product }: Props) {
       </main>
       <SiteFooter />
       <MobilePurchaseBar name={product.name} price={product.price} originalPrice={product.originalPrice} installment={product.installment} quantity={quantity} onDecrease={() => setQuantity(value => Math.max(1, value - 1))} onIncrease={() => setQuantity(value => value + 1)} onBuy={buy} />
-      <CartDrawer open={cartOpen} quantity={Math.max(1, cartQuantity)} onClose={() => setCartOpen(false)} onQuantityChange={setCartQuantity} productName={product.name} productImage={product.image} unitPrice={product.priceCents / 100} productSlug={product.slug} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} />
     </div>
   );
 }

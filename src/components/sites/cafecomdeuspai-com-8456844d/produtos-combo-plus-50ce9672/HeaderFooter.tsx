@@ -1,14 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
   ChevronDown,
   Facebook,
   Instagram,
   Menu,
+  PackageSearch,
   Search,
   ShoppingBag,
-  UserRound,
   X,
   Youtube,
 } from "lucide-react";
@@ -36,26 +37,26 @@ const footerColumns = [
   {
     title: "Atendimento",
     links: [
-      ["Fale conosco", "/fale-conosco/"],
-      ["Compras em atacado", "/compras-em-atacado/"],
-      ["Assessoria de imprensa", "/assessoria-de-imprensa/"],
-      ["Dúvidas frequentes", "/duvidas-frequentes/"],
+      ["Fale conosco", "/contato"],
+      ["Compras em atacado", "/compras-em-atacado"],
+      ["Assessoria de imprensa", "/assessoria-de-imprensa"],
+      ["Dúvidas frequentes", "/duvidas-frequentes"],
     ],
   },
   {
     title: "Institucional",
     links: [
       ["Depoimentos", "https://lp.cafecomdeuspai.com/depoimentos"],
-      ["Sobre nós", "/sobre-nos/"],
-      ["Sobre o autor", "/sobre-o-autor/"],
+      ["Sobre nós", "/sobre"],
+      ["Sobre o autor", "/sobre-o-autor"],
     ],
   },
   {
     title: "Políticas",
     links: [
-      ["Trocas e Devoluções", "/trocas-e-devolucoes/"],
-      ["Entregas", "/entregas1/"],
-      ["Privacidade e segurança", "/politica-de-privacidade/"],
+      ["Trocas e Devoluções", "/trocas-e-devolucoes"],
+      ["Entregas", "/entregas"],
+      ["Privacidade e segurança", "/politica-de-privacidade"],
     ],
   },
 ] as const;
@@ -118,7 +119,7 @@ export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }:
             <Menu aria-hidden="true" />
           </button>
 
-          <a className={styles.logoLink} href="/" aria-label="Café com Deus Pai — início">
+          <Link className={styles.logoLink} href="/" aria-label="Café com Deus Pai — início">
             <Image
               className={styles.logo}
               src={`${assetRoot}/logo.png`}
@@ -127,14 +128,12 @@ export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }:
               height={746}
               priority
             />
-          </a>
+          </Link>
 
           <nav className={styles.desktopNav} aria-label="Navegação principal">
-            {navigation.map(([label, href]) => (
-              <a key={label} href={href}>
-                {label}
-              </a>
-            ))}
+            {navigation.map(([label, href]) => href.startsWith("/")
+              ? <Link key={label} href={href}>{label}</Link>
+              : <a key={label} href={href}>{label}</a>)}
           </nav>
 
           <div className={styles.utilities}>
@@ -144,8 +143,8 @@ export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }:
                 <Search aria-hidden="true" />
               </button>
             </form>
-            <a className={`${styles.iconButton} ${styles.accountButton}`} href="/account/login/" aria-label="Minha conta">
-              <UserRound aria-hidden="true" />
+            <a className={`${styles.iconButton} ${styles.accountButton}`} href={RASTREIO_BASE} target="_blank" rel="noopener noreferrer" aria-label="Rastrear meu pedido">
+              <PackageSearch aria-hidden="true" />
             </a>
             <button
               className={`${styles.iconButton} ${styles.mobileSearchButton}`}
@@ -180,11 +179,9 @@ export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }:
             </button>
           </div>
           <nav>
-            {navigation.map(([label, href]) => (
-              <a key={label} href={href} onClick={() => setMenuOpen(false)}>
-                {label}<ChevronDown aria-hidden="true" />
-              </a>
-            ))}
+            {navigation.map(([label, href]) => href.startsWith("/")
+              ? <Link key={label} href={href} onClick={() => setMenuOpen(false)}>{label}<ChevronDown aria-hidden="true" /></Link>
+              : <a key={label} href={href} onClick={() => setMenuOpen(false)}>{label}<ChevronDown aria-hidden="true" /></a>)}
           </nav>
         </aside>
       </div>
@@ -197,7 +194,7 @@ function FooterColumn({ column }: { column: (typeof footerColumns)[number] }) {
     <details className={styles.footerColumn}>
       <summary>{column.title}<ChevronDown aria-hidden="true" /></summary>
       <ul>
-        {column.links.map(([label, href]) => <li key={label}><a href={href}>{label}</a></li>)}
+        {column.links.map(([label, href]) => <li key={label}>{href.startsWith("/") ? <Link href={href}>{label}</Link> : <a href={href}>{label}</a>}</li>)}
       </ul>
     </details>
   );
@@ -212,9 +209,9 @@ export function SiteFooter() {
     <footer className={styles.footer}>
       <div className={styles.footerMain}>
         <div className={styles.footerBrand}>
-          <a href="/" aria-label="Café com Deus Pai — início">
+          <Link href="/" aria-label="Café com Deus Pai — início">
             <Image src={`${assetRoot}/logo.png`} alt="Café com Deus Pai" width={663} height={746} />
-          </a>
+          </Link>
           <div className={styles.socials} aria-label="Redes sociais">
             <a href="https://instagram.com/cafecomdeuspai" aria-label="Instagram"><Instagram aria-hidden="true" /></a>
             <a href="https://www.youtube.com/c/JuniorRostirola/videos" aria-label="YouTube"><Youtube aria-hidden="true" /></a>
@@ -222,7 +219,7 @@ export function SiteFooter() {
           </div>
         </div>
         {footerColumns.map((column) => <FooterColumn key={column.title} column={column} />)}
-        <details className={`${styles.footerColumn} ${styles.helpColumn}`}>
+        <details className={styles.footerColumn}>
           <summary>Dúvidas sobre seus pedidos?<ChevronDown aria-hidden="true" /></summary>
           <div className={styles.helpText}>
             <p><strong>SAC: (47) 3224-9292</strong><br />Resposta por WhatsApp em até <strong>72h úteis</strong>.</p>

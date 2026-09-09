@@ -57,7 +57,9 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
     "./supabase/servidor": { supabaseAdmin: () => ({ from: () => new Consulta() }) },
     "./axxonpay": gateway, "./axxonpay-protocolo": protocolo, "./axxonpay-webhook": webhook, "./cartao": cartao,
     "./numero-pedido": { sortearNumeroPedido: () => numeros ? numeros[numerosSorteados++ % numeros.length] : String(100001 + numerosSorteados++) },
-    "./precos": { calcularTotalCafe: () => ({ total: 2500, subtotal: 2500, desconto: 0, frete: { centavos: 0, nome: "PAC" }, kit: { nome: "Produto teste" } }) },
+    "./precos": { calcularCarrinhoCafe: () => ({ total: 2500, subtotal: 2500, desconto: 0,
+      frete: { centavos: 0, nome: "PAC" }, kit: { nome: "1x Produto teste" }, quantidadeTotal: 1,
+      itens: [{ slug: "teste", nome: "Produto teste", quantidade: 1, totalCentavos: 2500 }] }) },
     "./confirmar-pedido": { depois: () => {}, confirmarPorEmail: async () => { confirmacoes++; }, registrarCompraNoPixel: async () => {}, enviarPixPorEmail: async () => {} },
     "./entrega-app": { entregarAcessoApp: async () => {} },
   };
@@ -148,11 +150,11 @@ for (const metodo of ["pix", "cartao"]) {
     assert.equal(resposta.status, 200);
     const dados = await resposta.json();
     assert.match(dados.pedido, /^[1-9]\d{5}$/);
-    assert.equal(enviado.description, `Pedido #${dados.pedido}`);
+    assert.equal(enviado.description, `Café com Deus Pai - 1x Produto teste - Pedido #${dados.pedido}`);
     assert.equal(enviado.metadata.external_reference, dados.pedido);
     assert.equal(enviado.metadata.payment_attempt, body.tentativa);
     assert.equal(a.pedidos.get(dados.pedido).id, body.tentativa);
-    assert.equal(a.pedidos.get(dados.pedido).kit, "Produto teste");
+    assert.equal(a.pedidos.get(dados.pedido).kit, "1x Produto teste");
   });
 }
 

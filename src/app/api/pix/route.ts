@@ -4,7 +4,7 @@ import { criarPix } from "@/lib/pinpay";
 import { lerGateways } from "@/lib/gateways-config";
 import { processarAxxon } from "@/lib/pagamentos-axxon";
 import { excedeu, ipDe } from "@/lib/limite";
-import { calcularTotal, calcularTotalCafe, type IdFrete } from "@/lib/precos";
+import { calcularCarrinhoCafe, calcularTotal, calcularTotalCafe, type IdFrete, type ItemCarrinhoCafe } from "@/lib/precos";
 import { ler } from "@/lib/config-integracoes";
 import { depois, enviarPixPorEmail } from "@/lib/confirmar-pedido";
 import { novoNumeroPedido } from "@/lib/numero-pedido";
@@ -16,6 +16,12 @@ export const dynamic = "force-dynamic";
 
 const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const emailOk = (v: unknown) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v ?? "").trim());
+const itensDoCorpo = (body: Record<string, unknown>): ItemCarrinhoCafe[] => Array.isArray(body.itens)
+  ? body.itens.map((item) => {
+      const linha = item && typeof item === "object" && !Array.isArray(item) ? item as Record<string, unknown> : {};
+      return { produto: String(linha.produto ?? ""), qtd: Number(linha.qtd) };
+    })
+  : [{ produto: String(body.produto ?? ""), qtd: Number(body.qtd) }];
 
 export async function POST(req: Request) {
   // cada chamada cria uma cobrança de verdade na conta do lojista
@@ -59,7 +65,7 @@ export async function POST(req: Request) {
   try {
     // O valor NÃO vem do cliente — é recalculado a partir do catálogo do servidor.
     valores = body.loja === "cafecomdeuspai"
-      ? calcularTotalCafe(String(body.produto ?? ""), qtd, String(body.frete ?? ""), {
+      ? calcularCarrinhoCafe(itensDoCorpo(body), String(body.frete ?? ""), {
           cupom: typeof body.cupom === "string" ? body.cupom : undefined,
           pagamento: "pix",
         })
@@ -74,9 +80,9 @@ export async function POST(req: Request) {
   try {
     const cobranca = await criarPix({
       amount: valores.total,
-      description: `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido ${pedido}`,
+      description: `${body.loja === "cafecomdeuspai" ? "Café com Deus Pai" : valores.kit.nome} - Pedido ${pedido}`,
       customer: { name: nome, email, document: { number: documento } },
-      metadata: { external_reference: pedido, checkout_url: `https://loja.bellablue.fit/product/escova-modeladora-gokoco/` },
+      metadata: { external_reference: pedido, checkout_url: `${origem}/checkout` },
     });
 
     /* A PinPay às vezes devolve qr_code_url = null. O BR Code (qr_code) é o
@@ -110,7 +116,7 @@ export async function POST(req: Request) {
         desconto_centavos: valores.desconto,
         frete_centavos: valores.frete.centavos,
         kit: valores.kit.nome,
-        quantidade: qtd,
+        quantidade: "quantidadeTotal" in valores ? valores.quantidadeTotal : qtd,
         frete_tipo: valores.frete.nome,
         cliente_nome: nome,
         cliente_email: email,
@@ -140,7 +146,9 @@ export async function POST(req: Request) {
         clienteEmail: email,
         clienteDocumento: documento,
         clienteTelefone: soDigitos(body.celular) || null,
-        itens: [{ descricao: valores.kit.nome, quantidade: qtd, totalCentavos: valores.subtotal }],
+        itens: "itens" in valores
+          ? valores.itens.map((item) => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos }))
+          : [{ descricao: valores.kit.nome, quantidade: qtd, totalCentavos: valores.subtotal }],
         subtotalCentavos: valores.subtotal,
         descontoCentavos: valores.desconto,
         freteCentavos: valores.frete.centavos,

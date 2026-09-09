@@ -6,7 +6,7 @@ import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import type { EstoqueLote } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/StockUrgency";
-import { useCartQuantity } from "@/components/sites/cafecomdeuspai-com-8456844d/useCart";
+import { useCart } from "@/components/sites/cafecomdeuspai-com-8456844d/useCart";
 import CartDrawer from "./CartDrawer";
 import { SiteFooter, SiteHeader } from "./HeaderFooter";
 import ProductPage from "./ProductPage";
@@ -24,13 +24,19 @@ type Props = {
 
 export default function ComboPlusStore({ produto = comboPlus, notificacoes = false, estoque, cupomSaida }: Props) {
   const [cartOpen, setCartOpen] = useState(false);
-  const [cartQuantity, setCartQuantity] = useCartQuantity();
+  const cart = useCart();
   /* A oferta escolhida sobe até aqui porque a sacola também precisa dela. */
   const [ofertaIndice, setOfertaIndice] = useState(0);
   const oferta = produto.ofertas[ofertaIndice] ?? produto.ofertas[0];
 
   function addToCart(quantity: number) {
-    setCartQuantity(quantity);
+    cart.add({
+      slug: oferta.slug,
+      name: oferta.unidades > 1 ? `${produto.nome} · ${oferta.rotulo}` : produto.nome,
+      image: produto.imagem,
+      priceCents: Math.round(oferta.preco * 100),
+      originalPrice: oferta.comparado ? `R$ ${oferta.comparado.toFixed(2).replace(".", ",")}` : null,
+    }, quantity);
     setCartOpen(true);
     pixel("AddToCart", dadosProdutoPixel(oferta.slug, produto.nome, Math.round(oferta.preco * quantity * 100), quantity));
     /* Marca o clique em comprar na trilha da sessão. Ainda não há pedido; ele
@@ -41,7 +47,7 @@ export default function ComboPlusStore({ produto = comboPlus, notificacoes = fal
   return (
     <div>
       <EventoMeta evento="ViewContent" dados={dadosProdutoPixel(oferta.slug, produto.nome, Math.round(oferta.preco * 100))} />
-      <SiteHeader cartCount={cartQuantity} onCartClick={() => setCartOpen(true)} />
+      <SiteHeader cartCount={cart.quantity} onCartClick={() => setCartOpen(true)} />
       <ProductPage
         produto={produto}
         oferta={oferta}
@@ -51,14 +57,9 @@ export default function ComboPlusStore({ produto = comboPlus, notificacoes = fal
       />
       <SiteFooter />
       <CartDrawer
-        productName={oferta.unidades > 1 ? `${produto.nome} · ${oferta.rotulo}` : produto.nome}
-        productImage={produto.imagem}
-        unitPrice={oferta.preco}
-        productSlug={oferta.slug}
         open={cartOpen}
-        quantity={Math.max(1, cartQuantity)}
         onClose={() => setCartOpen(false)}
-        onQuantityChange={setCartQuantity}
+        cart={cart}
       />
       {notificacoes ? <PurchaseNotifications imagem={produto.imagem} nome={produto.nome} /> : null}
       {cupomSaida ? (

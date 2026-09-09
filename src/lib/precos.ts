@@ -1,5 +1,5 @@
 import "server-only";
-import { calcularDescontos, sobraAteRealCheio } from "./promocoes";
+import { calcularDescontosCarrinho, sobraAteRealCheio } from "./promocoes";
 import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
 
 /* Tabela de preços autoritativa. O checkout envia apenas o índice do kit e a
@@ -61,23 +61,50 @@ export function calcularTotalCafe(
   frete: string,
   opcoes: { cupom?: string; pagamento?: "pix" | "cartao" } = {},
 ) {
-  const produto = PRODUTOS_CAFE[produtoSlug];
-  if (!produto) throw new Error("Produto inválido");
-  if (!Number.isInteger(qtd) || qtd < 1 || qtd > 20) throw new Error("Quantidade inválida");
+  return calcularCarrinhoCafe([{ produto: produtoSlug, qtd }], frete, opcoes);
+}
+
+export type ItemCarrinhoCafe = { produto: string; qtd: number };
+
+/** Calcula uma sacola inteira usando exclusivamente o catálogo do servidor.
+ * Slugs repetidos são consolidados e nenhum preço vindo do navegador é aceito. */
+export function calcularCarrinhoCafe(
+  itensBrutos: readonly ItemCarrinhoCafe[],
+  frete: string,
+  opcoes: { cupom?: string; pagamento?: "pix" | "cartao" } = {},
+) {
+  if (!Array.isArray(itensBrutos) || itensBrutos.length < 1 || itensBrutos.length > 20) throw new Error("Carrinho inválido");
+  const quantidades = new Map<string, number>();
+  for (const item of itensBrutos) {
+    const produto = PRODUTOS_CAFE[item?.produto];
+    if (!produto) throw new Error("Produto inválido");
+    if (!Number.isInteger(item.qtd) || item.qtd < 1 || item.qtd > 20) throw new Error("Quantidade inválida");
+    const total = (quantidades.get(item.produto) ?? 0) + item.qtd;
+    if (total > 20) throw new Error("Quantidade inválida");
+    quantidades.set(item.produto, total);
+  }
+  const quantidadeTotal = [...quantidades.values()].reduce((total, qtd) => total + qtd, 0);
+  if (quantidadeTotal > 40) throw new Error("Quantidade total inválida");
   if (frete !== "pac" && frete !== "sedex") throw new Error("Forma de envio inválida");
-  const subtotal = produto.centavos * qtd;
+  const itens = [...quantidades].map(([slug, quantidade]) => {
+    const produto = PRODUTOS_CAFE[slug];
+    return { slug, nome: produto.nome, quantidade, totalCentavos: produto.centavos * quantidade };
+  });
+  const subtotal = itens.reduce((total, item) => total + item.totalCentavos, 0);
   const freteSelecionado = frete === "pac"
     ? { nome: "Correios - PAC", centavos: 0 }
     : { nome: "Correios - SEDEX", centavos: 2032 };
-  const descontos = calcularDescontos({
-    subtotalCentavos: subtotal,
-    produtoSlug,
+  const descontos = calcularDescontosCarrinho({
+    itens: itens.map((item) => ({ produtoSlug: item.slug, subtotalCentavos: item.totalCentavos })),
     cupom: opcoes.cupom,
     pagamento: opcoes.pagamento,
     freteCentavos: freteSelecionado.centavos,
   });
+  const nomeCarrinho = itens.map((item) => `${item.quantidade}x ${item.nome}`).join(" + ");
   return {
-    kit: produto,
+    kit: { nome: nomeCarrinho, centavos: subtotal },
+    itens,
+    quantidadeTotal,
     subtotal,
     desconto: descontos.totalCentavos,
     cupom: descontos.cupomAplicado,

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { SiteFooter } from "../produtos-combo-plus-50ce9672/HeaderFooter";
 import HomeVideoStories from "./HomeVideoStories";
@@ -80,7 +81,7 @@ export default function HomeLower() {
 
       {cookies ? (
         <div className={styles.cookie} role="dialog" aria-label="Aviso de cookies">
-          <p>Utilizamos cookies para melhorar sua experiência. Ao continuar navegando, você concorda com a nossa <a href="/politica-de-privacidade/">Política de Privacidade</a>.</p>
+          <p>Utilizamos cookies para melhorar sua experiência. Ao continuar navegando, você concorda com a nossa <Link href="/politica-de-privacidade">Política de Privacidade</Link>.</p>
           <button className={styles.accept} type="button" onClick={acceptCookies}>Aceitar</button>
           <button className={styles.cookieClose} type="button" onClick={acceptCookies} aria-label="Fechar aviso"><X /></button>
         </div>

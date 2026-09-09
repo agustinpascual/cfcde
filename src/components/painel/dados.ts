@@ -469,6 +469,7 @@ export const TABELAS = [
   { nome: "pedidos", para: "Pedidos e receita" },
   { nome: "eventos", para: "Funil e rastreamento" },
   { nome: "sessoes", para: "Visitantes ao vivo e mapa" },
+  { nome: "ips_bloqueados", para: "Bloqueio de acessos suspeitos" },
   { nome: "eventos_webhook", para: "Confirmação de pagamento" },
   { nome: "configuracoes", para: "Integrações salvas no painel" },
   { nome: "conversas", para: "WhatsApp" },
@@ -488,6 +489,7 @@ export type EstadoTabela = { nome: string; para: string; existe: boolean; coluna
    criada, e nada na tela indicava isso. */
 const COLUNAS: Record<string, string[]> = {
   pedidos: ["metodo_pagamento", "aviso_pix_em"],
+  sessoes: ["ip"],
   conversas: ["saudou_em"],
   treinamento: ["escalar_mensagem", "saudacao_ativa", "saudacao_mensagem", "atendente_nome"],
 };
@@ -498,7 +500,8 @@ export async function estadoInstalacao(): Promise<EstadoTabela[] | null> {
   const db = supabaseAdmin();
   if (!db) return null;
   return Promise.all(TABELAS.map(async ({ nome, para }) => {
-    const { error } = await db.from(nome).select(nome === "configuracoes" ? "chave" : "id").limit(1);
+    const colunaChave = nome === "configuracoes" ? "chave" : nome === "ips_bloqueados" ? "ip" : "id";
+    const { error } = await db.from(nome).select(colunaChave).limit(1);
     // PGRST205 = tabela ausente do cache do schema. Outros erros (RLS, etc.)
     // significam que a tabela existe.
     const existe = !error || (error as { code?: string }).code !== "PGRST205";
