@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* IDs públicos do Meta Pixel. O fallback mantém o rastreamento ativo também
+     nos builds do Cloudflare que não importam arquivos .env.local. Tokens da
+     API de Conversões continuam somente cifrados no banco. */
+  env: {
+    NEXT_PUBLIC_META_PIXEL_ID:
+      process.env.NEXT_PUBLIC_META_PIXEL_ID ??
+      "1790438962159532,2131505900780686,1617137666619683",
+  },
   // Performance
   compress: true,
   poweredByHeader: false,
