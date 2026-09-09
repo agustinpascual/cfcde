@@ -7,3 +7,7 @@ create table if not exists public.ips_bloqueados (
   motivo     text,
   criado_em  timestamptz not null default now()
 );
+
+-- A lista contém informação operacional sensível e só é acessada pelo
+-- backend com service_role. Nenhum acesso público pelo anon.
+alter table public.ips_bloqueados enable row level security;

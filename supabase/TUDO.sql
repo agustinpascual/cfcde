@@ -622,3 +622,63 @@ alter table public.pedidos
 
 comment on column public.pedidos.chave_usuario is
   'Identificador público de 3 dígitos, sem função de autenticação.';
+
+-- ---------------------------------------------------------------------
+-- Código de rastreio do envio, preenchido à mão no painel.
+-- Nulo enquanto o pedido não foi postado.
+-- ---------------------------------------------------------------------
+alter table public.pedidos
+  add column if not exists codigo_rastreio      text,
+  add column if not exists rastreio_atualizado  timestamptz;
+
+comment on column public.pedidos.codigo_rastreio is
+  'Código dos Correios (ex.: AA123456789BR). Preenchido pelo painel e enviado ao cliente por e-mail.';
+
+-- Marca que o e-mail de confirmação já saiu. A PinPay reenvia o mesmo evento,
+-- e sem esta coluna o cliente receberia a confirmação várias vezes.
+alter table public.pedidos
+  add column if not exists confirmacao_enviada_em timestamptz;
+
+-- Alterna os pedidos consultados: um Pix antigo ainda aberto não bloqueia os demais.
+alter table public.pedidos
+  add column if not exists pix_conferido_em timestamptz;
+
+create index if not exists pedidos_pix_conferir_idx
+  on public.pedidos (pix_conferido_em asc nulls first, criado_em)
+  where status = 'pendente' and metodo_pagamento = 'pix' and pix_id is not null;
+
+-- Novos tipos de evento do funil, bloqueados pelo CHECK antigo (0002):
+--   comprar          → clique no botão "Comprar" na página do produto
+--   checkout_parcial → dados preenchidos no checkout (carrinho abandonado)
+--   voltou           → retorno à aba após copiar o código PIX
+-- Sem isto o insert desses eventos falha com eventos_tipo_check (23514) e o
+-- evento é descartado em silêncio (a compra não quebra, mas o dado some).
+
+alter table public.eventos drop constraint if exists eventos_tipo_check;
+
+alter table public.eventos add constraint eventos_tipo_check
+  check (tipo in (
+    'pageview', 'secao', 'comprar', 'checkout', 'checkout_parcial',
+    'pix_gerado', 'pix_copiado', 'voltou', 'compra', 'saida'
+  ));
+
+-- Guarda o código PIX (copia-e-cola) e a imagem do QR de cada cobrança, para o
+-- painel poder mostrar e reenviar ao cliente. Antes só o pix_id era salvo, e a
+-- PinPay não deixa recuperar o QR depois pelo código de forma confiável.
+alter table public.pedidos
+  add column if not exists pix_copia_cola text,
+  add column if not exists pix_qr_url     text;
+
+-- IP na sessão (para ver a origem do pedido no painel) e lista de IPs
+-- bloqueados (o middleware recusa o acesso ao site vindo desses IPs).
+alter table public.sessoes add column if not exists ip text;
+
+create table if not exists public.ips_bloqueados (
+  ip         text primary key,
+  motivo     text,
+  criado_em  timestamptz not null default now()
+);
+
+-- A lista contém informação operacional sensível e só é acessada pelo
+-- backend com service_role. Nenhum acesso público pelo anon.
+alter table public.ips_bloqueados enable row level security;
