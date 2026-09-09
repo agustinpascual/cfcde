@@ -199,7 +199,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     <Script src={SDK_URL} strategy="afterInteractive" onReady={() => void iniciar()}
       onError={() => { setSdk("erro"); setMensagem("O serviço de cartão está indisponível. Tente novamente em instantes ou pague com Pix."); }} />
     {!cobranca && <form ref={form} className={s.form} onSubmit={pagar} noValidate>
-      <p className={s.aviso}><LockKeyhole aria-hidden="true" /><span>Pagamento processado pela AxxonPay. Os dados do cartão são transmitidos com criptografia e não ficam armazenados na loja.</span></p>
+      <p className={s.aviso}><LockKeyhole aria-hidden="true" /><span>Os dados do cartão são transmitidos com criptografia e não ficam armazenados na loja.</span></p>
       <label>Número do cartão<input ref={numero} className={s.input} inputMode="numeric" autoComplete="cc-number" placeholder="0000 0000 0000 0000" maxLength={23} onInput={mascararNumero} disabled={ocupado} required /></label>
       <label>Nome impresso no cartão<input ref={titular} className={s.input} autoComplete="cc-name" maxLength={60} disabled={ocupado} required /></label>
       <div className={s.linha}>
