@@ -144,11 +144,18 @@ export default function PagamentoPix() {
                 </svg>
               </span>
             </div>
+            <p className={s.sucessoSelo}>Pagamento aprovado</p>
             <h1 className={s.sucessoTitulo}>Obrigado pela sua compra!</h1>
-            <p className={s.sucessoTexto}>
-              Pagamento confirmado{pago.pedido ? <> · pedido <b>{pago.pedido}</b></> : null}.
-            </p>
+            <p className={s.sucessoTexto}>Seu pedido foi confirmado e já está sendo preparado.</p>
           </div>
+
+          {pago.pedido && (
+            <section className={s.pedidoAprovado} aria-label="Número do pedido">
+              <p className={s.pedidoAprovadoRotulo}>Número do pedido</p>
+              <p className={s.pedidoAprovadoNumero}>#{pago.pedido}</p>
+              <p className={s.pedidoAprovadoNota}>Guarde este número para acompanhar a sua compra.</p>
+            </section>
+          )}
 
           {pago.rastreio ? (
             <div className={s.cartao}>
@@ -158,15 +165,26 @@ export default function PagamentoPix() {
                 Rastrear meu pedido
               </a>
             </div>
-          ) : (
-            <p className={s.nota}>
-              O código de rastreio será enviado por e-mail após a postagem.
-            </p>
-          )}
+          ) : null}
 
-          <p className={s.rodape}>
-            Você receberá por e-mail o comprovante da compra e as informações do pedido.
-          </p>
+          <section className={s.avisoEmail} aria-labelledby="aviso-email-titulo">
+            <span className={s.avisoEmailIcone} aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="m3 7 9 6 9-6" />
+              </svg>
+            </span>
+            <div className={s.avisoEmailConteudo}>
+              <h2 id="aviso-email-titulo">Fique de olho no seu e-mail</h2>
+              <p>Enviaremos para o e-mail informado no pedido:</p>
+              <ul>
+                <li>Sua nota fiscal</li>
+                <li>O código de rastreamento assim que o pedido for enviado</li>
+              </ul>
+            </div>
+          </section>
+
+          <p className={s.rodape}>Não encontrou a mensagem? Confira também a caixa de spam.</p>
         </main>
       </div>
     );

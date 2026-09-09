@@ -141,7 +141,11 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
     await page.waitForURL("**/pagamento", { timeout: 10000 });
     await page.getByRole("heading", { name: "Obrigado pela sua compra!" }).waitFor();
-    assert.match(await page.getByRole("status").innerText(), /pedido 100001/);
+    await page.getByText("Número do pedido").waitFor();
+    await page.getByText("#100001").waitFor();
+    await page.getByText("Sua nota fiscal").waitFor();
+    await page.getByText("O código de rastreamento assim que o pedido for enviado").waitFor();
+    assert.match(await page.getByRole("status").innerText(), /pagamento aprovado/i);
     const storage = await page.evaluate(() => sessionStorage.getItem("cdp:pagamento") ?? "");
     assert.doesNotMatch(storage, /4111|Cliente Teste|"cvv"/i, "tela final não persiste cartão");
     const animacao = await page.getByRole("status").evaluate(el => getComputedStyle(el).animationName);
