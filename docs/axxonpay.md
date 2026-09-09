@@ -32,7 +32,7 @@ O lojista foi informado das alternativas (trocar para adquirente que tokeniza; m
 
 ### CSP do checkout
 
-Só `/checkout/:path*` recebe a CSP ampliada (`next.config.ts`): `script-src`/`connect-src` enumeram o SDK Axxon, o bloopi.js e os cinco provedores de 3DS que a Bloopi pode rotear conforme valor/parcelas (Safe2Pay/Braspag + Cardinal, Stone/Pagar.me, PagBank, Marlim, ThreatMetrix), hosts lidos dos próprios scripts em 09/09/2026. `frame-src` é `https:` no checkout porque o desafio 3DS abre um iframe do banco emissor. `frame-ancestors 'none'` e o restante do site seguem na política fechada. **Alterações em `next.config.ts` exigem reiniciar o `next dev`**; sem isso o bloopi.js é bloqueado e o botão mostra "Cartão indisponível".
+Só `/checkout/:path*` recebe a CSP ampliada (`next.config.ts`): `script-src`/`connect-src` enumeram o SDK Axxon, o bloopi.js e os cinco provedores de 3DS que a Bloopi pode rotear conforme valor/parcelas (Safe2Pay/Braspag + Cardinal, Stone/Pagar.me, PagBank, Marlim, ThreatMetrix), hosts lidos dos próprios scripts em 09/09/2026. `frame-src` é `https:` no checkout porque o desafio 3DS abre um iframe do banco emissor. `form-action` é `'self' https:` somente no checkout porque o Cardinal injeta no iframe um formulário POST para a URL ACS HTTPS do emissor; restringi-lo a `'self'` cria o modal, mas deixa seu conteúdo branco. `frame-ancestors 'none'` e o restante do site seguem na política fechada. **Alterações em `next.config.ts` exigem reiniciar o `next dev`**; sem isso o bloopi.js é bloqueado e o botão mostra "Cartão indisponível".
 
 ### Homologação
 

@@ -172,6 +172,7 @@ test("CSP: hosts de 3DS só no checkout; o resto do site continua fechado", () =
     assert.match(checkout, new RegExp(host.replace(/[.*]/g, c => `\\${c}`)), `${host} no checkout`);
   }
   assert.match(checkout, /"frame-src": "https:"/);
+  assert.match(checkout, /"form-action": "'self' https:"/, "Cardinal pode postar o desafio na URL ACS do emissor");
   assert.doesNotMatch(checkout, /"frame-ancestors"|"script-src": "'self' 'unsafe-inline' 'unsafe-eval' https:"/, "herda frame-ancestors 'none' e não abre script-src");
   assert.match(config, /source: "\/checkout\/:path\*", headers: \[\{ key: "Content-Security-Policy", value: cspCheckout \}\]/);
 });

@@ -67,8 +67,11 @@ const nextConfig: NextConfig = {
        subdomínios aleatórios de online-metrix.net, daí o curinga). Scripts e conexões ficam enumerados
        (é o que impede um script injetado de ler o formulário ou exfiltrar);
        frame-src precisa ser https: porque o desafio 3DS abre um iframe do
-       banco emissor, cujo domínio não dá para prever. O resto do site segue
-       na política fechada. */
+       banco emissor, cujo domínio não dá para prever. O Cardinal cria esse
+       iframe em branco, injeta nele um form POST para a URL ACS do emissor e
+       só então o envia; por isso form-action também precisa aceitar HTTPS no
+       checkout. Sem isso o modal abre, mas permanece branco. O resto do site
+       segue na política fechada. */
     const cspCheckout = montar({
       ...base,
       "script-src": `${base["script-src"]} https://app.bloopi.io https://js.bloopi.io https://*.online-metrix.net`
@@ -79,6 +82,7 @@ const nextConfig: NextConfig = {
         + " https://sdk.pagseguro.com https://api.marlim.co https://*.cardinalcommerce.com https://*.cardinaltrusted.com",
       "img-src": `${base["img-src"]} https://*.online-metrix.net`,
       "frame-src": "https:",
+      "form-action": "'self' https:",
     });
 
     const seguranca = [

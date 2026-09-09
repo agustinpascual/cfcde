@@ -14,7 +14,7 @@ const publicKey = process.env.AXXONPAY_PUBLIC_KEY;
 test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { skip: !publicKey && "defina AXXONPAY_PUBLIC_KEY" }, async () => {
   for (const [caminho, deve] of [["/checkout?produto=testes", true], ["/", false]]) {
     const csp = (await fetch(`${base}${caminho}`, { redirect: "manual" })).headers.get("content-security-policy") ?? "";
-    assert.equal(csp.includes("app.bloopi.io") && csp.includes("frame-src https:"), deve, `CSP de ${caminho}`);
+    assert.equal(csp.includes("app.bloopi.io") && csp.includes("frame-src https:") && csp.includes("form-action 'self' https:"), deve, `CSP de ${caminho}`);
     assert.match(csp, /frame-ancestors 'none'/);
   }
   const browser = await chromium.launch({ headless: true });
@@ -22,10 +22,14 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
     const violacoes = [], erros = [], externos = new Set();
     const postsCartao = [];
-    let cobrancas = 0;
+    let cobrancas = 0, postsAcs = 0;
     await context.addInitScript(() => document.addEventListener("securitypolicyviolation", e => console.log(`CSPVIOLATION ${e.violatedDirective} ${e.blockedURI}`)));
     await context.route("**/*", async route => {
       const req = route.request(), url = new URL(req.url());
+      if (url.host === "acs-test.invalid") {
+        if (req.method() === "POST") postsAcs++;
+        return route.fulfill({ status: 204, body: "" });
+      }
       if (url.origin !== base) { externos.add(url.host); return route.continue(); }
       if (req.method() !== "GET") {
         if (url.pathname === "/api/pix") cobrancas++;
@@ -56,6 +60,22 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
 
     await page.goto(`${base}/checkout?produto=testes`, { waitUntil: "networkidle" });
     assert.ok((await page.getByText(/Produto de teste/).count()) > 0, "produto de homologação no checkout");
+    // O Cardinal cria um about:blank, injeta um form POST para o ACS HTTPS do
+    // emissor e o envia. Reproduz esse mecanismo sem cartão nem gateway: se
+    // form-action voltar a 'self', o pedido é bloqueado e o modal fica branco.
+    await page.evaluate(() => {
+      const iframe = document.createElement("iframe");
+      iframe.id = "csp-acs-probe";
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument;
+      doc.open();
+      doc.write('<form id="acs" method="post" action="https://acs-test.invalid/challenge"><input name="creq" value="teste"></form>');
+      doc.close();
+      doc.getElementById("acs").submit();
+    });
+    await page.waitForTimeout(300);
+    assert.equal(postsAcs, 1, "form POST do Cardinal chega ao ACS HTTPS");
+    await page.locator("#csp-acs-probe").evaluate(iframe => iframe.remove());
     await page.getByLabel("CEP", { exact: true }).fill("01001000");
     await page.getByRole("radio", { name: /Correios - PAC/ }).check();
     await page.getByLabel("E-mail", { exact: true }).fill("teste@example.com");
