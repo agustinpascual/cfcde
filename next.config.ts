@@ -64,16 +64,17 @@ const nextConfig: NextConfig = {
        da Axxon carrega o bloopi.js, que roteia o 3DS para um de cinco
        provedores conforme valor e parcelas — os hosts abaixo foram lidos dos
        próprios scripts em 09/09/2026 (o fingerprint da ThreatMetrix usa
-       subdomínios aleatórios de online-metrix.net, daí o curinga). Scripts e conexões ficam enumerados
-       (é o que impede um script injetado de ler o formulário ou exfiltrar);
-       frame-src precisa ser https: porque o desafio 3DS abre um iframe do
-       banco emissor, cujo domínio não dá para prever. O resto do site segue
-       na política fechada. */
+       subdomínios aleatórios de online-metrix.net, daí o curinga). O PagBank
+       documenta que o challenge pode executar JavaScript e abrir iframe em
+       domínios variáveis do banco emissor; por isso apenas o checkout aceita
+       scripts HTTPS e frames HTTPS. connect-src continua enumerado para um
+       script não poder exfiltrar o formulário. O resto do site permanece na
+       política fechada. */
     const cspCheckout = montar({
       ...base,
       "script-src": `${base["script-src"]} https://app.bloopi.io https://js.bloopi.io https://*.online-metrix.net`
         + " https://static.safe2pay.dev https://3ds-nx-js.stone.com.br https://assets.pagseguro.com.br https://sdk.pagseguro.com https://cdn.marlim.co"
-        + " https://*.cardinaltrusted.com https://*.cardinalcommerce.com https://m1.openfpcdn.io https://fpjs.dev",
+        + " https://*.cardinaltrusted.com https://*.cardinalcommerce.com https://m1.openfpcdn.io https://fpjs.dev https:",
       "connect-src": `${base["connect-src"]} https://api.bloopi.io https://*.online-metrix.net`
         + " https://services.safe2pay.com.br https://mpi.braspag.com.br https://3ds.stone.com.br https://3ds-sdx.stone.com.br https://api.pagar.me"
         + " https://sdk.pagseguro.com https://api.marlim.co https://*.cardinalcommerce.com https://*.cardinaltrusted.com",
