@@ -3,7 +3,6 @@ import { Instrument_Sans, Inter, Lato, Work_Sans } from "next/font/google";
 import { Suspense } from "react";
 import MetaPixel from "@/components/marketing/MetaPixel";
 import Rastreador from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
-import SplashScreen from "@/components/sites/cafecomdeuspai-com-8456844d/shared/SplashScreen";
 import AntiClone from "@/components/seguranca/AntiClone";
 import { marca } from "@/components/storefront/brand";
 import { SITE } from "@/lib/seo";
@@ -66,7 +65,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <body className={`${instrumentSans.variable} ${lato.variable} ${workSans.variable} ${inter.variable}`}>
         {children}
-        <SplashScreen />
         <AntiClone />
         <Suspense fallback={null}><Rastreador /></Suspense>
         {/* Suspense obrigatório: o pixel usa useSearchParams, que sem ele

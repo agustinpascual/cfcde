@@ -17,14 +17,38 @@ const videos = [1, 2, 3, 4, 5, 6, 7].map((number) => ({
 const wrap = (index: number) => (index + videos.length) % videos.length;
 
 export default function HomeVideoStories() {
+  const sectionRef = useRef<HTMLElement>(null);
   const [center, setCenter] = useState(0);
   const [story, setStory] = useState<number | null>(null);
+  const [mediaAtiva, setMediaAtiva] = useState(false);
   const [muted, setMuted] = useState(true);
   const [liked, setLiked] = useState(false);
   const [progress, setProgress] = useState(0);
   const storyVideo = useRef<HTMLVideoElement>(null);
   const cardVideos = useRef(new Map<number, HTMLVideoElement>());
   const visible = [-2, -1, 0, 1, 2].map((offset) => ({ index: wrap(center + offset), offset }));
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    if (!("IntersectionObserver" in window)) {
+      const timer = setTimeout(() => setMediaAtiva(true), 0);
+      return () => clearTimeout(timer);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setMediaAtiva(true);
+        observer.disconnect();
+      },
+      { rootMargin: "900px 0px", threshold: 0.01 },
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
 
   function close() { setStory(null); setProgress(0); }
   function move(direction: number) {
@@ -40,13 +64,15 @@ export default function HomeVideoStories() {
      elementos em vez de remontá-los — o que já foi baixado continua na mão.
      Em troca, o autoPlay não dispara de novo e quem toca é este efeito. */
   useEffect(() => {
+    if (!mediaAtiva) return;
+
     cardVideos.current.forEach((video, index) => {
       if (index !== center) { video.pause(); return; }
       /* Antes dos metadados o currentTime ainda não aceita escrita. */
       if (video.readyState > 0) video.currentTime = 0;
       video.play().catch(() => undefined);
     });
-  }, [center]);
+  }, [center, mediaAtiva]);
 
   useEffect(() => {
     if (story === null) return;
@@ -67,7 +93,7 @@ export default function HomeVideoStories() {
     else await navigator.clipboard?.writeText(window.location.href);
   }
 
-  return <section className={styles.section} aria-labelledby="stories-title">
+  return <section ref={sectionRef} className={styles.section} aria-labelledby="stories-title">
     <div className={styles.inner}>
       <h2 id="stories-title">Descubra cada detalhe em vídeo</h2>
       <div className={styles.carousel}>
@@ -77,21 +103,15 @@ export default function HomeVideoStories() {
               if (element) cardVideos.current.set(index, element);
               else cardVideos.current.delete(index);
             }}
-            /* Só o card central e o próximo recebem src. Os outros três
-               ficam no poster: sem src o navegador não abre conexão nem
-               monta decodificador de vídeo, e a vitrine passa de cinco
-               vídeos vivos para dois. Quem clica num card lateral abre o
-               story, que tem o próprio <video> com o src certo. */
-            src={offset >= 0 && offset <= 1 ? videos[index].src : undefined}
-            poster={videos[index].poster}
+            /* A mídia só é conectada quando a seção se aproxima da tela.
+               Isso evita baixar vários megabytes de vídeo durante a abertura
+               da home, sem atrasar a reprodução quando o visitante chegar. */
+            src={mediaAtiva && offset === 0 ? videos[index].src : undefined}
+            poster={mediaAtiva ? videos[index].poster : undefined}
             muted
             playsInline
-            autoPlay={offset === 0}
-            /* Só o card central baixa o vídeo. O "próximo" (offset 1) mantém o
-               src para troca instantânea, mas com preload="none" não baixa o
-               arquivo inteiro na abertura — economiza ~2,8 MB no load da home;
-               ao virar central, carrega sob o poster. */
-            preload={offset === 0 ? "auto" : "none"}
+            autoPlay={mediaAtiva && offset === 0}
+            preload={mediaAtiva && offset === 0 ? "metadata" : "none"}
             onEnded={offset === 0 ? avancar : undefined}
           />
           <span className={styles.play} aria-hidden="true">▶</span>
