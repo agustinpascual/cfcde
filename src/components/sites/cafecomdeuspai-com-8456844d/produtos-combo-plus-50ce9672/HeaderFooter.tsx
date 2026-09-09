@@ -126,6 +126,7 @@ export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }:
               alt="Café com Deus Pai"
               width={663}
               height={746}
+              sizes="(max-width: 720px) 34px, 51px"
               priority
             />
           </Link>
@@ -210,7 +211,7 @@ export function SiteFooter() {
       <div className={styles.footerMain}>
         <div className={styles.footerBrand}>
           <Link href="/" aria-label="Café com Deus Pai — início">
-            <Image src={`${assetRoot}/logo.png`} alt="Café com Deus Pai" width={663} height={746} />
+            <Image src={`${assetRoot}/logo.png`} alt="Café com Deus Pai" width={663} height={746} sizes="(max-width: 720px) 66px, 82px" />
           </Link>
           <div className={styles.socials} aria-label="Redes sociais">
             <a href="https://instagram.com/cafecomdeuspai" aria-label="Instagram"><Instagram aria-hidden="true" /></a>

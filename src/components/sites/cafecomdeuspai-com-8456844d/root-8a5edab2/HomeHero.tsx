@@ -71,7 +71,7 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
                   alt={slide.alt}
                   width={1580}
                   height={600}
-                  priority={index === 0}
+                  fetchPriority={index === 0 ? "high" : undefined}
                   sizes="100vw"
                 />
               </picture>
