@@ -30,6 +30,7 @@ const SDK_URL = "https://app.axxonpay.com.br/v1/js/sdk.js";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const FINAIS = ["approved", "failed", "expired", "refunded"];
+const esperar = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms));
 
 const mascararNumero = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 "); };
 const mascararValidade = (e: React.FormEvent<HTMLInputElement>) => { const d = digitos(e.currentTarget.value).slice(0, 4); e.currentTarget.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
@@ -49,19 +50,45 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   const [podeRepetir, setPodeRepetir] = useState(false);
   const router = useRouter();
   const redirecionando = useRef(false);
+  const inicializandoSdk = useRef(false);
   const form = useRef<HTMLFormElement>(null);
   const numero = useRef<HTMLInputElement>(null), titular = useRef<HTMLInputElement>(null);
   const validade = useRef<HTMLInputElement>(null), cvv = useRef<HTMLInputElement>(null);
 
   async function iniciar() {
+    if (inicializandoSdk.current) return;
+    inicializandoSdk.current = true;
+    setSdk("carregando");
+    setMensagem("");
+    let ultimoErro: unknown;
     try {
-      if (!window.Axxon) throw new Error("SDK indisponível");
-      await window.Axxon.setPublicKey(publicKey);
-      setSdk("pronto");
-    } catch {
+      // Alguns navegadores terminam o evento de carregamento antes de o
+      // provedor interno do SDK estar pronto. Três tentativas curtas evitam
+      // transformar essa condição transitória em cartão indisponível.
+      for (let tentativa = 0; tentativa < 3; tentativa++) {
+        try {
+          if (!window.Axxon) throw new Error("SDK indisponível");
+          await window.Axxon.setPublicKey(publicKey);
+          setSdk("pronto");
+          return;
+        } catch (erro) {
+          ultimoErro = erro;
+          if (tentativa < 2) await esperar(350 * (tentativa + 1));
+        }
+      }
+      throw ultimoErro;
+    } catch (erro) {
+      console.error("[checkout/cartao] Falha ao inicializar o SDK:", erro instanceof Error ? erro.message : "erro desconhecido");
       setSdk("erro");
       setMensagem("Não foi possível iniciar o pagamento por cartão. Tente novamente em instantes ou pague com Pix.");
+    } finally {
+      inicializandoSdk.current = false;
     }
+  }
+
+  function tentarIniciarNovamente() {
+    if (window.Axxon) void iniciar();
+    else window.location.reload();
   }
 
   // Acompanha a cobrança até um estado final. Só a consulta ao servidor aprova.
@@ -224,6 +251,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
           </div>}
     </div>}
     {mensagem && <p className={s.mensagem} role="alert">{mensagem}</p>}
+    {!cobranca && sdk === "erro" && <button type="button" className={s.repetir} onClick={tentarIniciarNovamente}>Tentar carregar o cartão novamente</button>}
     {cobranca && (status === "failed" || status === "expired" || podeRepetir) && <button type="button" className={s.repetir} onClick={novaTentativa}>Tentar com outro cartão</button>}
   </div>;
 }

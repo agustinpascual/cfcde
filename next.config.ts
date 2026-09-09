@@ -91,7 +91,8 @@ const nextConfig: NextConfig = {
         + " https://*.cardinaltrusted.com https://*.cardinalcommerce.com https://m1.openfpcdn.io https://fpjs.dev",
       "connect-src": `${base["connect-src"]} https://api.bloopi.io https://*.online-metrix.net`
         + " https://services.safe2pay.com.br https://mpi.braspag.com.br https://3ds.stone.com.br https://3ds-sdx.stone.com.br https://api.pagar.me"
-        + " https://sdk.pagseguro.com https://api.marlim.co https://*.cardinalcommerce.com https://*.cardinaltrusted.com",
+        + " https://sdk.pagseguro.com https://api.marlim.co https://*.cardinalcommerce.com https://*.cardinaltrusted.com"
+        + " https://kg668dbov0.execute-api.us-east-1.amazonaws.com",
       "img-src": `${base["img-src"]} https://*.online-metrix.net`,
       "frame-src": "https:",
       "form-action": "'self' https:",
