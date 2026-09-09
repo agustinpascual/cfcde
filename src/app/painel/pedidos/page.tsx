@@ -4,9 +4,12 @@ import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
+import ExportarPedidos from "@/components/painel/ExportarPedidos";
+import FiltroPedidos from "@/components/painel/FiltroPedidos";
 import Paginacao from "@/components/painel/Paginacao";
 import Recarrega from "@/components/painel/Recarrega";
-import { estadoInstalacao, configurado, lerAoVivo, lerPaginaPedidos, moeda, POR_PAGINA } from "@/components/painel/dados";
+import SubAbasPedidos from "@/components/painel/SubAbasPedidos";
+import { estadoInstalacao, configurado, lerAoVivo, lerCarrinhos, lerPaginaPedidos, moeda, POR_PAGINA } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
@@ -27,13 +30,16 @@ const quando = (iso: string) =>
     day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
   });
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
+export default async function Page({ searchParams }: { searchParams: Promise<{ p?: string; busca?: string; status?: string; metodo?: string; de?: string; ate?: string }> }) {
   if (!painelConfigurado()) redirect("/painel");
   if (!(await autenticado())) redirect("/painel/entrar");
 
-  const pagina = Math.max(1, Number((await searchParams).p) || 1);
-  const [{ linhas: pedidos, total }, vivos, _inst] = await Promise.all([
-    lerPaginaPedidos(pagina), lerAoVivo(), estadoInstalacao(),
+  const sp = await searchParams;
+  const pagina = Math.max(1, Number(sp.p) || 1);
+  const filtros = { busca: sp.busca, status: sp.status, metodo: sp.metodo, de: sp.de, ate: sp.ate };
+  const temFiltro = Boolean(sp.busca || sp.status || sp.metodo || sp.de || sp.ate);
+  const [{ linhas: pedidos, total }, vivos, _inst, carrinhos] = await Promise.all([
+    lerPaginaPedidos(pagina, filtros), lerAoVivo(), estadoInstalacao(), lerCarrinhos(),
   ]);
   const _faltam = _inst?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
@@ -47,10 +53,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
       <Recarrega segundos={5} />
       <AvisoConfig faltando={configurado() ? [] : ["SUPABASE_SERVICE_ROLE_KEY"]} />
 
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <SubAbasPedidos atual="pedidos" abandonados={carrinhos.length} />
+        <ExportarPedidos de={sp.de} ate={sp.ate} />
+      </div>
+
+      <FiltroPedidos busca={sp.busca} status={sp.status} metodo={sp.metodo} de={sp.de} ate={sp.ate} />
+
       <section className={s.cartao}>
         {pedidos.length === 0 ? (
           <p className={s.vazio}>
-            {total > 0
+            {temFiltro
+              ? "Nenhum pedido encontrado com esses filtros. Tente outro termo ou limpe os filtros."
+              : total > 0
               ? "Esta página não existe mais. Volte para a primeira."
               : "Nenhum pedido ainda. Assim que alguém gerar um PIX no checkout, ele aparece aqui — e muda para “Pago” quando o webhook da PinPay confirmar."}
           </p>
@@ -65,9 +80,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
               </thead>
               <tbody>
                 {pedidos.map((p) => (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={s.linhaPedido}>
                     <td className={s.mono}>
-                      <Link href={`/painel/pedidos/${p.id}`} className={s.linkPedido}>{p.referencia}</Link>
+                      <Link href={`/painel/pedidos/${p.id}`} className={s.linkPedido}
+                        aria-label={`Abrir pedido ${p.referencia}${p.cliente_nome ? ` de ${p.cliente_nome}` : ""}`}>
+                        {p.referencia}
+                      </Link>
                     </td>
                     <td>
                       {p.cliente_nome ?? "—"}
@@ -80,7 +98,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
                       <span className={s.formaPgto}>{formaPagamento(p.metodo_pagamento)}</span>
                     </td>
                     <td className={s.dir}><strong>{moeda(p.valor_centavos)}</strong></td>
-                    <td className={s.mono}>{quando(p.criado_em)}</td>
+                    <td className={`${s.mono} ${s.pedidoData}`}>
+                      {quando(p.criado_em)}<span className={s.pedidoSeta} aria-hidden>→</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -89,7 +109,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
         )}
       </section>
 
-      <Paginacao pagina={pagina} total={total} porPagina={POR_PAGINA} base="/painel/pedidos" />
+      <Paginacao pagina={pagina} total={total} porPagina={POR_PAGINA} base="/painel/pedidos"
+        query={{ busca: sp.busca, status: sp.status, metodo: sp.metodo, de: sp.de, ate: sp.ate }} />
     </Casca>
   );
 }

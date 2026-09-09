@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, Minus, Plus, Star, Truck } from "lucide-react";
 import { useState } from "react";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
+import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { useCartQuantity } from "../useCart";
 import CartDrawer from "../produtos-combo-plus-50ce9672/CartDrawer";
 import { SiteFooter, SiteHeader } from "../produtos-combo-plus-50ce9672/HeaderFooter";
@@ -25,6 +26,7 @@ export default function CatalogProductStore({ product }: Props) {
     setCartQuantity(quantity);
     setCartOpen(true);
     pixel("AddToCart", dadosProdutoPixel(product.slug, product.name, product.priceCents * quantity, quantity));
+    registrar("comprar", { produto: product.slug, nome: product.name, quantidade: quantity });
   }
 
   return (

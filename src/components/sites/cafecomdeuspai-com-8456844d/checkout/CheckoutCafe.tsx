@@ -2,14 +2,15 @@
 
 import Image from "next/image";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, LockKeyhole, Mail, MapPin, Truck, X } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CHAVE_PIX } from "@/app/pagamento/PagamentoPix";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
+import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { calcularDescontos, cupomValido, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
-import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
 import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
+import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
@@ -49,7 +50,7 @@ function deliveryDate(days: number) {
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function CheckoutCafe({ product }: { product: CheckoutProduct }) {
-  const [gatewayConfig, setGatewayConfig] = useState<{ pix: string; cartao: string; publicKey: string | null } | null>(null);
+  const [gatewayConfig, setGatewayConfig] = useState<{ pix: string; cartao: string; publicKey: string | null; cartaoDisponivel?: boolean; parcelas?: number } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/pagamentos/config", { signal: controller.signal, cache: "no-store" })
@@ -57,7 +58,6 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
       .then(setGatewayConfig).catch(() => {});
     return () => controller.abort();
   }, []);
-  const cartaoDisponivel = gatewayConfig?.cartao === "axxonpay" && !!gatewayConfig.publicKey;
   const [step, setStep] = useState<2 | 3>(2);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [couponOpen, setCouponOpen] = useState(false);
@@ -108,6 +108,35 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
     } catch {}
   }, []);
 
+  /* Carrinho abandonado: salva o que a pessoa já preencheu e em que etapa
+     parou, para o painel poder recuperar a venda. Só grava com e-mail ou
+     telefone (sem contato não há o que recuperar) e sem interromper a digitação
+     — espera 1,2 s de pausa. A compra concluída sai da lista no painel, que
+     ignora sessões com pedido pago. */
+  const finalizado = useRef(false);
+  useEffect(() => {
+    if (finalizado.current) return;
+    const contato = email.trim() || phone.replace(/\D/g, "");
+    if (!contato) return;
+    const etapa = step === 3 ? "Pagamento"
+      : cep.replace(/\D/g, "").length === 8 || address.street ? "Entrega"
+      : "Contato";
+    const dados = {
+      etapa,
+      email: email.trim() || null,
+      nome: [firstName, lastName].filter(Boolean).join(" ").trim() || null,
+      telefone: phone.replace(/\D/g, "") || null,
+      documento: documentNumber.replace(/\D/g, "") || null,
+      cep: cep.replace(/\D/g, "") || null,
+      cidade: address.city || null,
+      uf: address.state || null,
+      produto: product.slug,
+      produto_nome: product.name,
+      valor: totalCents,
+    };
+    const id = window.setTimeout(() => registrar("checkout_parcial", dados), 1200);
+    return () => window.clearTimeout(id);
+  }, [email, firstName, lastName, phone, documentNumber, cep, address, step, product.slug, product.name, totalCents]);
 
   useEffect(() => {
     if (cep.length !== 8) {
@@ -229,6 +258,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
     setCouponMessage(`Cupom ${codigo} aplicado.`);
   }, [product.slug]);
 
+  const cartaoDisponivel = gatewayConfig?.cartaoDisponivel === true && Boolean(gatewayConfig.publicKey);
   const paymentPayload = {
     cupom: cupomAplicado,
     loja: "cafecomdeuspai",
@@ -253,6 +283,7 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
         throw new Error(data.erro || "Não foi possível gerar o PIX.");
       }
       setPixCharge(data);
+      finalizado.current = true;   // saiu do funil de abandono: PIX gerado
       pixel("AddPaymentInfo", { ...dadosProdutoPixel(product.slug, product.name, data.total), payment_method: "pix" });
       /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
          código e o passo a passo. Guardar no sessionStorage evita uma
@@ -334,16 +365,18 @@ export default function CheckoutCafe({ product }: { product: CheckoutProduct }) 
                 <div className={styles.reviewRow}><Truck aria-hidden="true" /><span><b>Correios - {shippingMethod === "pac" ? "PAC" : "SEDEX"} · {shippingFeeCents ? money.format(shippingFeeCents/100) : "Grátis"}</b><small>Chega em {deliveryDate(shippingMethod === "pac" ? 25 : 13)}</small></span><button type="button" onClick={() => { setDraftShipping(shippingMethod ?? "pac"); setShippingModalOpen(true); }}>Alterar</button></div>
               </div>
               {!paymentExpanded ? <><h1>Forma de pagamento</h1><div className={styles.paymentOptions} role="radiogroup" aria-label="Forma de pagamento">
-                {!cartaoDisponivel
-                  ? <button type="button" className={styles.opcaoManutencao} disabled aria-disabled="true"><CreditCard /><span><b>Cartão de crédito</b><small>{gatewayConfig?.cartao === "sandbox" ? "Modo de teste — indisponível para compras" : "Indisponível no momento"}</small></span><em className={styles.selo}>Indisponível</em></button>
-                  : <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>EM ATÉ 4X SEM JUROS</small></span><ChevronRight /></button>}
+                {cartaoDisponivel
+                  ? <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>Em até {gatewayConfig?.parcelas ?? 1}x sem juros</small></span><ChevronRight /></button>
+                  : <button type="button" className={styles.opcaoManutencao} disabled aria-disabled="true"><CreditCard /><span><b>Cartão de crédito</b><small>{gatewayConfig?.cartao === "sandbox" ? "Modo de teste — indisponível para compras" : "Indisponível no momento"}</small></span><em className={styles.selo}>Indisponível</em></button>}
                 <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("pix"); setPaymentExpanded(true); setPaymentError(""); }}><PixLogo /><span><b>Pix</b><small>Aprovação rápida</small></span><em className={styles.pixOff}>{Math.round(DESCONTO_PIX * 100)}% OFF</em><ChevronRight /></button>
               </div></> : <div className={styles.paymentDetail}>
                 <header><button type="button" aria-label="Voltar às formas de pagamento" onClick={() => { setPaymentExpanded(false); setPaymentError(""); }}><ArrowLeft /></button><span>{payment === "pix" ? <PixLogo /> : <CreditCard />}<b>{payment === "pix" ? "Pix" : "Cartão de crédito"}</b></span></header>
                 {payment === "pix" ? <>
                   {!pixCharge && <div className={styles.pixInstructions}><PixLogo /><p>Ao gerar o Código Pix do pedido você pode pagar escaneando o <b>QR Code</b> ou <b>Copiar e Colar</b>.</p></div>}
                   {pixCharge && <div className={styles.pixResult} role="status"><h2>PIX gerado com sucesso</h2><p>Pedido <b>{pixCharge.pedido}</b> · valor <b>{money.format(pixCharge.total / 100)}</b></p>{pixCharge.qr_code_url && <Image className={styles.qr} src={pixCharge.qr_code_url} alt="QR Code PIX" width={220} height={220} unoptimized />}<label>Código PIX copia e cola<textarea readOnly value={pixCharge.qr_code} /></label><button className={styles.copyButton} type="button" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código PIX"}</button></div>}
-                </> : cartaoDisponivel && gatewayConfig?.publicKey ? <CartaoAxxon publicKey={gatewayConfig.publicKey} payload={paymentPayload} total={totalCents} /> : <p>Cartão indisponível no momento.</p>}
+                </> : cartaoDisponivel && gatewayConfig?.publicKey
+                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={paymentPayload} produtoNome={product.name} onEnviado={() => { finalizado.current = true; }} />
+                  : <p>Cartão indisponível no momento. Nenhum dado de cartão foi solicitado.</p>}
                 <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
               </div>}
               <SavedPaymentData phone={phone} checked={savePaymentData} onChecked={setSavePaymentData} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />

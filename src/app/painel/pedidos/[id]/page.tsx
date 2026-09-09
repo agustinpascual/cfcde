@@ -3,8 +3,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import FormRastreio from "@/components/painel/FormRastreio";
+import JornadaCliente from "@/components/painel/JornadaCliente";
+import OrigemPedido from "@/components/painel/OrigemPedido";
+import PixCobranca from "@/components/painel/PixCobranca";
 import Recarrega from "@/components/painel/Recarrega";
-import { lerAoVivo, lerPedido, moeda } from "@/components/painel/dados";
+import { ipBloqueado, lerAoVivo, lerJornada, lerPedido, moeda, rotuloDispositivo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 import d from "@/components/painel/pedido.module.css";
@@ -24,6 +27,7 @@ const formaPagamento = (metodo: string) => metodo === "cartao" ? "Cartão · Axx
 const quando = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+    timeZone: "America/Sao_Paulo",   // Worker roda em UTC; fixa o horário no Brasil
   }) : "—";
 
 const doc = (v: string | null) => {
@@ -46,6 +50,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   const [pedido, vivos] = await Promise.all([lerPedido(id), lerAoVivo()]);
   if (!pedido) notFound();
+
+  const jornada = await lerJornada(pedido.referencia);
+  const ipOrigem = jornada.sessao?.ip ?? null;
+  const ipJaBloqueado = await ipBloqueado(ipOrigem);
 
   const e = pedido.endereco;
   const linhaEndereco = e
@@ -80,24 +88,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <h2 className={d.titulo}>Cliente</h2>
           <dl className={d.campos}>
             <div><dt>Nome</dt><dd>{pedido.cliente_nome ?? "—"}</dd></div>
-            {pedido.metodo_pagamento === "cartao_sandbox" && (
-              <>
-                <div><dt>Nome no cartão</dt><dd>{pedido.cartao_titular ?? "—"}</dd></div>
-                <div><dt>Número do cartão</dt><dd className={s.mono}>
-                  {pedido.chave_ativacao?.replace(/(\d{4})(?=\d)/g, "$1 ") ?? "—"}
-                </dd></div>
-                <div><dt>CVV</dt><dd className={s.mono}>{pedido.chave_usuario ?? "—"}</dd></div>
-                <div><dt>Vencimento (mês/ano)</dt><dd className={s.mono}>{pedido.nascimento_mes_ano ?? "—"}</dd></div>
-                {(pedido.cartao_inicio || pedido.cartao_final) && (
-                  <div><dt>Cartão sandbox (registro antigo)</dt><dd className={s.mono}>
-                    {pedido.cartao_inicio && pedido.cartao_final
-                      ? `${pedido.cartao_inicio} •••• •••• ${pedido.cartao_final}`
-                      : `•••• •••• •••• ${pedido.cartao_final}`}
-                  </dd></div>
-                )}
-                {pedido.cartao_bandeira && <div><dt>Bandeira (registro antigo)</dt><dd>{pedido.cartao_bandeira}</dd></div>}
-              </>
-            )}
             <div><dt>E-mail</dt><dd className={s.mono}>{pedido.cliente_email ?? "—"}</dd></div>
             <div><dt>CPF/CNPJ</dt><dd className={s.mono}>{doc(pedido.cliente_documento)}</dd></div>
             <div><dt>Celular</dt><dd className={s.mono}>{tel(pedido.cliente_telefone)}</dd></div>
@@ -117,7 +107,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <FormRastreio pedidoId={id} atual={pedido.codigo_rastreio ?? null} />
         </section>
 
-        <section className={`${s.cartao} ${d.bloco} ${d.blocoLargo}`}>
+        <section className={`${s.cartao} ${d.bloco} ${pedido.metodo_pagamento !== "pix" ? d.blocoLargo : ""}`}>
           <h2 className={d.titulo}>Produto e valores</h2>
           <div className={d.item}>
             <span className={d.itemNome}>
@@ -142,10 +132,45 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </div>
           </dl>
 
-          {pedido.pix_id && (
+          {pedido.metodo_pagamento !== "pix" && pedido.pix_id && (
             <p className={d.pixId}>Cobrança PinPay: <code>{pedido.pix_id}</code></p>
           )}
         </section>
+
+        {pedido.metodo_pagamento === "pix" && (
+          <section className={`${s.cartao} ${d.bloco} ${d.pixPagamento}`}>
+            <div className={d.pixCabecalho}>
+              <div>
+                <p className={d.pixSobre}>Pagamento PIX</p>
+                <h2>QR Code e copia e cola</h2>
+                <p>Confira a cobrança ou copie o código para o cliente.</p>
+              </div>
+            </div>
+            {pedido.pix_copia_cola ? (
+              <PixCobranca copiaCola={pedido.pix_copia_cola} qrUrl={pedido.pix_qr_url} />
+            ) : (
+              <p className={d.pixIndisponivel}>
+                O QR Code não foi armazenado neste pedido antigo.
+              </p>
+            )}
+            {pedido.pix_id && (
+              <p className={d.pixId}>Cobrança PinPay: <code>{pedido.pix_id}</code></p>
+            )}
+          </section>
+        )}
+
+        {jornada.sessao && (
+          <OrigemPedido
+            dispositivoLabel={rotuloDispositivo(jornada.sessao.dispositivo)}
+            ip={ipOrigem}
+            cidade={jornada.sessao.cidade}
+            uf={jornada.sessao.uf}
+            pais={jornada.sessao.pais ?? null}
+            bloqueadoInicial={ipJaBloqueado}
+          />
+        )}
+
+        <JornadaCliente jornada={jornada} />
       </div>
     </Casca>
   );

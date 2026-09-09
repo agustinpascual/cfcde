@@ -3,11 +3,11 @@ import { useId, useState } from "react";
 import g from "./grafico.module.css";
 
 /* Gráficos em SVG puro — sem biblioteca.
-   Paleta validada pelo validate_palette.js (light, superfície #fff):
-   #2f5fd0 · #1d9a8a · #c2410c — passa nos seis testes, inclusive
-   separação para daltonismo e contraste contra o fundo. */
-export const CORES = ["#2f5fd0", "#1d9a8a", "#c2410c"] as const;
-const TINTA2 = "#64748b", GRADE = "#eceff3";
+   Paleta da marca (Café com Deus Pai): latão escuro · verde · preto quente.
+   Tons quentes e escuros o bastante para ler sobre o branco e se separarem
+   entre si — coerentes com o resto do painel, sem o azul genérico de antes. */
+export const CORES = ["#8a6f42", "#2f6b4f", "#1a1714"] as const;
+const TINTA2 = "#57504a", GRADE = "#ece7de";
 
 /* ---------- área + linha: receita por dia ---------- */
 export type Formato = "moeda" | "numero";
@@ -26,7 +26,13 @@ export function AreaTempo({ dados, formato = "moeda" }: {
   const formatar = FORMATA[formato];
   const id = useId();
   const [ativo, setAtivo] = useState<number | null>(null);
-  if (dados.length < 2) return <p className={g.vazio}>Sem dados suficientes ainda.</p>;
+  if (!dados.length) return <p className={g.vazio}>Sem vendas neste período.</p>;
+  if (dados.length === 1) return (
+    <div className={g.diaUnico}>
+      <span aria-hidden />
+      <div><strong>{formatar(dados[0].valor)}</strong><small>{dados[0].rotulo}</small></div>
+    </div>
+  );
 
   const L = 52, R = 14, T = 14, B = 26, W = 720, H = 240;
   const max = Math.max(...dados.map((d) => d.valor), 1);

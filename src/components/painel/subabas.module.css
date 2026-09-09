@@ -1,0 +1,40 @@
+.abas {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--cdp-borda);
+}
+
+.aba, .ativa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--cdp-tinta-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+}
+.aba:hover { color: var(--cdp-tinta); }
+
+.ativa {
+  color: var(--cdp-tinta);
+  border-bottom-color: var(--cdp-ouro-escuro, #8a6d3b);
+}
+
+.contador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--cdp-ouro-fundo, #f3ecdd);
+  color: var(--cdp-ouro-escuro, #8a6d3b);
+  font-size: 12px;
+  font-weight: 800;
+}

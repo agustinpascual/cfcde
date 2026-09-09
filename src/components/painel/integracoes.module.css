@@ -2,8 +2,11 @@
 /* Classe dobrada de propósito. O globals.css tem `button:not(.sf-root *)`
    com especificidade (0,1,1), que vence uma classe simples (0,1,0) e zera
    fundo, padding e peso do botão. Dobrar a classe sobe para (0,2,0). */
-.lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
-.card { display: flex; flex-direction: column; }
+.lista { column-width: 360px; column-gap: 16px; }
+/* Layout em colunas (tipo masonry): os cartões têm alturas bem diferentes;
+   com grid cada linha ganhava a altura do maior e sobravam buracos. Aqui eles
+   se empacotam sem espaço morto. break-inside evita cortar um cartão ao meio. */
+.card { display: flex; flex-direction: column; break-inside: avoid; margin-bottom: 16px; }
 .cabecalho { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
 .nome { font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
 .papel { font-size: 12.5px; color: var(--cdp-tinta-2); margin-top: 3px; line-height: 1.5; }

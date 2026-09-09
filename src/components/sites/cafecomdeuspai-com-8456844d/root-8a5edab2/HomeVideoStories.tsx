@@ -87,7 +87,11 @@ export default function HomeVideoStories() {
             muted
             playsInline
             autoPlay={offset === 0}
-            preload="auto"
+            /* Só o card central baixa o vídeo. O "próximo" (offset 1) mantém o
+               src para troca instantânea, mas com preload="none" não baixa o
+               arquivo inteiro na abertura — economiza ~2,8 MB no load da home;
+               ao virar central, carrega sob o poster. */
+            preload={offset === 0 ? "auto" : "none"}
             onEnded={offset === 0 ? avancar : undefined}
           />
           <span className={styles.play} aria-hidden="true">▶</span>

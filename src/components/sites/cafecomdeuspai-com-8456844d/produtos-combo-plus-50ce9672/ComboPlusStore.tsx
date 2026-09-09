@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
+import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import type { EstoqueLote } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/StockUrgency";
@@ -32,6 +33,9 @@ export default function ComboPlusStore({ produto = comboPlus, notificacoes = fal
     setCartQuantity(quantity);
     setCartOpen(true);
     pixel("AddToCart", dadosProdutoPixel(oferta.slug, produto.nome, Math.round(oferta.preco * quantity * 100), quantity));
+    /* Marca o clique em comprar na trilha da sessão. Ainda não há pedido; ele
+       será ligado à sessão quando o PIX for gerado (pedido_ref). */
+    registrar("comprar", { produto: oferta.slug, nome: produto.nome, quantidade: quantity });
   }
 
   return (

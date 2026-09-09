@@ -1,0 +1,60 @@
+.botao {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 42px; padding: 0 18px;
+  border: 1px solid var(--cdp-borda); border-radius: 10px;
+  background: #fff; color: var(--cdp-tinta);
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.botao:hover { border-color: var(--cdp-tinta-3); background: var(--cdp-fundo); }
+
+.fundo {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(26, 23, 20, .5);
+}
+.caixa {
+  width: min(100%, 480px);
+  background: #fff; border-radius: 16px; padding: 24px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .3);
+}
+
+.cabecalho { display: flex; align-items: center; justify-content: space-between; }
+.cabecalho h2 { margin: 0; font-size: 18px; font-weight: 800; color: var(--cdp-tinta); }
+.fechar { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--cdp-tinta-2); cursor: pointer; }
+.fechar:hover { background: var(--cdp-fundo); }
+
+.ajuda { margin: 4px 0 18px; font-size: 13px; color: var(--cdp-tinta-2); }
+
+.grupo { border: 0; padding: 0; margin: 0 0 18px; }
+.grupo legend { padding: 0; margin-bottom: 9px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--cdp-tinta-3); }
+
+.opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip, .chipAtivo {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 9px; cursor: pointer;
+  font-size: 13px; font-weight: 600;
+  border: 1px solid var(--cdp-borda); background: #fff; color: var(--cdp-tinta-2);
+  transition: border-color .15s, background .15s, color .15s;
+}
+.chip input, .chipAtivo input { accent-color: var(--cdp-menu); width: 15px; height: 15px; cursor: pointer; }
+.chip:hover { border-color: var(--cdp-tinta-3); }
+.chipAtivo { border-color: var(--cdp-menu); background: var(--cdp-fundo); color: var(--cdp-tinta); }
+
+.datas { display: flex; gap: 12px; flex-wrap: wrap; }
+.datas label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--cdp-tinta-3); }
+.datas input { padding: 8px 10px; border: 1px solid var(--cdp-borda); border-radius: 8px; font-family: inherit; font-size: 13px; color: var(--cdp-tinta); }
+
+.acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.cancelar {
+  height: 42px; padding: 0 18px; border: 1px solid var(--cdp-borda); border-radius: 10px;
+  background: #fff; color: var(--cdp-tinta-2); font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.cancelar:hover { background: var(--cdp-fundo); }
+.confirmar {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 42px; padding: 0 20px; border: 0; border-radius: 10px;
+  background: var(--cdp-menu); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: background .15s;
+}
+.confirmar:hover { background: var(--cdp-menu-2); }

@@ -23,6 +23,11 @@ function sorteia(): number {
   return MIN + crypto.randomInt(FAIXA);
 }
 
+/** Candidato de seis dígitos; quem reserva deve tratar a colisão no INSERT. */
+export function sortearNumeroPedido(): string {
+  return String(sorteia());
+}
+
 /**
  * Devolve um número de pedido livre. Tenta algumas vezes; se o banco não
  * responder, devolve o sorteio mesmo assim — perder a venda por causa da

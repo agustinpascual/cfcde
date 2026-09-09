@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { IconeBanco, IconeChat, IconeEmail, IconePedidos, IconePlug, IconeVendas, IconeVivo } from "./Icones";
+import MenuMobile from "./MenuMobile";
+import { IconeBanco, IconeChat, IconeEmail, IconePedidos, IconePlug, IconeVendas } from "./Icones";
 import { marca } from "@/components/storefront/brand";
 import s from "./painel.module.css";
 
 const ITENS = [
   { grupo: "Operação", links: [
-    { href: "/painel", rotulo: "Vendas", Icone: IconeVendas },
-    { href: "/painel/ao-vivo", rotulo: "Ao vivo", Icone: IconeVivo, vivo: true },
+    { href: "/painel", rotulo: "Dashboard", Icone: IconeVendas, vivo: true },
     { href: "/painel/pedidos", rotulo: "Pedidos", Icone: IconePedidos },
   ]},
   { grupo: "Configuração", links: [
@@ -23,7 +23,8 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
 }) {
   return (
     <div className={s.app}>
-      <nav className={s.lateral}>
+      <MenuMobile>
+      <nav className={s.lateral} aria-label="Navegação do painel">
         <Link href="/painel" className={s.marca}>
           {/* O logo é preto com o "fé" em cobre: sobre a barra escura sumiria,
               e inverter as cores mataria o cobre. Vai numa placa creme — que é
@@ -44,7 +45,7 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
             <div key={g.grupo}>
               <p className={s.grupo}>{g.grupo}</p>
               {g.links.map(({ href, rotulo, Icone, vivo }) => (
-                <Link key={href} href={href} className={`${s.link} ${atual === href ? s.linkAtivo : ""}`}>
+                <Link key={href} href={href} aria-current={atual === href ? "page" : undefined} className={`${s.link} ${atual === href ? s.linkAtivo : ""}`}>
                   <Icone /> {rotulo}
                   {vivo && aoVivo > 0 && <span className={s.badgeVivo}>{aoVivo}</span>}
                 </Link>
@@ -58,6 +59,7 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
           <p>Dados em tempo real do Supabase</p>
         </div>
       </nav>
+      </MenuMobile>
 
       <div className={s.conteudo}>
         <header className={s.cabecalho}>

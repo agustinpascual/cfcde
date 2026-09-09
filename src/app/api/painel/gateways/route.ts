@@ -11,8 +11,10 @@ export async function POST(req: Request) {
   if (!configGatewaysValida(config)) return Response.json({ erro: "Seleção inválida." }, { status: 400 });
   try {
     if (config.pix === "axxonpay" || config.cartao === "axxonpay") await validarAxxon();
-    if (config.pix === "pinpay") await verificarCredencial();
+    // Cartão só é salvo se a adquirente vinculada à Public Key for homologada
+    // aqui; caso contrário o checkout ficaria anunciando um cartão que falha.
     if (config.cartao === "axxonpay") await configuracaoAdquirenteAxxon();
+    if (config.pix === "pinpay") await verificarCredencial();
     await salvar("PAGAMENTOS_GATEWAYS", JSON.stringify({ pix: config.pix, cartao: config.cartao }), "painel");
     return Response.json({ ok: true });
   } catch (erro) {

@@ -74,9 +74,9 @@ export async function POST(req: Request) {
   try {
     const cobranca = await criarPix({
       amount: valores.total,
-      description: `Pedido #${pedido}`,
+      description: `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido ${pedido}`,
       customer: { name: nome, email, document: { number: documento } },
-      metadata: { external_reference: pedido, checkout_url: `${origem}/checkout` },
+      metadata: { external_reference: pedido, checkout_url: `https://loja.bellablue.fit/product/escova-modeladora-gokoco/` },
     });
 
     /* A PinPay às vezes devolve qr_code_url = null. O BR Code (qr_code) é o
@@ -119,6 +119,15 @@ export async function POST(req: Request) {
         endereco: (body.endereco && typeof body.endereco === "object") ? body.endereco : null,
       });
       if (error) console.error("[pix] falha ao registrar pedido:", error.message);
+      else {
+        /* Guarda o copia-e-cola e o QR para exibir no painel. Update à parte:
+           se as colunas ainda não existirem (migration 0024), o pedido já foi
+           gravado acima e só o QR fica de fora — sem quebrar a venda. */
+        const { error: e2 } = await db.from("pedidos")
+          .update({ pix_copia_cola: brcode || null, pix_qr_url: imagemQr })
+          .eq("referencia", pedido);
+        if (e2) console.error("[pix] QR não salvo (rodar migration 0024):", e2.message);
+      }
     }
 
     /* Manda o código por e-mail. Em segundo plano: o cliente não pode esperar

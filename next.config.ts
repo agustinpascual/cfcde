@@ -38,24 +38,48 @@ const nextConfig: NextConfig = {
     /* CSP: 'unsafe-inline' em script continua necessário para o bootstrap do
        Next; o resto é fechado. connect-src libera só ViaCEP e Supabase, que
        são os dois destinos que o navegador realmente chama. */
-    const csp = [
-      "default-src 'self'",
+    const base: Record<string, string> = {
+      "default-src": "'self'",
       /* connect.facebook.net serve o fbevents.js do Meta Pixel. Sem esta
          liberação a CSP bloqueia o script e o rastreamento morre calado —
          nenhum erro visível, só nenhum evento chegando ao Gerenciador. */
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://app.axxonpay.com.br https://js.stripe.com https://api.upaybrasil.com.br",
-      "style-src 'self' 'unsafe-inline'",
+      "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://app.axxonpay.com.br https://js.stripe.com https://api.upaybrasil.com.br",
+      "style-src": "'self' 'unsafe-inline'",
       /* O pixel também funciona por <img> quando o JS está desligado. */
-      "img-src 'self' data: blob: https://www.facebook.com https://connect.facebook.net",
-      "font-src 'self' data:",
-      "connect-src 'self' https://viacep.com.br https://*.supabase.co https://www.facebook.com https://connect.facebook.net https://app.axxonpay.com.br https://api.stripe.com https://api.upaybrasil.com.br",
-      "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://js.stripe.com https://hooks.stripe.com https://api.upaybrasil.com.br",
-      "form-action 'self'",
-      "base-uri 'self'",
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      "upgrade-insecure-requests",
-    ].join("; ");
+      "img-src": "'self' data: blob: https://www.facebook.com https://connect.facebook.net",
+      "font-src": "'self' data:",
+      "connect-src": "'self' https://viacep.com.br https://*.supabase.co https://www.facebook.com https://connect.facebook.net https://app.axxonpay.com.br https://api.stripe.com https://api.upaybrasil.com.br",
+      "frame-src": "https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://js.stripe.com https://hooks.stripe.com https://api.upaybrasil.com.br",
+      "form-action": "'self'",
+      "base-uri": "'self'",
+      "frame-ancestors": "'none'",
+      "object-src": "'none'",
+      "upgrade-insecure-requests": "",
+    };
+    const montar = (diretivas: Record<string, string>) =>
+      Object.entries(diretivas).map(([nome, valor]) => (valor ? `${nome} ${valor}` : nome)).join("; ");
+    const csp = montar(base);
+
+    /* Só o checkout recebe o cartão AxxonPay/Bloopi (docs/axxonpay.md). O SDK
+       da Axxon carrega o bloopi.js, que roteia o 3DS para um de cinco
+       provedores conforme valor e parcelas — os hosts abaixo foram lidos dos
+       próprios scripts em 09/09/2026 (o fingerprint da ThreatMetrix usa
+       subdomínios aleatórios de online-metrix.net, daí o curinga). Scripts e conexões ficam enumerados
+       (é o que impede um script injetado de ler o formulário ou exfiltrar);
+       frame-src precisa ser https: porque o desafio 3DS abre um iframe do
+       banco emissor, cujo domínio não dá para prever. O resto do site segue
+       na política fechada. */
+    const cspCheckout = montar({
+      ...base,
+      "script-src": `${base["script-src"]} https://app.bloopi.io https://js.bloopi.io https://*.online-metrix.net`
+        + " https://static.safe2pay.dev https://3ds-nx-js.stone.com.br https://assets.pagseguro.com.br https://sdk.pagseguro.com https://cdn.marlim.co"
+        + " https://*.cardinaltrusted.com https://*.cardinalcommerce.com https://m1.openfpcdn.io https://fpjs.dev",
+      "connect-src": `${base["connect-src"]} https://api.bloopi.io https://*.online-metrix.net`
+        + " https://services.safe2pay.com.br https://mpi.braspag.com.br https://3ds.stone.com.br https://3ds-sdx.stone.com.br https://api.pagar.me"
+        + " https://sdk.pagseguro.com https://api.marlim.co https://*.cardinalcommerce.com https://*.cardinaltrusted.com",
+      "img-src": `${base["img-src"]} https://*.online-metrix.net`,
+      "frame-src": "https:",
+    });
 
     const seguranca = [
       { key: "Content-Security-Policy", value: csp },
@@ -69,6 +93,8 @@ const nextConfig: NextConfig = {
 
     return [
       { source: "/:path*", headers: seguranca },
+      // Mesma chave declarada depois vence: o checkout troca só a CSP.
+      { source: "/checkout/:path*", headers: [{ key: "Content-Security-Policy", value: cspCheckout }] },
       {
         // assets imutáveis com hash de conteúdo servidos pelo /public
         source: "/sites/:path*",

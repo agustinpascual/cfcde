@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
    A localização vem dos headers que o Vercel injeta a partir do IP — não
    guardamos o IP em si, só cidade/UF e coordenadas aproximadas. */
 
-const TIPOS = new Set(["pageview", "secao", "checkout", "pix_gerado", "pix_copiado", "compra", "saida"]);
+const TIPOS = new Set(["pageview", "secao", "comprar", "checkout", "checkout_parcial", "pix_gerado", "pix_copiado", "voltou", "compra", "saida"]);
 
 /* O cliente já não manda ping do painel, mas a rota é pública: quem chamar
    direto também não polui o mapa nem o funil. */
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
     latitude: Number.isFinite(lat) ? lat : null,
     longitude: Number.isFinite(lng) ? lng : null,
     dispositivo: detectarDispositivo(h.get("user-agent") ?? "", plataforma, Number.isFinite(toques) ? toques : 0),
+    ip: (() => { const v = ipDe(req); return v === "desconhecido" ? null : v; })(),
     referencia: txt(corpo.referencia, 200),
     visto_em: new Date().toISOString(),
     ...(corpo.tipo === "pix_copiado" ? { copiou_pix: true } : {}),

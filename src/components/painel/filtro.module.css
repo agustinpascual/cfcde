@@ -1,3 +1,26 @@
+/* ===== Seletor de período do dashboard (FiltroPeriodo) ===== */
+.seletorPeriodo { position: relative; max-width: 100%; }
+.gatilhoPeriodo { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 10px 14px; border: 1px solid var(--cdp-borda); border-radius: 10px; background: #fff; color: var(--cdp-tinta); font-size: 14px; font-weight: 600; cursor: pointer; list-style: none; }
+.gatilhoPeriodo::-webkit-details-marker { display: none; }
+.gatilhoPeriodo > svg { flex-shrink: 0; color: var(--cdp-ouro-escuro); }
+.gatilhoPeriodo > span { overflow-wrap: anywhere; }
+.gatilhoPeriodo:focus-visible { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: 3px; }
+.setaPeriodo { margin-left: auto; transition: transform .15s; }
+.seletorPeriodo[open] .setaPeriodo { transform: rotate(180deg); }
+.opcoesPeriodo { position: absolute; top: calc(100% + 8px); left: 0; z-index: 40; width: min(380px, calc(100vw - 36px)); padding: 14px; border: 1px solid var(--cdp-borda); border-radius: 14px; background: #fff; box-shadow: 0 12px 36px rgba(26,23,20,.14); }
+.tituloPeriodo { margin-bottom: 12px; font-size: 13px; font-weight: 700; color: var(--cdp-tinta); }
+.opcoesPeriodo .atalhos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+.opcoesPeriodo .atalho { min-height: 44px; }
+.opcoesPeriodo .intervalo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin-top: 12px; padding: 12px 0 0; border: 0; border-top: 1px solid var(--cdp-borda); border-radius: 0; box-shadow: none; }
+.opcoesPeriodo .rotulo { min-width: 0; }
+.opcoesPeriodo .data { width: 100%; min-width: 0; min-height: 44px; font-size: 16px; }
+.opcoesPeriodo .aplicar { grid-column: 1 / -1; min-height: 44px; }
+.notaPeriodo { margin-top: 12px; font-size: 11px; line-height: 1.6; color: var(--cdp-tinta-2); }
+@media (max-width: 620px) {
+  .seletorPeriodo { width: 100%; }
+  .opcoesPeriodo { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
+}
+
 .barra { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
 .atalhos { display: flex; gap: 4px; background: #fff; border: 1px solid var(--cdp-borda); border-radius: 10px; padding: 4px; }
 .atalho { font-size: 13px; font-weight: 600; color: var(--cdp-tinta-2); border-radius: 7px; padding: 8px 14px; transition: background .15s, color .15s; }
@@ -19,3 +42,150 @@
   .intervalo { width: 100%; flex-wrap: wrap; }
   .resumo { margin-left: 0; }
 }
+
+/* ===== Filtro da lista de pedidos (FiltroPedidos) ===== */
+.filtro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.campoBusca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 260px;
+  min-width: 220px;
+  padding: 0 12px;
+  height: 42px;
+  border: 1px solid var(--cdp-borda);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cdp-tinta-3);
+}
+.campoBusca input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  color: var(--cdp-tinta);
+  outline: none;
+}
+
+.filtro select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--cdp-borda);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cdp-tinta);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* O botão Filtrar reaproveita .aplicar; só igualo a altura aos campos. */
+.filtro .aplicar { height: 42px; padding: 0 22px; }
+
+.limpar {
+  font-size: 13px;
+  color: var(--cdp-tinta-3);
+  text-decoration: underline;
+}
+.limpar:hover { color: var(--cdp-tinta); }
+
+@media (max-width: 560px) {
+  .campoBusca { flex-basis: 100%; }
+  .filtro select { flex: 1 1 45%; }
+}
+
+/* Seletor de período do dashboard. Convive com os filtros da lista de pedidos. */
+.barra { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+.atalhos { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--cdp-borda); border-radius: 10px; background: #fff; }
+.atalho { padding: 8px 14px; border-radius: 7px; color: var(--cdp-tinta-2); font-size: 13px; font-weight: 600; transition: background .15s, color .15s; }
+.atalho:hover { background: var(--cdp-fundo); }
+.atalhoAtivo, .atalhoAtivo:hover { background: var(--cdp-menu); color: #fff; }
+.intervalo { display: flex; align-items: flex-end; gap: 10px; padding: 10px 12px; border: 1px solid var(--cdp-borda); border-radius: 10px; background: #fff; }
+.rotulo { display: flex; flex-direction: column; gap: 4px; color: var(--cdp-tinta-2); font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.data { padding: 7px 9px; border: 1px solid var(--cdp-tinta-3); border-radius: 7px; color: var(--cdp-tinta); font-family: inherit; font-size: 13px; outline: none; }
+.data:focus { border-color: var(--cdp-ouro-escuro); }
+.resumo { margin-left: auto; color: var(--cdp-tinta-2); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 700px) {
+  .atalhos { width: 100%; overflow-x: auto; }
+  .intervalo { width: 100%; flex-wrap: wrap; }
+  .resumo { margin-left: 0; }
+}
+
+/* ===== Refinamento visual do seletor de período (dashboard) =====
+   Fica por último de propósito: o arquivo acumulou regras duplicadas destas
+   classes (colisão de edição simultânea); estando no fim, esta versão vence
+   pela cascata sem precisar mexer nos blocos anteriores nem no .aplicar. */
+.barra { gap: 12px; }
+
+/* Segmented control: trilho suave, item ativo escuro que "salta". */
+.atalhos {
+  display: inline-flex; gap: 3px; padding: 4px;
+  border: 1px solid var(--cdp-borda); border-radius: 12px;
+  background: var(--cdp-fundo);
+}
+/* Classe dobrada: o reset global `button:not(.sf-root *)` (0,1,1) zera
+   background/padding/cor de botão e vence uma classe simples. (0,2,0) ganha. */
+.atalho.atalho {
+  padding: 8px 15px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: var(--cdp-tinta-2);
+  background: transparent; cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.atalho.atalho:hover:not(.atalhoAtivo) { background: #fff; color: var(--cdp-tinta); }
+.atalhoAtivo.atalhoAtivo, .atalhoAtivo.atalhoAtivo:hover {
+  background: var(--cdp-menu); color: #fff;
+  box-shadow: 0 1px 3px rgba(26,23,20,.22);
+}
+
+/* Mesmo motivo: os botões Aplicar/Filtrar apareciam como texto puro. */
+.aplicar.aplicar {
+  background: var(--cdp-menu); color: #fff;
+  border-radius: 8px; padding: 9px 18px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background .15s;
+}
+.aplicar.aplicar:hover { background: var(--cdp-menu-2); }
+
+/* Período atual como chip com ícone de calendário (latão da marca). */
+.resumo {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--cdp-borda); border-radius: 10px;
+  background: #fff; color: var(--cdp-tinta-2);
+  font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.resumo::before {
+  content: ""; width: 15px; height: 15px; flex: 0 0 auto;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a6f42' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+/* Popover de dia/intervalo flutua com sombra, em vez de empurrar a barra. */
+.intervalo { box-shadow: 0 10px 30px rgba(26,23,20,.10); }
+
+@media (max-width: 700px) {
+  .resumo { margin-left: 0; width: 100%; justify-content: center; }
+  .atalhos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+  .atalho.atalho { min-height: 44px; padding: 8px 5px; }
+  .intervalo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); box-shadow: none; }
+  .rotulo { min-width: 0; }
+  .data { width: 100%; min-width: 0; min-height: 44px; font-size: 16px; }
+  .intervalo .aplicar { grid-column: 1 / -1; min-height: 44px; }
+  .campoBusca { min-width: 0; min-height: 46px; }
+  .campoBusca input { min-width: 0; font-size: 16px; }
+  .filtro select { min-width: 0; min-height: 46px; font-size: 16px; }
+  .filtro .aplicar { min-height: 46px; }
+  .limpar { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* Campos De/Até do filtro de pedidos. */
+.campoData { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 12px; border: 1px solid var(--cdp-borda); border-radius: 10px; background: #fff; }
+.campoData span { font-size: 12px; font-weight: 700; color: var(--cdp-tinta-3); text-transform: uppercase; letter-spacing: .4px; }
+.campoData input { border: 0; background: transparent; font-family: inherit; font-size: 13px; color: var(--cdp-tinta); outline: none; }

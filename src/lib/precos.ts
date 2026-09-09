@@ -1,5 +1,6 @@
 import "server-only";
 import { calcularDescontos, sobraAteRealCheio } from "./promocoes";
+import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
 
 /* Tabela de preços autoritativa. O checkout envia apenas o índice do kit e a
    quantidade; o valor cobrado é calculado AQUI. Se viesse do cliente, daria
@@ -33,21 +34,23 @@ export function calcularTotal(kitIndex: number, qtd: number, frete: IdFrete) {
   return { kit, subtotal, desconto, frete: opcao, total };
 }
 
-const PRODUTOS_CAFE: Record<string, { nome: string; centavos: number }> = {
+/* Combos do ComboPlusStore — não fazem parte do catálogo da vitrine, então
+   ficam explícitos aqui. */
+const COMBOS: Record<string, { nome: string; centavos: number }> = {
   "combo-plus": { nome: "Combo Plus | Frete grátis", centavos: 28990 },
   "combo-plus2027": { nome: "Lançamento Combo Plus | 2027", centavos: 8990 },
   "combo-plus2027-2un": { nome: "Lançamento Combo Plus | 2027 · 2 unidades", centavos: 12990 },
-  "cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa": { nome: "Café com Deus Pai vol.6 + A vida que você busca", centavos: 9990 },
-  "cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-caneca": { nome: "Café com Deus Pai vol.6 + A vida que você busca + caneca", centavos: 21990 },
-  "2-canecas-cafe-com-deus-pai-vol-6": { nome: "2 canecas Café com Deus Pai", centavos: 19990 },
-  "a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-lata-alfajor-velutti-com-6-un-marca-texto": { nome: "A vida que você busca + alfajores + marca-texto", centavos: 14990 },
-  "a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-planner-marca-texto": { nome: "A vida que você busca + planner + marca-texto", centavos: 12990 },
-  "planner-cafe-com-deus-pai-2025": { nome: "Planner Café com Deus Pai", centavos: 5990 },
-  "a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-cafe-com-deus-pai-brochura-vol-6-planner": { nome: "A vida que você busca + Café com Deus Pai + planner", centavos: 17990 },
-  "2-livros-cafe-com-deus-pai-vol-6-brochura-2-canecas": { nome: "2 livros Café com Deus Pai + 2 canecas", centavos: 28990 },
-  "combo-cafe-com-deus-pai-vol-6-brochura-lata-de-cafe-gourmet": { nome: "Café com Deus Pai + café gourmet", centavos: 10890 },
-  "combo-cafe-com-deus-pai-2026-brochura-ecobag-copo-250ml": { nome: "Café com Deus Pai + ecobag + copo", centavos: 9990 },
-  "cafe-com-deus-pai-2026-brochura-10-filtros-individuais": { nome: "Café com Deus Pai + 10 filtros", centavos: 7890 },
+  /* Homologação de pagamento (/produto/testes). Remover depois de homologar. */
+  "testes": { nome: "Produto de teste — homologação de pagamento", centavos: 1000 },
+};
+
+/* A tabela de preços do servidor é DERIVADA do catálogo da vitrine. Antes as
+   duas listas eram mantidas à mão e dessincronizaram: os 24 produtos do vol.7
+   apareciam na loja mas davam "Produto inválido" ao gerar o PIX. Derivando,
+   todo produto que existe na vitrine é cobrável, com o mesmo preço exibido. */
+const PRODUTOS_CAFE: Record<string, { nome: string; centavos: number }> = {
+  ...COMBOS,
+  ...Object.fromEntries(PRODUCTS.map((p) => [p.slug, { nome: p.name, centavos: p.priceCents }])),
 };
 
 /* Cupom e desconto Pix são recalculados aqui: do cliente vem só o código do

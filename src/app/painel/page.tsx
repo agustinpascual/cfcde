@@ -2,18 +2,32 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
 import AcessosDispositivos from "@/components/painel/AcessosDispositivos";
-import Recarrega from "@/components/painel/Recarrega";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import { AreaTempo, BarrasH } from "@/components/painel/Grafico";
 import FiltroPeriodo from "@/components/painel/FiltroPeriodo";
-import { estadoInstalacao, configurado, lerAoVivo, lerFunil, lerResumo, lerVendasPorDia, moeda, resolverPeriodo } from "@/components/painel/dados";
-import { autenticado, painelConfigurado } from "@/lib/painel-auth";
+import MapaBrasil from "@/components/painel/MapaBrasil";
+import Recarrega from "@/components/painel/Recarrega";
+import { dispositivoAndroid, dispositivoApple, estadoInstalacao, configurado, hojeNoPainel, lerAoVivo, lerFunil, lerResumo, lerVendasPorDia, moeda, resolverPeriodo, rotuloDispositivo } from "@/components/painel/dados";
 import { contarDispositivos } from "@/lib/dispositivos";
+import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 
-export const metadata: Metadata = { title: "Vendas", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
+
+const NOME_PAGINA: Record<string, string> = {
+  "/": "Página inicial", "/checkout": "Checkout", "/contato": "Contato",
+  "/sobre": "Sobre nós", "/duvidas-frequentes": "Dúvidas frequentes",
+};
+const nomearPagina = (pagina: string | null) =>
+  !pagina ? "Página desconhecida"
+    : pagina.startsWith("/pagamento") ? "Tela de pagamento"
+      : NOME_PAGINA[pagina] ?? pagina;
+const tempoOnline = (segundos: number) =>
+  segundos < 60 ? `${segundos}s`
+    : segundos < 3600 ? `${Math.floor(segundos / 60)} min`
+      : `${Math.floor(segundos / 3600)} h`;
 
 export default async function Page({ searchParams }: {
   searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
@@ -23,7 +37,7 @@ export default async function Page({ searchParams }: {
 
   const periodo = resolverPeriodo(await searchParams);
   const [resumo, dias, funil, vivos] = await Promise.all([
-    lerResumo(periodo), lerVendasPorDia(periodo), lerFunil(), lerAoVivo(),
+    lerResumo(periodo), lerVendasPorDia(periodo), lerFunil(periodo), lerAoVivo(),
   ]);
 
   const faltando: string[] = [];
@@ -43,15 +57,15 @@ export default async function Page({ searchParams }: {
     { rotulo: "Compras", valor: funil.compras, nota: pct(funil.compras) },
   ];
 
-  const dispositivosOnline = contarDispositivos(vivos);
-  const porDispositivo = [
-    { rotulo: "Computadores", valor: dispositivosOnline.computador },
-    { rotulo: "Celulares", valor: dispositivosOnline.celular },
-    { rotulo: "Tablets", valor: dispositivosOnline.tablet },
-    { rotulo: "Não identificado", valor: dispositivosOnline.outros },
-  ];
-
   const ticket = resumo.pedidos_pagos ? resumo.receita_centavos / resumo.pedidos_pagos : 0;
+  const noCheckout = vivos.filter((v) => v.pagina?.startsWith("/checkout")).length;
+  const noPagamento = vivos.filter((v) => v.pagina?.startsWith("/pagamento")).length;
+  const copiaramPix = vivos.filter((v) => v.copiou_pix).length;
+  const apple = vivos.filter((v) => dispositivoApple(v.dispositivo)).length;
+  const android = vivos.filter((v) => dispositivoAndroid(v.dispositivo)).length;
+  const computadores = contarDispositivos(vivos).computador;
+  const outrosDispositivos = Math.max(0, vivos.length - apple - android - computadores);
+  const conversao = funil.visitantes ? (funil.compras / funil.visitantes) * 100 : 0;
 
   const _inst = await estadoInstalacao();
 
@@ -59,55 +73,130 @@ export default async function Page({ searchParams }: {
 
 
   return (
-    <Casca atual="/painel" titulo="Vendas" subtitulo={`Resumo do desempenho · ${periodo.rotulo}`} aoVivo={vivos.length}>
+    <Casca atual="/painel" titulo="Dashboard" subtitulo={`Visão geral da operação · ${periodo.rotulo}`} aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
       <AvisoConfig faltando={faltando} />
       <Recarrega segundos={15} />
 
-      <FiltroPeriodo de={periodo.de} ate={periodo.ate} />
+      <FiltroPeriodo de={periodo.de} ate={periodo.ate} hoje={hojeNoPainel()} />
 
-      <div className={s.kpis}>
-        <Kpi rotulo="Receita no período" valor={moeda(resumo.receita_centavos)} nota={`${resumo.pedidos_pagos} pedidos pagos`} />
+      <section className={s.financeiro} aria-labelledby="resumo-financeiro">
+        <div className={s.financeiroCabecalho}>
+          <div>
+            <p className={s.sobretitulo}>Visão financeira</p>
+            <h2 id="resumo-financeiro" className={s.financeiroTitulo}>O que realmente entra no caixa</h2>
+          </div>
+          <span className={s.taxaRegra}>Gateway · 5,99% + R$ 1,50 por transação</span>
+        </div>
+
+        <div className={s.financeiroGrade}>
+          <article className={s.financeiroItem}>
+            <p className={s.financeiroRotulo}>Receita bruta</p>
+            <p className={s.financeiroValor}>{moeda(resumo.receita_centavos)}</p>
+            <p className={s.financeiroNota}>{resumo.pedidos_pagos} {resumo.pedidos_pagos === 1 ? "pedido pago" : "pedidos pagos"}</p>
+          </article>
+
+          <article className={`${s.financeiroItem} ${s.financeiroTaxas}`}>
+            <p className={s.financeiroRotulo}>Taxas pagas ao gateway</p>
+            <p className={s.financeiroValor}>− {moeda(resumo.taxas_gateway_centavos)}</p>
+            <dl className={s.taxaDetalhes}>
+              <div><dt>Percentual (5,99%)</dt><dd>{moeda(resumo.taxa_gateway_percentual_centavos)}</dd></div>
+              <div><dt>Fixa ({resumo.pedidos_pagos} × R$ 1,50)</dt><dd>{moeda(resumo.taxa_gateway_fixa_centavos)}</dd></div>
+            </dl>
+          </article>
+
+          <article className={`${s.financeiroItem} ${s.financeiroLiquido}`}>
+            <p className={s.financeiroRotulo}>Valor líquido estimado</p>
+            <p className={s.financeiroValor}>{moeda(resumo.receita_liquida_centavos)}</p>
+            <p className={s.financeiroNota}>bruto menos as taxas do gateway</p>
+          </article>
+        </div>
+      </section>
+
+      <div className={`${s.kpis} ${s.kpisCompactos}`}>
         <Kpi rotulo="Receita hoje" valor={moeda(resumo.receita_hoje_centavos)} nota={`${resumo.pedidos_hoje} pedidos hoje`} />
         <Kpi rotulo="Ticket médio" valor={moeda(ticket)} nota="por pedido pago" />
         <Kpi rotulo="Aguardando pagamento" valor={String(resumo.pedidos_pendentes)} nota="PIX gerado sem confirmação" />
-        <Kpi rotulo="Online agora" valor={String(vivos.length)} nota={`${vivos.filter((v) => v.pagina?.startsWith("/checkout")).length} no checkout`} vivo />
+        <Kpi rotulo="Conversão" valor={`${conversao.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`} nota={`compras · ${periodo.rotulo.toLowerCase()}`} />
       </div>
 
       <AcessosDispositivos periodo={periodo} online={vivos} />
 
       <div className={s.grade}>
         <section className={s.cartao}>
-          <h2 className={s.cartaoTitulo}>Receita por dia</h2>
-          <p className={s.cartaoSub}>{periodo.rotulo} · apenas pedidos aprovados</p>
+          <h2 className={s.cartaoTitulo}>Faturamento bruto por dia</h2>
+          <p className={s.cartaoSub}>{periodo.rotulo} · pedidos aprovados antes das taxas</p>
           <AreaTempo dados={serie} formato="moeda" />
         </section>
 
         <section className={s.cartao}>
           <h2 className={s.cartaoTitulo}>Funil de conversão</h2>
-          <p className={s.cartaoSub}>Sessões distintas nas últimas 24 horas</p>
+          <p className={s.cartaoSub}>{periodo.rotulo} · compras confirmadas pelo gateway</p>
           <BarrasH dados={etapas} formato="numero" />
         </section>
       </div>
 
-      <div className={s.grade}>
-        <section className={s.cartao}>
-          <h2 className={s.cartaoTitulo}>Onde as pessoas estão agora</h2>
-          <p className={s.cartaoSub}>Sessões ativas por página</p>
-          <BarrasH cor={1}
-            dados={Object.entries(vivos.reduce<Record<string, number>>((a, v) => {
-              const p = v.pagina ?? "(desconhecida)";
-              a[p] = (a[p] ?? 0) + 1; return a;
-            }, {})).map(([rotulo, valor]) => ({ rotulo, valor })).sort((a, b) => b.valor - a.valor)}
-            formato="numero" />
-        </section>
+      <section id="agora" className={`${s.cartao} ${s.tempoReal}`} aria-labelledby="titulo-tempo-real">
+        <div className={s.tempoRealCabecalho}>
+          <div>
+            <p className={s.sobretitulo}>Em tempo real</p>
+            <h2 id="titulo-tempo-real" className={s.tempoRealTitulo}>O que está acontecendo na loja agora</h2>
+            <p className={s.tempoRealSub}>Atualização automática a cada 15 segundos</p>
+          </div>
+          <span className={s.onlineBadge}><i aria-hidden />{vivos.length} online</span>
+        </div>
 
-        <section className={s.cartao}>
-          <h2 className={s.cartaoTitulo}>Dispositivos online</h2>
-          <p className={s.cartaoSub}>Distribuição das sessões ativas</p>
-          <BarrasH dados={porDispositivo} formato="numero" cor={2} />
-        </section>
-      </div>
+        <div className={s.tempoRealKpis}>
+          <MiniKpi rotulo="Navegando" valor={vivos.length - noCheckout - noPagamento} />
+          <MiniKpi rotulo="No checkout" valor={noCheckout} />
+          <MiniKpi rotulo="Na tela do PIX" valor={noPagamento} />
+          <MiniKpi rotulo="Copiaram o PIX" valor={copiaramPix} destaque />
+        </div>
+
+        <div className={s.dispositivosFaixa} aria-label="Dispositivos online">
+          <p>Dispositivos agora</p>
+          <span><i className={s.apple} aria-hidden />Apple / iOS <strong>{apple}</strong></span>
+          <span><i className={s.android} aria-hidden />Android <strong>{android}</strong></span>
+          <span><i className={s.computador} aria-hidden />Computador <strong>{computadores}</strong></span>
+          {outrosDispositivos > 0 && <span><i aria-hidden />Outros <strong>{outrosDispositivos}</strong></span>}
+        </div>
+
+        <div className={s.tempoRealGrade}>
+          <div className={s.mapaPainel}>
+            <h3>Localização das sessões</h3>
+            <p>Posição aproximada por cidade</p>
+            <MapaBrasil sessoes={vivos} />
+          </div>
+
+          <div className={s.atividadePainel}>
+            <div className={s.atividadeCabecalho}>
+              <div><h3>Atividade atual</h3><p>Últimas sessões detectadas</p></div>
+              <span>{vivos.length}</span>
+            </div>
+            {vivos.length === 0 ? (
+              <div className={s.atividadeVazia}><i aria-hidden /><p>Ninguém navegando no momento.</p></div>
+            ) : (
+              <ul className={s.atividadeLista}>
+                {vivos.slice(0, 8).map((v) => {
+                  const noPix = v.pagina?.startsWith("/pagamento");
+                  const checkout = v.pagina?.startsWith("/checkout");
+                  return (
+                    <li key={v.sessao}>
+                      <span className={`${s.atividadePonto} ${v.copiou_pix ? s.pontoPix : noPix || checkout ? s.pontoCheckout : ""}`} aria-hidden />
+                      <div className={s.atividadeInfo}>
+                        <strong>{nomearPagina(v.pagina)}</strong>
+                        <span>{rotuloDispositivo(v.dispositivo)} · {v.cidade ? `${v.cidade}${v.uf ? `/${v.uf}` : ""}` : "localização indisponível"}</span>
+                      </div>
+                      <span className={s.atividadeEstado}>{v.copiou_pix ? "PIX copiado" : noPix ? "Pagamento" : checkout ? "Checkout" : "Navegando"}</span>
+                      <time>{tempoOnline(v.segundos_no_site)}</time>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      </section>
     </Casca>
   );
 }
@@ -118,6 +207,14 @@ function Kpi({ rotulo, valor, nota, vivo }: { rotulo: string; valor: string; not
       <p className={s.kpiRotulo}>{rotulo}</p>
       <p className={s.kpiValor}>{valor}</p>
       <p className={s.kpiNota}>{nota}</p>
+    </div>
+  );
+}
+
+function MiniKpi({ rotulo, valor, destaque }: { rotulo: string; valor: number; destaque?: boolean }) {
+  return (
+    <div className={destaque ? s.miniKpiDestaque : ""}>
+      <p>{rotulo}</p><strong>{valor}</strong>
     </div>
   );
 }

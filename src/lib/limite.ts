@@ -10,6 +10,8 @@ const mapa = new Map<string, Janela>();
 export function ipDe(req: Request) {
   const h = req.headers;
   return (
+    // Na Cloudflare o IP real do cliente vem em cf-connecting-ip.
+    h.get("cf-connecting-ip") ||
     h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     h.get("x-real-ip") ||
     "desconhecido"

@@ -27,6 +27,11 @@ export default function PagamentoPix() {
   const [copiado, setCopiado] = useState(false);
   const [pago, setPago] = useState<{ rastreio: string | null; pedido: string | null } | null>(null);
   const abertoEm = useRef<number | null>(null);
+  /* Marca a cópia do código e se o retorno à aba já foi registrado. Depois de
+     copiar, o cliente vai ao app do banco; voltar para cá é o sinal de que
+     seguiu com o pagamento. */
+  const copiouEm = useRef<number | null>(null);
+  const voltouRegistrado = useRef(false);
 
   /* Atualiza também assim que o cliente retorna do aplicativo do banco. */
   useEffect(() => {
@@ -62,7 +67,27 @@ export default function PagamentoPix() {
       if (t > 0) registrar("saida", { pedido: cobranca.pedido, etapa: "pix", segundos_na_tela: t });
     };
     window.addEventListener("pagehide", aoSair);
-    return () => { window.removeEventListener("pagehide", aoSair); aoSair(); };
+
+    /* Voltou depois de copiar: a aba reaparece após a pessoa sair para o banco.
+       Só conta uma vez e só se já houve cópia. */
+    const aoVoltar = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!copiouEm.current || voltouRegistrado.current) return;
+      voltouRegistrado.current = true;
+      registrar("voltou", {
+        pedido: cobranca.pedido,
+        segundos_fora: Math.round((Date.now() - copiouEm.current) / 1000),
+      });
+    };
+    document.addEventListener("visibilitychange", aoVoltar);
+    window.addEventListener("focus", aoVoltar);
+
+    return () => {
+      window.removeEventListener("pagehide", aoSair);
+      document.removeEventListener("visibilitychange", aoVoltar);
+      window.removeEventListener("focus", aoVoltar);
+      aoSair();
+    };
   }, [cobranca]);
 
   async function copiar() {
@@ -73,6 +98,7 @@ export default function PagamentoPix() {
       return; // sem permissão de área de transferência: o cliente seleciona à mão
     }
     setCopiado(true);
+    copiouEm.current = Date.now();
     window.setTimeout(() => setCopiado(false), 2200);
     registrar("pix_copiado", {
       pedido: cobranca.pedido,

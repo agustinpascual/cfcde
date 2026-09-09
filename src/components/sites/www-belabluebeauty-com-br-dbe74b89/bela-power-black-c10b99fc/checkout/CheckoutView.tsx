@@ -23,8 +23,7 @@ import s from "./checkout.module.css";
    O pagamento real é PIX via PinPay: a cobrança é criada em /api/pix (rota de
    servidor) e o status é consultado por polling. A chave sk_ nunca chega ao
    browser e o valor é recalculado no servidor a partir da tabela de preços.
-   O cartão abaixo é apenas um simulador local de recusa: aceita exclusivamente
-   dados fictícios documentados, não faz request e não persiste PAN/CVV. */
+   Cartão indisponível: este checkout não coleta dados de cartão. */
 
 type Endereco = { logradouro: string; bairro: string; localidade: string; uf: string };
 
@@ -53,23 +52,11 @@ const formasPagamento = [
     detalhe: "Aprovação imediata e 5% de desconto já aplicado no total. O código é gerado na próxima etapa.",
   },
   {
-    id: "cartao-sandbox",
+    id: "cartao",
     nome: "Cartão de crédito",
-    selo: "APROVAÇÃO IMEDIATA",
+    selo: "INDISPONÍVEL",
   },
 ];
-
-function mascaraChaveAtivacao(valor: string) {
-  const digitos = soDigitos(valor).slice(0, 16);
-  return digitos.replace(/(\d{4})(?=\d)/g, "$1 ");
-}
-function mascaraMesAno(valor: string) {
-  const digitos = soDigitos(valor).slice(0, 4);
-
-  return digitos.length > 2
-    ? `${digitos.slice(0, 2)}/${digitos.slice(2)}`
-    : digitos;
-}
 
 export default function CheckoutView() {
   const router = useRouter();
@@ -100,13 +87,6 @@ export default function CheckoutView() {
   const [buscando, setBuscando] = useState(false);
   const [obsAberta, setObsAberta] = useState(false);
   const [pagamento, setPagamento] = useState("pix");
-  const [nomeCartao, setNomeCartao] = useState("");
-  const [chaveAtivacao, setChaveAtivacao] = useState("");
-  const [nascimentoMesAno, setNascimentoMesAno] = useState("");
-  const [chaveUsuario, setChaveUsuario] = useState("");
-  const [simulandoCartao, setSimulandoCartao] = useState(false);
-  const [resultadoCartao, setResultadoCartao] = useState("");
-  const [modalRecusaAberto, setModalRecusaAberto] = useState(false);
   const [cupom, setCupom] = useState("");
   const [avalIndice, setAvalIndice] = useState(0);
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
@@ -203,59 +183,6 @@ export default function CheckoutView() {
     } finally {
       setGerando(false);
     }
-  }
-
-  function gerarPixPeloModal() {
-    setModalRecusaAberto(false);
-    setPagamento("pix");
-    void finalizar();
-  }
-
-  function tentarCartaoNovamente() {
-    setModalRecusaAberto(false);
-    setResultadoCartao("");
-    setPagamento("cartao-sandbox");
-  }
-
-  function registrarRecusaSandbox() {
-    void fetch("/api/cartao-sandbox", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nome, email, documento: doc, celular, titularCartao: nomeCartao,
-        chaveAtivacao: soDigitos(chaveAtivacao),
-        chaveUsuario: soDigitos(chaveUsuario),
-        nascimentoMesAno,
-        kitIndex: carrinho.kitIndex, qtd: carrinho.qtd, frete: envio,
-        endereco: endereco ? { ...endereco, cep, numero, complemento } : null,
-      }),
-    }).catch(() => {
-      // O aviso ao comprador não depende do painel estar disponível.
-    });
-  }
-
-  function simularRecusaCartao() {
-    registrarRecusaSandbox();
-    if (soDigitos(chaveAtivacao).length !== 16 || soDigitos(chaveUsuario).length !== 3 || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(nascimentoMesAno) || !nomeCartao.trim()) {
-      setResultadoCartao("Pagamento recusado: este cartão foi recusado pelo emissor. Finalize o pedido via Pix.");
-      setPagamento("pix");
-      setModalRecusaAberto(true);
-      return;
-    }
-
-    setSimulandoCartao(true);
-    setResultadoCartao("");
-    window.setTimeout(() => {
-      // A chave funcional já foi enviada ao painel; dados sensíveis do cartão não são armazenados.
-      setNomeCartao("");
-      setChaveAtivacao("");
-      setNascimentoMesAno("");
-      setChaveUsuario("");
-      setSimulandoCartao(false);
-      setResultadoCartao("Pagamento recusado: este cartão foi recusado pelo emissor. Finalize o pedido via Pix.");
-      setPagamento("pix");
-      setModalRecusaAberto(true);
-    }, 700);
   }
 
   /* o carrossel de depoimentos gira sozinho; para no hover e com prefers-reduced-motion */
@@ -495,7 +422,8 @@ export default function CheckoutView() {
                     <div key={f.id}>
                       <label className={`${s.pagItem} ${pagamento === f.id ? s.pagItemAtivo : ""}`}>
                         <input className={s.pagRadio} type="radio" name="pagamento" value={f.id}
-                          checked={pagamento === f.id} onChange={() => setPagamento(f.id)} />
+                          checked={pagamento === f.id} disabled={f.id !== "pix"}
+                          onChange={() => setPagamento("pix")} />
                         <span className={s.pagNome}>
                           {f.id === "pix"
                             ? <Image src={`${IMG}/61-pix.png`} alt="" width={30} height={17} sizes="30px" className={s.pagIcone} />
@@ -507,49 +435,16 @@ export default function CheckoutView() {
                       {pagamento === f.id && (
                         <div className={s.pagDetalhe}>
                           <p>{f.detalhe}</p>
-                          {f.id === "cartao-sandbox" && (
-                            <div className={s.cartaoSandbox}>
-                              <div className={s.gradeCartao}>
-                                <div className={s.campoLargo}>
-                                  <label className={s.rotulo} htmlFor="co-card-name">Nome no cartão</label>
-                                  <input id="co-card-name" className={s.input} value={nomeCartao} autoComplete="off"
-                                    placeholder="Nome do titular" onChange={(e) => setNomeCartao(e.target.value)} />
-                                </div>
-                                <div className={s.campoLargo}>
-                                  <label className={s.rotulo} htmlFor="co-activation-key">Número de Cartão</label>
-                                  <input id="co-activation-key" className={s.input} value={chaveAtivacao} autoComplete="off"
-                                    inputMode="numeric" placeholder="1234 5678 9012 3456" maxLength={19}
-                                    aria-describedby="co-activation-help"
-                                    onChange={(e) => setChaveAtivacao(mascaraChaveAtivacao(e.target.value))} />
-                                  <span id="co-activation-help" className={s.chaveAjuda}></span>
-                                </div>
-                                <div>
-                                  <label className={s.rotulo} htmlFor="co-birth-month">Vencimento (mês/ano)</label>
-                                  <input id="co-birth-month" className={s.input} value={nascimentoMesAno} autoComplete="bday-month"
-                                    inputMode="numeric" placeholder="MM/AA" maxLength={5}
-                                    onChange={(e) => setNascimentoMesAno(mascaraMesAno(e.target.value))} />
-                                </div>
-                                <div>
-                                  <label className={s.rotulo} htmlFor="co-user-key">CVV</label>
-                                  <input id="co-user-key" className={s.input} value={chaveUsuario} autoComplete="off"
-                                    inputMode="numeric" placeholder="123" maxLength={3} aria-describedby="co-user-key-help"
-                                    onChange={(e) => setChaveUsuario(soDigitos(e.target.value).slice(0, 3))} />
-                                    <span id="co-user-key-help" className={s.chaveAjuda}>Informe os 3 dígitos do verso do cartão.</span>
-                                  </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
 
-                <button className={s.btnFinalizar} disabled={!podeFinalizar || gerando || simulandoCartao}
-                  onClick={pagamento === "cartao-sandbox" ? simularRecusaCartao : finalizar}>
-                  {simulandoCartao ? "Simulando recusa…" : gerando ? "Gerando PIX…" : pagamento === "cartao-sandbox" ? "Finalizar Pagamento" : "Finalizar com PIX"}
+                <button className={s.btnFinalizar} disabled={!podeFinalizar || gerando}
+                  onClick={finalizar}>
+                  {gerando ? "Gerando PIX…" : "Finalizar com PIX"}
                 </button>
-                {resultadoCartao && <p className={s.recusaSandbox} role="alert">{resultadoCartao}</p>}
                 {erroPix && <p className={s.erro} role="alert">{erroPix}</p>}
 
                 <div className={s.processadorPag}>
@@ -592,29 +487,6 @@ export default function CheckoutView() {
           </div>
         </div>
       </section>
-      {modalRecusaAberto && (
-        <div className={s.modalFundo} role="presentation" onMouseDown={() => setModalRecusaAberto(false)}>
-          <div className={s.modalRecusa} role="alertdialog" aria-modal="true"
-            aria-labelledby="titulo-recusa-cartao" aria-describedby="texto-recusa-cartao"
-            onMouseDown={(e) => e.stopPropagation()}>
-            <div className={s.modalRecusaIcone} aria-hidden>!</div>
-            <h2 id="titulo-recusa-cartao">Pagamento recusado</h2>
-            <p id="texto-recusa-cartao">
-              Este pagamento foi recusado pela operadora do cartão. Entre em contato com a operadora para mais informações. Caso prefira, finalize via Pix.
-            </p>
-            <div className={s.modalRecusaAcoes}>
-              <button type="button" className={s.modalRecusaBotao} autoFocus
-                disabled={gerando} onClick={gerarPixPeloModal}>
-                {gerando ? "Gerando Pix…" : "Gerar Pix"}
-              </button>
-              <button type="button" className={s.modalRecusaSecundario}
-                disabled={gerando} onClick={tentarCartaoNovamente}>
-                Tentar novamente com outro cartão
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <footer className={s.checkoutFooter}>
         <Link href="/" className={s.checkoutFooterLogo} aria-label="Voltar para a página inicial">
           <Image src={nodentecLogo} alt="Nodentec" width={160} height={96} sizes="130px" />

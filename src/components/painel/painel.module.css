@@ -32,6 +32,27 @@
 .subtitulo { font-size: 13px; color: var(--cdp-tinta-2); margin-top: 3px; }
 .corpo { padding: 26px 30px 46px; }
 
+/* ---- resumo financeiro da página inicial ---- */
+.financeiro { background: #fff; border: 1px solid var(--cdp-borda); border-radius: 18px; padding: 24px; margin-bottom: 16px; box-shadow: 0 10px 32px rgba(36, 29, 20, .04); }
+.financeiroCabecalho { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--cdp-borda); }
+.sobretitulo { margin-bottom: 5px; color: var(--cdp-ouro-escuro); font-size: 10px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+.financeiroTitulo { font-size: 18px; font-weight: 750; letter-spacing: -.35px; }
+.taxaRegra { flex: 0 0 auto; padding: 7px 11px; border: 1px solid var(--cdp-ouro-borda); border-radius: 999px; background: var(--cdp-ouro-fundo); color: var(--cdp-ouro-escuro); font-size: 11.5px; font-weight: 700; }
+.financeiroGrade { display: grid; grid-template-columns: 1fr 1.1fr 1fr; }
+.financeiroItem { min-width: 0; padding: 22px 24px 4px 0; }
+.financeiroItem + .financeiroItem { margin-top: 18px; padding: 4px 24px 4px; border-left: 1px solid var(--cdp-borda); }
+.financeiroItem:last-child { padding-right: 0; }
+.financeiroRotulo { color: var(--cdp-tinta-2); font-size: 11px; font-weight: 750; letter-spacing: .055em; text-transform: uppercase; }
+.financeiroValor { margin-top: 9px; color: var(--cdp-tinta); font-size: clamp(24px, 2.4vw, 34px); font-weight: 800; letter-spacing: -1.25px; line-height: 1; font-variant-numeric: tabular-nums; }
+.financeiroNota { margin-top: 9px; color: var(--cdp-tinta-3); font-size: 12px; }
+.financeiroTaxas .financeiroValor { color: var(--cdp-erro); }
+.taxaDetalhes { display: grid; gap: 6px; margin-top: 13px; padding-top: 11px; border-top: 1px dashed var(--cdp-borda); }
+.taxaDetalhes div { display: flex; justify-content: space-between; gap: 12px; color: var(--cdp-tinta-3); font-size: 11px; }
+.taxaDetalhes dd { color: var(--cdp-tinta-2); font-weight: 650; font-variant-numeric: tabular-nums; }
+.financeiroLiquido { position: relative; background: linear-gradient(135deg, rgba(47,107,79,.075), rgba(47,107,79,.02)); border-radius: 12px; }
+.financeiroItem + .financeiroLiquido { margin: 12px 0 0 12px; padding: 14px 16px; border: 1px solid rgba(47,107,79,.14); }
+.financeiroLiquido .financeiroRotulo, .financeiroLiquido .financeiroValor { color: var(--cdp-ok); }
+
 /* ---- avisos ---- */
 .aviso { background: var(--cdp-aviso-fundo); border: 1px solid var(--cdp-aviso-borda); border-radius: 12px; padding: 18px 20px; margin-bottom: 22px; }
 .avisoTitulo { font-size: 14px; font-weight: 700; color: var(--cdp-aviso); margin-bottom: 6px; }
@@ -41,6 +62,9 @@
 /* ---- cartões de número ---- */
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px; }
 .kpi { background: #fff; border: 1px solid var(--cdp-borda); border-radius: 14px; padding: 18px 20px; }
+.kpisCompactos { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpisCompactos .kpi { padding: 16px 18px; border-radius: 12px; box-shadow: 0 5px 20px rgba(36, 29, 20, .025); }
+.kpisCompactos .kpiValor { font-size: 23px; }
 .kpiRotulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--cdp-tinta-2); }
 .kpiValor { font-size: 27px; font-weight: 800; letter-spacing: -.8px; margin-top: 7px; line-height: 1.1; }
 .kpiNota { font-size: 12px; color: var(--cdp-tinta-2); margin-top: 5px; }
@@ -53,6 +77,48 @@
 .cartaoSub { font-size: 12px; color: var(--cdp-tinta-2); margin-top: 3px; margin-bottom: 16px; }
 .vazio { padding: 34px 0; text-align: center; font-size: 13px; color: var(--cdp-tinta-3); }
 
+/* ---- atividade em tempo real integrada ao dashboard ---- */
+.tempoReal { margin-top: 16px; padding: 0; overflow: hidden; }
+.tempoRealCabecalho { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 24px 26px 20px; border-bottom: 1px solid var(--cdp-borda); }
+.tempoRealTitulo { font-size: 18px; font-weight: 750; letter-spacing: -.35px; }
+.tempoRealSub { margin-top: 4px; color: var(--cdp-tinta-3); font-size: 12px; }
+.onlineBadge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid var(--cdp-ok-borda); border-radius: 999px; background: var(--cdp-ok-fundo); color: var(--cdp-ok); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.onlineBadge i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(47,107,79,.12); }
+.tempoRealKpis { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--cdp-borda); background: #fcfbf9; }
+.tempoRealKpis > div { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 20px; border-right: 1px solid var(--cdp-borda); }
+.tempoRealKpis > div:last-child { border-right: 0; }
+.tempoRealKpis p { color: var(--cdp-tinta-2); font-size: 12px; }
+.tempoRealKpis strong { color: var(--cdp-tinta); font-size: 20px; font-variant-numeric: tabular-nums; }
+.tempoRealKpis .miniKpiDestaque strong { color: var(--cdp-ouro-escuro); }
+.dispositivosFaixa { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 11px 20px; border-bottom: 1px solid var(--cdp-borda); background: #fff; }
+.dispositivosFaixa > p { margin-right: 4px; color: var(--cdp-tinta-2); font-size: 11px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.dispositivosFaixa > span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid var(--cdp-borda); border-radius: 999px; color: var(--cdp-tinta-2); font-size: 11px; }
+.dispositivosFaixa i { width: 7px; height: 7px; border-radius: 50%; background: var(--cdp-tinta-3); }
+.dispositivosFaixa i.apple { background: #374151; }
+.dispositivosFaixa i.android { background: #2f6b4f; }
+.dispositivosFaixa i.computador { background: #2f5fd0; }
+.dispositivosFaixa strong { color: var(--cdp-tinta); font-size: 11.5px; }
+.tempoRealGrade { display: grid; grid-template-columns: minmax(360px, .9fr) minmax(460px, 1.1fr); min-height: 410px; }
+.mapaPainel { padding: 24px 26px; border-right: 1px solid var(--cdp-borda); background: #fcfbf9; }
+.mapaPainel h3, .atividadePainel h3 { font-size: 14px; font-weight: 700; }
+.mapaPainel > p, .atividadeCabecalho p { margin-top: 3px; margin-bottom: 15px; color: var(--cdp-tinta-3); font-size: 11.5px; }
+.mapaPainel > div { max-width: 430px; margin: 0 auto; }
+.atividadePainel { min-width: 0; padding: 24px 26px; }
+.atividadeCabecalho { display: flex; justify-content: space-between; gap: 16px; }
+.atividadeCabecalho > span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--cdp-fundo); color: var(--cdp-tinta-2); font-size: 12px; font-weight: 750; }
+.atividadeLista { display: flex; flex-direction: column; }
+.atividadeLista li { display: grid; grid-template-columns: 9px minmax(0, 1fr) auto 44px; align-items: center; gap: 11px; min-height: 54px; border-top: 1px solid var(--cdp-fundo); }
+.atividadePonto { width: 8px; height: 8px; border-radius: 50%; background: #2f5fd0; }
+.atividadePonto.pontoCheckout { background: #1d9a8a; }
+.atividadePonto.pontoPix { background: #c2410c; }
+.atividadeInfo { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.atividadeInfo strong { overflow: hidden; color: var(--cdp-tinta); font-size: 12.5px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.atividadeInfo span { overflow: hidden; color: var(--cdp-tinta-3); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.atividadeEstado { padding: 4px 8px; border-radius: 999px; background: var(--cdp-fundo); color: var(--cdp-tinta-2); font-size: 10.5px; font-weight: 650; }
+.atividadeLista time { color: var(--cdp-tinta-3); font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+.atividadeVazia { display: grid; place-items: center; align-content: center; min-height: 280px; color: var(--cdp-tinta-3); font-size: 13px; }
+.atividadeVazia i { width: 9px; height: 9px; margin-bottom: 12px; border-radius: 50%; background: var(--cdp-borda); }
+
 /* ---- tabela ---- */
 .tabelaWrap { overflow-x: auto; }
 .tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; }
@@ -60,6 +126,9 @@
 .tabela td { padding: 13px 14px; border-bottom: 1px solid var(--cdp-fundo); vertical-align: middle; }
 .tabela tr:last-child td { border-bottom: 0; }
 .tabela tbody tr:hover { background: var(--cdp-fundo); }
+.linhaPedido { position: relative; cursor: pointer; transition: background .15s, box-shadow .15s; }
+.linhaPedido:hover { background: var(--cdp-ouro-fundo) !important; box-shadow: inset 3px 0 0 var(--cdp-ouro); }
+.linhaPedido:focus-within { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: -2px; }
 .mono { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--cdp-tinta-2); }
 .dir { text-align: right; }
 
@@ -71,18 +140,47 @@
 .seloNeutro   { background: var(--cdp-fundo); color: var(--cdp-tinta-2); }
 
 @media (max-width: 1100px) { .grade { grid-template-columns: 1fr; } }
+@media (max-width: 1050px) {
+  .financeiroGrade { grid-template-columns: 1fr 1fr; }
+  .financeiroLiquido { grid-column: 1 / -1; }
+  .financeiroItem + .financeiroLiquido { margin-left: 0; }
+  .kpisCompactos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tempoRealGrade { grid-template-columns: 1fr; }
+  .mapaPainel { border-right: 0; border-bottom: 1px solid var(--cdp-borda); }
+}
 @media (max-width: 860px) {
   .app { flex-direction: column; }
   .lateral { flex: 1 1 auto; position: static; height: auto; }
-  .menu { flex-direction: row; overflow-x: auto; padding: 10px; }
-  .grupo, .rodapeLateral { display: none; }
+  .menu { flex-direction: column; padding: 10px; }
   .link { white-space: nowrap; }
   .corpo, .cabecalho { padding-left: 18px; padding-right: 18px; }
 }
+@media (max-width: 620px) {
+  .financeiro { padding: 19px; border-radius: 15px; }
+  .financeiroCabecalho { flex-direction: column; gap: 12px; }
+  .taxaRegra { white-space: normal; }
+  .financeiroGrade { grid-template-columns: 1fr; }
+  .financeiroItem, .financeiroItem + .financeiroItem { margin: 0; padding: 18px 0; border-left: 0; border-bottom: 1px solid var(--cdp-borda); }
+  .financeiroItem + .financeiroLiquido { margin-top: 14px; padding: 15px; border: 1px solid rgba(47,107,79,.14); }
+  .financeiroItem:last-child { border-bottom: 0; }
+  .kpisCompactos { grid-template-columns: 1fr 1fr; }
+  .tempoRealCabecalho { flex-direction: column; padding: 20px; }
+  .tempoRealKpis { grid-template-columns: 1fr 1fr; }
+  .tempoRealKpis > div:nth-child(2) { border-right: 0; }
+  .tempoRealKpis > div:nth-child(-n+2) { border-bottom: 1px solid var(--cdp-borda); }
+  .mapaPainel, .atividadePainel { padding: 20px; }
+  .atividadeLista li { grid-template-columns: 9px minmax(0, 1fr) 42px; }
+  .atividadeEstado { display: none; }
+}
+@media (max-width: 430px) { .kpisCompactos { grid-template-columns: 1fr; } }
 .sair { display: inline-block; color: var(--cdp-menu-fraco); font-size: 12px; margin-bottom: 8px; text-decoration: underline; }
 .sair:hover { color: #fff; }
 .linkPedido { color: var(--cdp-ouro-escuro); font-weight: 700; }
 .linkPedido:hover { text-decoration: underline; }
+.linkPedido::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.pedidoData { white-space: nowrap; }
+.pedidoSeta { display: inline-block; margin-left: 12px; color: var(--cdp-ouro-escuro); font-family: inherit; font-size: 16px; transition: transform .15s; }
+.linhaPedido:hover .pedidoSeta { transform: translateX(3px); }
 .formaPgto { display: block; font-size: 11px; color: var(--cdp-tinta-3); margin-top: 4px; font-weight: 600; }
 
 /* ---------- instalação do banco ---------- */
@@ -182,3 +280,36 @@
 .reconciliarBtn:hover:not(:disabled) { background: var(--cdp-tinta-2); }
 .reconciliarBtn:disabled { opacity: .5; cursor: default; }
 .reconciliarBtn:focus-visible { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: 2px; }
+
+/* Ajustes de toque e leitura restritos ao painel administrativo. */
+@media (max-width: 860px) {
+  .link { min-height: 46px; }
+  .cabecalho { flex-wrap: wrap; gap: 12px; }
+}
+
+@media (max-width: 620px) {
+  .corpo { padding: 18px 14px calc(28px + env(safe-area-inset-bottom)); }
+  .cabecalho { padding: 18px 16px; }
+  .titulo { font-size: 20px; line-height: 1.25; overflow-wrap: anywhere; }
+  .subtitulo { line-height: 1.5; }
+  .cartao { padding: 18px 16px; border-radius: 12px; }
+  .cartaoSub { line-height: 1.5; }
+  .financeiro { padding: 18px 16px; }
+  .financeiroValor { font-size: clamp(24px, 7vw, 32px); overflow-wrap: anywhere; }
+  .financeiroNota { line-height: 1.5; }
+  .kpisCompactos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpisCompactos .kpi { min-width: 0; padding: 14px 12px; }
+  .kpisCompactos .kpiValor { font-size: 22px; overflow-wrap: anywhere; }
+  .kpiRotulo { font-size: 10px; line-height: 1.45; }
+  .kpiNota { line-height: 1.4; }
+  .tempoRealCabecalho, .mapaPainel, .atividadePainel { padding: 18px 16px; }
+  .tempoRealKpis > div { padding: 14px 12px; gap: 8px; }
+  .tabelaWrap { overscroll-behavior-x: contain; }
+  .tabela th, .tabela td { padding-left: 10px; padding-right: 10px; }
+  .paginacaoBotoes { max-width: 100%; flex-wrap: wrap; justify-content: center; }
+  .pagBotao, .pagNumero { min-height: 44px; min-width: 44px; }
+}
+
+@media (max-width: 359px) {
+  .kpisCompactos { grid-template-columns: 1fr; }
+}

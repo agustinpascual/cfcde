@@ -3,13 +3,21 @@ import s from "./painel.module.css";
 
 /* Paginação por link — funciona sem JavaScript e mantém a página na URL,
    então dá para recarregar ou compartilhar sem perder o lugar. */
-export default function Paginacao({ pagina, total, porPagina, base }: {
+export default function Paginacao({ pagina, total, porPagina, base, query }: {
   pagina: number; total: number; porPagina: number; base: string;
+  query?: Record<string, string | undefined>;
 }) {
   const paginas = Math.ceil(total / porPagina);
   if (paginas <= 1) return null;
 
-  const url = (n: number) => (n === 1 ? base : `${base}?p=${n}`);
+  /* Mantém os filtros (busca/status/método) ao trocar de página. */
+  const url = (n: number) => {
+    const sp = new URLSearchParams();
+    for (const [k, v] of Object.entries(query ?? {})) if (v) sp.set(k, v);
+    if (n > 1) sp.set("p", String(n));
+    const qs = sp.toString();
+    return qs ? `${base}?${qs}` : base;
+  };
   const primeiro = (pagina - 1) * porPagina + 1;
   const ultimo = Math.min(pagina * porPagina, total);
 

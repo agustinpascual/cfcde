@@ -26,7 +26,14 @@ export default function MapaBrasil({ sessoes }: { sessoes: Sessao[] }) {
       const chave = `${s.latitude.toFixed(2)},${s.longitude.toFixed(2)}`;
       const g = mapa.get(chave);
       if (g) g.sessoes.push(s);
-      else mapa.set(chave, { chave, x: px(s.longitude), y: py(s.latitude), sessoes: [s] });
+      /* Coordenadas curtas evitam diferenças de serialização de ponto flutuante
+         entre o HTML do servidor e a hidratação do SVG no navegador. */
+      else mapa.set(chave, {
+        chave,
+        x: Number(px(s.longitude).toFixed(3)),
+        y: Number(py(s.latitude).toFixed(3)),
+        sessoes: [s],
+      });
     }
     return [...mapa.values()];
   }, [sessoes]);
@@ -56,9 +63,8 @@ export default function MapaBrasil({ sessoes }: { sessoes: Sessao[] }) {
           return (
             <path key={e.uf} d={e.d}
               fill={n ? `rgba(47,95,208,${intensidade.toFixed(3)})` : "#eef1f6"}
-              stroke="#dbe1ea" strokeWidth="0.7" strokeLinejoin="round">
-              <title>{e.uf}{n ? ` — ${n} online` : ""}</title>
-            </path>
+              stroke="#dbe1ea" strokeWidth="0.7" strokeLinejoin="round"
+              aria-label={`${e.uf}${n ? ` — ${n} online` : ""}`} />
           );
         })}
 

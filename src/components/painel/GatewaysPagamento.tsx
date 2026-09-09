@@ -29,8 +29,9 @@ export default function GatewaysPagamento({ inicial, editavel }: { inicial: Conf
         <option value="pinpay">PinPay</option><option value="axxonpay">AxxonPay</option>
       </select></label>
       <label>Cartão de crédito<select disabled={!editavel || salvando} value={config.cartao} onChange={e => setConfig({ ...config, cartao: e.target.value as ConfigGateways["cartao"] })}>
-        <option value="desativado">Desativado</option><option value="sandbox">Sandbox local — apenas testes no painel</option><option value="axxonpay">AxxonPay — cobrança real com tokenização</option>
+        <option value="desativado">Desativado</option><option value="sandbox">Sandbox local — apenas testes no painel</option><option value="axxonpay">AxxonPay (adquirente Bloopi)</option>
       </select></label>
+      <p>Com a AxxonPay/Bloopi o cliente digita o cartão no checkout da loja e o servidor o repassa à adquirente sem gravar nem registrar. A ativação valida as credenciais e a adquirente antes de salvar. Homologue com uma compra real de valor baixo antes de divulgar.</p>
       <button disabled={!editavel || salvando}>{salvando ? "Validando e salvando…" : "Validar credenciais e salvar seleção"}</button>
     </form>
     <p role="status">{mensagem}</p>

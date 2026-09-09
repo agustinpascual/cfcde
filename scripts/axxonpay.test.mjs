@@ -1,16 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { conferirPagamentoAxxon, ehAxxon, idAxxon, idRemotoAxxon, lerPagamentoAxxon, statusAxxon } from "../src/lib/axxonpay-protocolo.ts";
+import { conferirPagamentoAxxon, ehAxxon, idAxxon, idRemotoAxxon, lerPagamentoAxxon, lerCriacaoAxxon, lerConsultaPagamentoAxxon, statusAxxon } from "../src/lib/axxonpay-protocolo.ts";
 import { tentativaPagamento, concluirTentativa, liberarTentativaEncerrada } from "../src/lib/tentativa-pagamento.ts";
 import { urlWebhookAxxon } from "../src/lib/axxonpay-webhook.ts";
 
-test("normaliza criação e consulta sem converter valores por suposição", () => {
+test("valores internos exigem centavos inteiros", () => {
   const p = { id: "payment_uuid", amount: 2500, status: "PENDING", paymentMethod: "pix" };
   assert.deepEqual(lerPagamentoAxxon({ data: p }), p);
   assert.deepEqual(lerPagamentoAxxon(p), p);
   for (const amount of [null, "2500", 25.5, -100, NaN, 0]) assert.throws(() => lerPagamentoAxxon({ ...p, amount }));
   assert.throws(() => lerPagamentoAxxon({ ...p, id: "../qualquer-rota" }));
+});
+test("consulta BRL em reais é convertida em centavos de forma explícita e exata", () => {
+  const p = { id: "payment_uuid", amount: 123, currency: "BRL", status: "PENDING", method: "pix" };
+  for (const [amount, esperado] of [[123, 12300], [25.5, 2550], [19.99, 1999], [0.01, 1], [12300, 1230000]]) {
+    assert.equal(lerConsultaPagamentoAxxon({ ...p, amount }).amount, esperado);
+  }
+  for (const amount of [null, "123", 25.555, -1, 0, NaN, Infinity, 1e-8, Number.MAX_SAFE_INTEGER]) {
+    assert.throws(() => lerConsultaPagamentoAxxon({ ...p, amount }));
+  }
+  for (const currency of [undefined, "USD", "EUR"]) assert.throws(() => lerConsultaPagamentoAxxon({ ...p, currency }));
+});
+test("criação conserva ID mesmo quando amount da resposta tem outro formato", () => {
+  for (const amount of [undefined, 123, 12300, 19.99]) {
+    assert.equal(lerCriacaoAxxon({ data: { id: "payment_uuid", amount } }).id, "payment_uuid");
+  }
+  for (const id of [null, 123, "../invalido"]) assert.throws(() => lerCriacaoAxxon({ data: { id } }));
+});
+test("metadata serializado preserva somente referência, sem dados pessoais", () => {
+  const p = lerPagamentoAxxon({ id: "payment_uuid", amount: 2500, status: "PENDING", metadata: JSON.stringify({ external_reference: "AXX-teste", document: "ficticio", customer: { email: "teste@example.com" } }) });
+  assert.deepEqual(p.metadata, { external_reference: "AXX-teste" });
 });
 test("3DS, processamento e estados desconhecidos não aprovam pedidos", () => {
   for (const status of ["PAID", "FINISHED", "succeeded", "APPROVED"]) assert.equal(statusAxxon(status), "approved");
@@ -32,6 +52,10 @@ test("não aplica transação de outro pedido, valor ou método", () => {
   assert.throws(() => conferirPagamentoAxxon({ ...p, id: "outro_uuid" }, pedido));
   assert.throws(() => conferirPagamentoAxxon({ ...p, method: "pix" }, pedido));
   assert.throws(() => conferirPagamentoAxxon({ ...p, metadata: { external_reference: "outro" } }, pedido));
+  // GET /payments/:id real (09/09/2026) devolve method "card" para cartão, sem metadata.
+  assert.doesNotThrow(() => conferirPagamentoAxxon({ id: "payment_uuid", amount: 2500, status: "PENDING", method: "card" }, pedido));
+  assert.throws(() => conferirPagamentoAxxon({ ...p, method: "card" }, { ...pedido, metodo_pagamento: "pix" }));
+  assert.throws(() => conferirPagamentoAxxon({ ...p, method: "debit_card" }, pedido));
 });
 test("reenvio reutiliza tentativa, e somente conclusão libera nova tentativa", () => {
   const banco = new Map();
