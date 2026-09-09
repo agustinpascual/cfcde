@@ -205,7 +205,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     etapa = "criacao";
     const criado = await criarPagamentoAxxon({
       amount: valores.total, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
-      description: `Café com Deus Pai - ${valores.kit.nome} - Pedido #${referencia}`.slice(0, 200),
+      description: `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${referencia}`.slice(0, 200),
       ...(metodo === "cartao" ? { installments: parcelas, card: cartao ?? { hash } } : {}),
       customer: { name: nome, email, phone: celular, document: { number: documento, type: documento.length === 11 ? "cpf" : "cnpj" },
         address: { street: texto(endereco.logradouro), number: texto(endereco.numero), neighborhood: texto(endereco.bairro),
