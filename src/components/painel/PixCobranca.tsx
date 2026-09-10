@@ -1,16 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, MessageCircle } from "lucide-react";
 import QRCode from "qrcode";
+import { numeroWhatsapp, preencherMensagemRecuperacao, primeiroNome } from "@/lib/mensagens-recuperacao";
 import s from "./pixcobranca.module.css";
 
 /* Mostra a cobrança PIX no detalhe do pedido: QR, copia-e-cola e botão de
    copiar — para o lojista reenviar o código a quem ainda não pagou. */
-export default function PixCobranca({ copiaCola, qrUrl }: { copiaCola: string; qrUrl?: string | null }) {
+export default function PixCobranca({ copiaCola, qrUrl, telefone, nome, pedido, valor, modelo }: {
+  copiaCola: string; qrUrl?: string | null; telefone?: string | null; nome?: string | null;
+  pedido?: string; valor?: string; modelo?: string;
+}) {
   const [copiado, setCopiado] = useState(false);
   const [qrGerado, setQrGerado] = useState<string | null>(null);
   const qr = qrUrl ?? qrGerado;
+  const numero = numeroWhatsapp(telefone);
+  const mensagem = modelo ? preencherMensagemRecuperacao(modelo, {
+    nome: primeiroNome(nome), pedido, valor, codigo_pix: copiaCola,
+  }) : "";
+  const whatsapp = numero && mensagem ? `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}` : null;
 
   useEffect(() => {
     if (qrUrl) return;
@@ -42,6 +51,9 @@ export default function PixCobranca({ copiaCola, qrUrl }: { copiaCola: string; q
         <button type="button" className={`${s.copiar} ${copiado ? s.copiado : ""}`} onClick={copiar}>
           {copiado ? <><Check size={15} /> Copiado</> : <><Copy size={15} /> Copiar código</>}
         </button>
+        {whatsapp && <a className={s.whatsapp} href={whatsapp} target="_blank" rel="noreferrer">
+          <MessageCircle size={16} aria-hidden="true" /> Enviar recuperação no WhatsApp
+        </a>}
       </div>
     </div>
   );

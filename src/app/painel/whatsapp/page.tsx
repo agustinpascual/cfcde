@@ -5,9 +5,11 @@ import Casca from "@/components/painel/Casca";
 import ConexaoZap from "@/components/painel/ConexaoZap";
 import Conversas, { type Conversa } from "@/components/painel/Conversas";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
+import MensagensRecuperacao from "@/components/painel/MensagensRecuperacao";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { lerTreinamento } from "@/lib/robo";
 import { ler } from "@/lib/config-integracoes";
+import { MENSAGEM_CARRINHO_PADRAO, MENSAGEM_PIX_PADRAO } from "@/lib/mensagens-recuperacao";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
@@ -21,8 +23,9 @@ export default async function Page() {
   if (!(await autenticado())) redirect("/painel/entrar");
 
   const db = supabaseAdmin();
-  const [vivos, treinamento, instancia] = await Promise.all([
+  const [vivos, treinamento, instancia, mensagemPix, mensagemCarrinho] = await Promise.all([
     lerAoVivo(), lerTreinamento(), ler("ZAPI_INSTANCIA"),
+    ler("WHATSAPP_MSG_PIX_PENDENTE"), ler("WHATSAPP_MSG_CARRINHO_ABANDONADO"),
   ]);
 
   let conversas: Conversa[] = [];
@@ -66,6 +69,7 @@ export default async function Page() {
       )}
 
       <ConexaoZap />
+      <MensagensRecuperacao pix={mensagemPix ?? MENSAGEM_PIX_PADRAO} carrinho={mensagemCarrinho ?? MENSAGEM_CARRINHO_PADRAO} />
       <Conversas inicial={conversas} />
 
     </Casca>

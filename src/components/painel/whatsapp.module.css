@@ -21,6 +21,41 @@
 
 @media (max-width: 600px) { .btnTreinar { margin-left: 0; width: 100%; text-align: center; } }
 
+/* ================= modelos de recuperação ================= */
+.recuperacao { margin-bottom: 20px; padding: 20px; border: 1px solid var(--cdp-borda); border-radius: 14px; background: #fff; }
+.recuperacaoTitulo { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.recuperacaoTitulo > span { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 11px; background: #eaf8f0; color: #187b4b; }
+.recuperacaoTitulo svg { width: 21px; height: 21px; }
+.recuperacaoTitulo h2 { font-size: 17px; color: var(--cdp-tinta); }
+.recuperacaoTitulo p { margin-top: 3px; font-size: 13px; color: var(--cdp-tinta-2); }
+.modelosGrade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.modeloCard { min-width: 0; padding: 16px; border: 1px solid var(--cdp-borda); border-radius: 12px; background: var(--cdp-fundo); }
+.modeloCard header { display: flex; gap: 10px; margin-bottom: 13px; }
+.modeloCard header > svg { flex: 0 0 auto; width: 19px; height: 19px; color: var(--cdp-ouro-escuro); }
+.modeloCard h3 { font-size: 14px; color: var(--cdp-tinta); }
+.modeloCard header p { margin-top: 3px; font-size: 12px; line-height: 1.45; color: var(--cdp-tinta-2); }
+.modeloCard label { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 700; color: var(--cdp-tinta-2); }
+.modeloCard textarea { width: 100%; min-height: 176px; resize: vertical; padding: 12px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: #fff; color: var(--cdp-tinta); font: 13px/1.5 inherit; }
+.modeloCard textarea:focus { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: -1px; }
+.variaveis { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.variaveis span { width: 100%; font-size: 11px; color: var(--cdp-tinta-3); }
+.variaveis code { padding: 3px 7px; border: 1px solid var(--cdp-borda); border-radius: 5px; background: #fff; color: var(--cdp-tinta-2); font-size: 11px; }
+.modeloCard > small { display: block; margin-top: 8px; text-align: right; color: var(--cdp-tinta-3); font-size: 11px; }
+.recuperacaoRodape { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+.mensagemOk, .mensagemErro { margin-right: auto; font-size: 13px; }
+.mensagemOk { color: var(--cdp-ok); }
+.mensagemErro { color: var(--cdp-erro); }
+.salvarMensagens { min-height: 42px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9px; background: var(--cdp-menu); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+.salvarMensagens svg { width: 16px; height: 16px; }
+.salvarMensagens:disabled { opacity: .6; cursor: default; }
+
+@media (max-width: 820px) {
+  .modelosGrade { grid-template-columns: 1fr; }
+  .recuperacao { padding: 15px; }
+  .recuperacaoRodape { align-items: stretch; flex-direction: column; }
+  .salvarMensagens { justify-content: center; width: 100%; }
+}
+
 /* ================= chat em duas colunas (estilo WhatsApp Web) ================= */
 .painelChat {
   display: grid;

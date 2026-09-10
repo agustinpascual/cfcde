@@ -12,6 +12,7 @@ export const CHAVES = [
   "AXXONPAY_PUBLIC_KEY", "AXXONPAY_SECRET_KEY", "PAGAMENTOS_GATEWAYS",
   "RESEND_API_KEY", "RESEND_REMETENTE",
   "ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN",
+  "WHATSAPP_MSG_PIX_PENDENTE", "WHATSAPP_MSG_CARRINHO_ABANDONADO",
   "GEMINI_API_KEY",
   /* Marketing: META_PIXELS guarda a relação ID/token em um único pacote
      cifrado; GOOGLE_TAG_ID é público e vai para o navegador. */

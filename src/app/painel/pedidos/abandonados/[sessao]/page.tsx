@@ -7,6 +7,8 @@ import Casca from "@/components/painel/Casca";
 import { lerAoVivo, lerCarrinhoAbandonado, moeda, rotuloDispositivo } from "@/components/painel/dados";
 import { criarTokenRecuperacaoCarrinho } from "@/lib/carrinho-recuperacao";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
+import { ler } from "@/lib/config-integracoes";
+import { MENSAGEM_CARRINHO_PADRAO } from "@/lib/mensagens-recuperacao";
 import s from "@/components/painel/painel.module.css";
 import d from "@/components/painel/pedido.module.css";
 import c from "@/components/painel/carrinho-abandonado.module.css";
@@ -46,8 +48,8 @@ export default async function Page({ params }: { params: Promise<{ sessao: strin
   if (!(await autenticado())) redirect("/painel/entrar");
 
   const { sessao } = await params;
-  const [carrinho, vivos, origem] = await Promise.all([
-    lerCarrinhoAbandonado(sessao), lerAoVivo(), origemAtual(),
+  const [carrinho, vivos, origem, modeloCarrinho] = await Promise.all([
+    lerCarrinhoAbandonado(sessao), lerAoVivo(), origemAtual(), ler("WHATSAPP_MSG_CARRINHO_ABANDONADO"),
   ]);
   if (!carrinho) notFound();
 
@@ -75,7 +77,10 @@ export default async function Page({ params }: { params: Promise<{ sessao: strin
           </div>
           <span className={`${s.selo} ${s.seloPendente}`}>{carrinho.etapa}</span>
         </div>
-        <AcoesRecuperacaoCarrinho link={link} telefone={carrinho.telefone} nome={carrinho.nome} />
+        <AcoesRecuperacaoCarrinho link={link} telefone={carrinho.telefone} nome={carrinho.nome}
+          produto={carrinho.produto_nome ?? carrinho.produto ?? "Produto selecionado"}
+          valor={carrinho.valor !== null ? moeda(carrinho.valor) : "a confirmar"}
+          modelo={modeloCarrinho ?? MENSAGEM_CARRINHO_PADRAO} />
       </section>
 
       <div className={d.grade}>

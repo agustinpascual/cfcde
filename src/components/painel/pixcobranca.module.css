@@ -67,12 +67,18 @@
 }
 .copiar.copiar:hover { opacity: .9; }
 .copiar.copiado { background: var(--cdp-ok); }
+.whatsapp {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  align-self: flex-start; min-height: 42px; padding: 0 20px; border-radius: 8px;
+  background: #187b4b; color: #fff; font-size: 14px; font-weight: 700;
+}
+.whatsapp:hover { background: #11663d; }
 
 @media (max-width: 640px) {
   .bloco { grid-template-columns: 1fr; }
   .qr, .qrCarregando { width: min(220px, 100%); height: auto; aspect-ratio: 1; margin: 0 auto; }
   .lado { min-width: 0; }
-  .copiar { align-self: stretch; }
+  .copiar, .whatsapp { align-self: stretch; }
 }
 
 @media (prefers-reduced-motion: reduce) { .qrCarregando { animation: none; } }

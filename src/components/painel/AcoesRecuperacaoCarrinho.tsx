@@ -2,17 +2,12 @@
 
 import { Check, Copy, ExternalLink, MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { numeroWhatsapp, preencherMensagemRecuperacao, primeiroNome } from "@/lib/mensagens-recuperacao";
 import c from "./carrinho-abandonado.module.css";
 
-function numeroWhatsapp(telefone: string | null) {
-  const digitos = (telefone ?? "").replace(/\D/g, "");
-  if (digitos.length === 10 || digitos.length === 11) return `55${digitos}`;
-  return digitos;
-}
-
 export default function AcoesRecuperacaoCarrinho({
-  link, telefone, nome,
-}: { link: string | null; telefone: string | null; nome: string | null }) {
+  link, telefone, nome, produto, valor, modelo,
+}: { link: string | null; telefone: string | null; nome: string | null; produto: string; valor: string; modelo: string }) {
   const [copiado, setCopiado] = useState(false);
   if (!link) {
     return (
@@ -22,10 +17,11 @@ export default function AcoesRecuperacaoCarrinho({
     );
   }
 
-  const primeiroNome = nome?.trim().split(/\s+/)[0];
-  const mensagem = `Olá${primeiroNome ? `, ${primeiroNome}` : ""}! Separei seu carrinho para você. Para continuar a compra com seus dados já preenchidos, acesse: ${link}`;
+  const mensagem = preencherMensagemRecuperacao(modelo, {
+    nome: primeiroNome(nome), produto, valor, link,
+  });
   const numero = numeroWhatsapp(telefone);
-  const whatsapp = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+  const whatsapp = numero ? `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}` : null;
 
   async function copiar() {
     try {
@@ -55,9 +51,9 @@ export default function AcoesRecuperacaoCarrinho({
           {copiado ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
           {copiado ? "Link copiado" : "Copiar link"}
         </button>
-        <a className={c.botaoWhatsapp} href={whatsapp} target="_blank" rel="noreferrer">
+        {whatsapp && <a className={c.botaoWhatsapp} href={whatsapp} target="_blank" rel="noreferrer">
           <MessageCircle aria-hidden="true" /> Enviar no WhatsApp
-        </a>
+        </a>}
         <a className={c.botaoAbrir} href={link} target="_blank" rel="noreferrer">
           <ExternalLink aria-hidden="true" /> Conferir checkout
         </a>
