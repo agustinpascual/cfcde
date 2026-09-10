@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import Recarrega from "@/components/painel/Recarrega";
@@ -63,9 +64,15 @@ export default async function Page() {
               </thead>
               <tbody>
                 {carrinhos.map((c) => (
-                  <tr key={c.sessao}>
+                  <tr key={c.sessao} className={s.linhaPedido}>
                     <td data-label="Contato">
-                      {c.nome ?? "Sem nome"}
+                      <Link
+                        href={`/painel/pedidos/abandonados/${encodeURIComponent(c.sessao)}`}
+                        className={s.linkPedido}
+                        aria-label={`Abrir dados do carrinho de ${c.nome ?? c.email ?? "cliente sem nome"}`}
+                      >
+                        {c.nome ?? "Sem nome"}
+                      </Link>
                       {c.email && <><br /><span className={s.mono}>{c.email}</span></>}
                       {tel(c.telefone) && <><br /><span className={s.mono}>{tel(c.telefone)}</span></>}
                     </td>
@@ -80,7 +87,9 @@ export default async function Page() {
                         {rotuloDispositivo(c.dispositivo)}
                       </span></>}
                     </td>
-                    <td className={s.mono} data-label="Última atividade">{quando(c.atualizado_em)}</td>
+                    <td className={s.mono} data-label="Última atividade">
+                      {quando(c.atualizado_em)}<span className={s.pedidoSeta} aria-hidden="true">→</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

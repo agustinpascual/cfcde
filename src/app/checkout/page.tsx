@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import CheckoutCafe from "@/components/sites/cafecomdeuspai-com-8456844d/checkout/CheckoutCafe";
 import { OFERTAS_POR_SLUG } from "@/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/produto";
 import { getProductBySlug } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
+import { COOKIE_RECUPERACAO_CARRINHO, lerCheckoutRecuperado } from "@/lib/carrinho-recuperacao";
 
 export const metadata: Metadata = {
   title: { absolute: "Finalizar a compra | Café com Deus Pai" },
@@ -28,11 +30,17 @@ function resolverProduto(slug: string) {
   } : null;
 }
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ produto?: string | string[]; itens?: string | string[] }> }) {
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ produto?: string | string[]; itens?: string | string[]; origem?: string | string[] }> }) {
   const params = await searchParams;
+  const token = params.origem === "recuperacao"
+    ? (await cookies()).get(COOKIE_RECUPERACAO_CARRINHO)?.value ?? ""
+    : "";
+  const recuperado = token ? await lerCheckoutRecuperado(token) : null;
   const rawSlug = params.produto;
   const slug = typeof rawSlug === "string" ? rawSlug : "combo-plus";
-  const bruto = typeof params.itens === "string" ? params.itens : "";
+  const bruto = recuperado?.itens.length
+    ? recuperado.itens.map((item) => `${item.slug}:${item.quantidade}`).join(",")
+    : typeof params.itens === "string" ? params.itens : "";
   const quantidades = new Map<string, number>();
   for (const trecho of bruto.split(",").slice(0, 20)) {
     const separador = trecho.lastIndexOf(":");
@@ -46,5 +54,5 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     return product ? [{ ...product, quantity }] : [];
   });
   if (!products.length) products.push({ ...(resolverProduto(slug) ?? comboPlus), quantity: 1 });
-  return <CheckoutCafe products={products} />;
+  return <CheckoutCafe products={products} prefill={recuperado?.prefill ?? null} />;
 }

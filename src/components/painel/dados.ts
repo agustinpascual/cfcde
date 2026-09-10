@@ -385,6 +385,56 @@ export type ResultadoCarrinhos = {
   erro: string | null;
 };
 
+export type ItemCarrinhoAbandonado = { slug: string; quantidade: number };
+
+export type CarrinhoAbandonadoDetalhe = CarrinhoAbandonado & {
+  documento: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  produto: string | null;
+  itens: ItemCarrinhoAbandonado[];
+  frete_tipo: "pac" | "sedex" | null;
+  metodo_pagamento: "pix" | "card" | null;
+  cupom: string | null;
+  sem_numero: boolean;
+  pagina: string | null;
+  secao: string | null;
+  pais: string | null;
+  referencia: string | null;
+  ip: string | null;
+  sessao_criada_em: string | null;
+  ultima_visita_em: string | null;
+};
+
+const textoCarrinho = (valor: unknown) =>
+  typeof valor === "string" && valor.trim() ? valor.trim() : null;
+
+function itensCarrinho(dados: Record<string, unknown>): ItemCarrinhoAbandonado[] {
+  if (Array.isArray(dados.itens)) {
+    return dados.itens.flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+      const linha = item as Record<string, unknown>;
+      const slug = textoCarrinho(linha.slug ?? linha.produto);
+      const quantidade = Number(linha.quantidade ?? linha.qtd);
+      return slug && Number.isInteger(quantidade) && quantidade > 0 && quantidade <= 20
+        ? [{ slug, quantidade }]
+        : [];
+    }).slice(0, 20);
+  }
+
+  const legado = textoCarrinho(dados.produto);
+  if (!legado) return [];
+  return legado.split(",").flatMap((trecho) => {
+    const encontrado = trecho.trim().match(/^(\d+)x\s+(.+)$/i);
+    if (!encontrado) return [];
+    const quantidade = Number(encontrado[1]);
+    const slug = encontrado[2].trim();
+    return quantidade > 0 && quantidade <= 20 && slug ? [{ slug, quantidade }] : [];
+  }).slice(0, 20);
+}
+
 /* Carrinho abandonado = preencheu algum dado no checkout mas NÃO chegou a gerar
    o PIX. A sessão recebe `pedido_ref` quando o PIX é criado; então quem já tem
    pedido_ref saiu do abandono (virou pedido pendente, aparece na aba Pedidos).
@@ -444,6 +494,70 @@ export async function lerCarrinhosComEstado(limite = 100): Promise<ResultadoCarr
 
 export async function lerCarrinhos(limite = 100): Promise<CarrinhoAbandonado[]> {
   return (await lerCarrinhosComEstado(limite)).carrinhos;
+}
+
+/** Lê somente os campos úteis à recuperação. Nunca devolve dados de cartão e
+    deixa de considerar a sessão assim que ela já possui um pedido. */
+export async function lerCarrinhoAbandonado(sessao: string): Promise<CarrinhoAbandonadoDetalhe | null> {
+  if (!/^[A-Za-z0-9_-]{8,64}$/.test(sessao)) return null;
+  const db = supabaseAdmin();
+  if (!db) return null;
+
+  try {
+    const [eventoR, sessaoR] = await Promise.all([
+      db.from("eventos").select("sessao,pagina,dados,criado_em")
+        .eq("sessao", sessao).eq("tipo", "checkout_parcial")
+        .order("criado_em", { ascending: false }).limit(1).maybeSingle(),
+      db.from("sessoes").select("*").eq("sessao", sessao).maybeSingle(),
+    ]);
+    if (eventoR.error) throw eventoR.error;
+    if (sessaoR.error) throw sessaoR.error;
+    if (!eventoR.data || sessaoR.data?.pedido_ref) return null;
+
+    const evento = eventoR.data as {
+      pagina: string | null; dados: Record<string, unknown> | null; criado_em: string;
+    };
+    const info = (sessaoR.data ?? {}) as Record<string, unknown>;
+    const dados = evento.dados ?? {};
+    const frete = textoCarrinho(dados.frete_tipo);
+    const pagamento = textoCarrinho(dados.metodo_pagamento);
+
+    return {
+      sessao,
+      etapa: textoCarrinho(dados.etapa) ?? "Contato",
+      email: textoCarrinho(dados.email),
+      nome: textoCarrinho(dados.nome),
+      telefone: textoCarrinho(dados.telefone),
+      documento: textoCarrinho(dados.documento),
+      cep: textoCarrinho(dados.cep),
+      logradouro: textoCarrinho(dados.logradouro),
+      numero: textoCarrinho(dados.numero),
+      complemento: textoCarrinho(dados.complemento),
+      bairro: textoCarrinho(dados.bairro),
+      cidade: textoCarrinho(dados.cidade),
+      uf: textoCarrinho(dados.uf),
+      produto: textoCarrinho(dados.produto),
+      produto_nome: textoCarrinho(dados.produto_nome),
+      itens: itensCarrinho(dados),
+      valor: typeof dados.valor === "number" ? dados.valor : null,
+      frete_tipo: frete === "pac" || frete === "sedex" ? frete : null,
+      metodo_pagamento: pagamento === "pix" || pagamento === "card" ? pagamento : null,
+      cupom: textoCarrinho(dados.cupom),
+      sem_numero: dados.sem_numero === true || textoCarrinho(dados.numero)?.toUpperCase() === "S/N",
+      dispositivo: textoCarrinho(info.dispositivo),
+      pagina: evento.pagina ?? textoCarrinho(info.pagina),
+      secao: textoCarrinho(info.secao),
+      pais: textoCarrinho(info.pais),
+      referencia: textoCarrinho(info.referencia),
+      ip: textoCarrinho(info.ip),
+      sessao_criada_em: textoCarrinho(info.criado_em),
+      ultima_visita_em: textoCarrinho(info.visto_em),
+      atualizado_em: evento.criado_em,
+    };
+  } catch (e) {
+    console.error("[painel] carrinho/detalhe:", e instanceof Error ? e.message : e);
+    return null;
+  }
 }
 
 /* ---------- jornada do cliente (funil por pedido) ---------- */

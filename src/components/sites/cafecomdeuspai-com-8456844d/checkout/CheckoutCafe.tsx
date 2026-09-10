@@ -29,6 +29,20 @@ type Address = {
   state: string;
 };
 
+export type CheckoutPrefill = {
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  documentNumber?: string | null;
+  phone?: string | null;
+  cep?: string | null;
+  address?: Partial<Address> | null;
+  shippingMethod?: "pac" | "sedex" | null;
+  paymentMethod?: "pix" | "card" | null;
+  coupon?: string | null;
+  withoutNumber?: boolean;
+};
+
 const emptyAddress: Address = { street: "", number: "", complement: "", neighborhood: "", city: "", state: "" };
 
 function formatDocument(value: string) {
@@ -51,7 +65,7 @@ function deliveryDate(days: number) {
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-export default function CheckoutCafe({ products }: { products: CheckoutProduct[] }) {
+export default function CheckoutCafe({ products, prefill = null }: { products: CheckoutProduct[]; prefill?: CheckoutPrefill | null }) {
   const product = products[0];
   const subtotalCents = products.reduce((total, item) => total + item.priceCents * item.quantity, 0);
   const cartKey = products.map((item) => `${item.slug}:${item.quantity}`).join("|");
@@ -67,28 +81,31 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
   const [step, setStep] = useState<2 | 3>(2);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [couponOpen, setCouponOpen] = useState(false);
-  const [coupon, setCoupon] = useState("");
+  const cupomRecuperado = prefill?.coupon?.trim().toUpperCase() ?? "";
+  const [coupon, setCoupon] = useState(cupomRecuperado);
   const [couponMessage, setCouponMessage] = useState("");
-  const [cupomAplicado, setCupomAplicado] = useState("");
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [documentNumber, setDocumentNumber] = useState("");
-  const [phone, setPhone] = useState("");
-  const [cep, setCep] = useState("");
-  const [address, setAddress] = useState<Address>(emptyAddress);
+  const [cupomAplicado, setCupomAplicado] = useState(() =>
+    cupomValidoCarrinho(cupomRecuperado, products.map((item) => item.slug)) ? cupomRecuperado : "",
+  );
+  const [email, setEmail] = useState(prefill?.email ?? "");
+  const [firstName, setFirstName] = useState(prefill?.firstName ?? "");
+  const [lastName, setLastName] = useState(prefill?.lastName ?? "");
+  const [documentNumber, setDocumentNumber] = useState(() => formatDocument(prefill?.documentNumber ?? ""));
+  const [phone, setPhone] = useState(() => formatPhone(prefill?.phone ?? ""));
+  const [cep, setCep] = useState(() => (prefill?.cep ?? "").replace(/\D/g, "").slice(0, 8));
+  const [address, setAddress] = useState<Address>(() => ({ ...emptyAddress, ...(prefill?.address ?? {}) }));
   const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ready" | "partial" | "error">("idle");
-  const [shippingMethod, setShippingMethod] = useState<"pac" | "sedex" | null>(null);
+  const [shippingMethod, setShippingMethod] = useState<"pac" | "sedex" | null>(prefill?.shippingMethod ?? null);
   const [offers, setOffers] = useState(false);
   const [error, setError] = useState("");
-  const [payment, setPayment] = useState<"pix" | "card">("pix");
+  const [payment, setPayment] = useState<"pix" | "card">(prefill?.paymentMethod === "card" ? "card" : "pix");
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const router = useRouter();
 
   const [paymentError, setPaymentError] = useState("");
   const [generatingPix, setGeneratingPix] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [withoutNumber, setWithoutNumber] = useState(false);
+  const [withoutNumber, setWithoutNumber] = useState(Boolean(prefill?.withoutNumber));
   const [sameInvoiceData, setSameInvoiceData] = useState(true);
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
   const [draftShipping, setDraftShipping] = useState<"pac" | "sedex">("pac");
@@ -107,6 +124,7 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
   const totalCents = subtotalCents - descontos.totalCentavos + shippingFeeCents;
 
   useEffect(() => {
+    if (prefill) return;
     try {
       const savedCep = localStorage.getItem(LAST_CEP_KEY)?.replace(/\D/g, "").slice(0, 8);
       if (savedCep?.length === 8) setCep(savedCep);
@@ -117,7 +135,7 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
         setSavePaymentData(true);
       }
     } catch {}
-  }, []);
+  }, [prefill]);
 
   useEffect(() => {
     if (step !== 3) return;
@@ -154,10 +172,19 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
       telefone: phone.replace(/\D/g, "") || null,
       documento: documentNumber.replace(/\D/g, "") || null,
       cep: cep.replace(/\D/g, "") || null,
+      logradouro: address.street || null,
+      numero: withoutNumber ? "S/N" : address.number || null,
+      complemento: address.complement || null,
+      bairro: address.neighborhood || null,
       cidade: address.city || null,
       uf: address.state || null,
       produto: products.map((item) => `${item.quantity}x ${item.slug}`).join(", "),
       produto_nome: products.map((item) => `${item.quantity}x ${item.name}`).join("; "),
+      itens: products.map((item) => ({ slug: item.slug, quantidade: item.quantity })),
+      frete_tipo: shippingMethod,
+      metodo_pagamento: payment,
+      cupom: cupomAplicado || null,
+      sem_numero: withoutNumber,
       valor: totalCents,
     };
     abandonoPendente.current = dados;
@@ -167,7 +194,7 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
       });
     }, 1200);
     return () => window.clearTimeout(id);
-  }, [email, firstName, lastName, phone, documentNumber, cep, address, step, products, totalCents]);
+  }, [email, firstName, lastName, phone, documentNumber, cep, address, step, products, totalCents, shippingMethod, payment, cupomAplicado, withoutNumber]);
 
   /* No celular a aba pode ser congelada sem dar tempo ao debounce. Envia o
      último estado pendente quando a página é ocultada ou fechada. */
@@ -212,8 +239,6 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
         setAddress(current => ({
           ...current,
           ...encontrado,
-          // O complemento é sempre informado pelo cliente (apto, bloco etc.).
-          complement: "",
         }));
         // Mantém o modo manual mesmo depois de digitar: não desmonta os
         // campos enquanto o cliente está completando o endereço.
@@ -298,6 +323,7 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
   /* O cupom pode chegar pela URL (?cupom=) ou do pop-up de saída da página do
      produto, que grava no navegador. */
   useEffect(() => {
+    if (prefill?.coupon) return;
     const daUrl = new URLSearchParams(window.location.search).get("cupom");
     let salvo: string | null = null;
     try { salvo = localStorage.getItem("cdp-cupom"); } catch {}
@@ -307,7 +333,7 @@ export default function CheckoutCafe({ products }: { products: CheckoutProduct[]
     setCupomAplicado(codigo);
     setCouponOpen(true);
     setCouponMessage(`Cupom ${codigo} aplicado.`);
-  }, [products]);
+  }, [products, prefill?.coupon]);
 
   const cartaoDisponivel = gatewayConfig?.cartaoDisponivel === true && Boolean(gatewayConfig.publicKey);
   const paymentPayload = {

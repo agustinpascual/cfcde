@@ -1,0 +1,36 @@
+.recuperacao {
+  margin-bottom: 16px;
+  border-color: var(--cdp-ouro-borda);
+  background: linear-gradient(135deg, #fff 56%, var(--cdp-ouro-fundo));
+}
+.recuperacaoCabecalho { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.recuperacaoCabecalho h2 { color: var(--cdp-tinta); font-size: 19px; letter-spacing: -.35px; }
+.recuperacaoCabecalho div > p:last-child { margin-top: 5px; color: var(--cdp-tinta-2); font-size: 13px; }
+.sobretitulo { margin-bottom: 5px; color: var(--cdp-ouro-escuro); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.acoes { margin-top: 19px; padding-top: 18px; border-top: 1px solid var(--cdp-ouro-borda); }
+.linkCampo { display: block; color: var(--cdp-tinta-2); font-size: 11px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.linkCampo input {
+  display: block; width: 100%; margin-top: 7px; padding: 11px 12px; border: 1px solid var(--cdp-borda);
+  border-radius: 9px; background: #fff; color: var(--cdp-tinta-2); font-family: ui-monospace, Menlo, monospace;
+  font-size: 11.5px; text-transform: none;
+}
+.botoes { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+.botaoSecundario.botaoSecundario, .botaoWhatsapp, .botaoAbrir {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px;
+  border-radius: 9px; padding: 9px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.botaoSecundario.botaoSecundario { border: 1px solid var(--cdp-borda); background: #fff; color: var(--cdp-tinta); }
+.botaoWhatsapp.botaoWhatsapp { background: #237a4b; color: #fff; }
+.botaoAbrir { border: 1px solid var(--cdp-ouro-borda); background: var(--cdp-ouro-fundo); color: var(--cdp-ouro-escuro); }
+.botaoSecundario svg, .botaoWhatsapp svg, .botaoAbrir svg { width: 16px; height: 16px; }
+.botaoSecundario:hover, .botaoWhatsapp:hover, .botaoAbrir:hover { filter: brightness(.96); }
+.linkNota { margin-top: 10px; color: var(--cdp-tinta-3); font-size: 11.5px; }
+.linkErro { margin-top: 17px; padding: 12px; border-radius: 8px; background: var(--cdp-erro-fundo); color: var(--cdp-erro); font-size: 12px; }
+.linkErro code { font-family: ui-monospace, Menlo, monospace; }
+
+@media (max-width: 620px) {
+  .recuperacao { padding: 18px; }
+  .recuperacaoCabecalho { flex-direction: column-reverse; gap: 11px; }
+  .botoes { display: grid; grid-template-columns: 1fr; }
+  .botaoSecundario.botaoSecundario, .botaoWhatsapp, .botaoAbrir { width: 100%; }
+}

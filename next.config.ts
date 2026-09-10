@@ -112,6 +112,9 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: seguranca },
       // Mesma chave declarada depois vence: o checkout troca só a CSP.
       { source: "/checkout/:path*", headers: [{ key: "Content-Security-Policy", value: cspCheckout }] },
+      // O link de recuperação carrega um token temporário apenas até o 303.
+      // Não permita que o caminho intermediário vire Referer do checkout.
+      { source: "/checkout/recuperar/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
       {
         // assets imutáveis com hash de conteúdo servidos pelo /public
         source: "/sites/:path*",
