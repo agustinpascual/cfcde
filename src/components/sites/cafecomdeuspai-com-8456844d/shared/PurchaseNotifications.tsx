@@ -5,14 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import { geraCompra, type Compra } from "./socialProof";
 import styles from "./PurchaseNotifications.module.css";
 
-type Props = { imagem: string; nome: string };
+type Props = { imagem: string; nome: string; juntoAoRodape?: boolean };
 
 const PRIMEIRA = 6000;
 const VISIVEL = 6000;
 const INTERVALO_MIN = 12000;
 const INTERVALO_MAX = 26000;
 
-export default function PurchaseNotifications({ imagem, nome }: Props) {
+export default function PurchaseNotifications({ imagem, nome, juntoAoRodape = false }: Props) {
   const [compra, setCompra] = useState<Compra | null>(null);
   const [saindo, setSaindo] = useState(false);
   const contador = useRef(0);
@@ -39,7 +39,7 @@ export default function PurchaseNotifications({ imagem, nome }: Props) {
   if (!compra) return null;
 
   return (
-    <div className={`${styles.toast} ${saindo ? styles.saindo : ""}`} role="status" aria-live="polite">
+    <div className={`${styles.toast} ${juntoAoRodape ? styles.juntoAoRodape : ""} ${saindo ? styles.saindo : ""}`} role="status" aria-live="polite">
       <span className={styles.imagem}>
         <Image src={imagem} alt="" width={54} height={54} sizes="54px" />
       </span>

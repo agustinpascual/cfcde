@@ -22,6 +22,11 @@
 
 .saindo { animation: sai .4s ease-in both; }
 
+/* No checkout não há barra fixa de compra, então a notificação pode ficar rente ao rodapé. */
+.toast.juntoAoRodape {
+  bottom: max(18px, env(safe-area-inset-bottom));
+}
+
 .imagem {
   display: grid;
   overflow: hidden;
@@ -109,6 +114,7 @@
     width: auto;
     padding: 10px 30px 10px 10px;
   }
+  .toast.juntoAoRodape { bottom: max(14px, env(safe-area-inset-bottom)); }
   .imagem { width: 44px; height: 44px; flex-basis: 44px; }
 }
 
