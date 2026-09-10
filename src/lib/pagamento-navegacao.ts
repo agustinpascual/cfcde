@@ -9,6 +9,7 @@ export type PagamentoNavegacao = {
   confirmado: boolean;
   qr_code: string;
   qr_code_url: string | null;
+  criado_em?: string;
   expires_at?: string;
   codigo_rastreio?: string | null;
   produto_nome?: string;
@@ -29,6 +30,7 @@ export function salvarPagamentoParaTela(dados: DadosPagamento) {
     confirmado: dados.confirmado === true,
     qr_code: typeof dados.qr_code === "string" ? dados.qr_code : "",
     qr_code_url: typeof dados.qr_code_url === "string" ? dados.qr_code_url : null,
+    ...(dados.metodo !== "cartao" ? { criado_em: typeof dados.criado_em === "string" ? dados.criado_em : new Date().toISOString() } : {}),
     ...(typeof dados.expires_at === "string" ? { expires_at: dados.expires_at } : {}),
     ...(typeof dados.codigo_rastreio === "string" ? { codigo_rastreio: dados.codigo_rastreio } : {}),
     ...(typeof dados.produto_nome === "string" ? { produto_nome: dados.produto_nome } : {}),
@@ -50,6 +52,7 @@ function normalizar(bruto: string, legado = false): PagamentoNavegacao | null {
       confirmado: legado ? false : dados.confirmado === true,
       qr_code: typeof dados.qr_code === "string" ? dados.qr_code : "",
       qr_code_url: typeof dados.qr_code_url === "string" ? dados.qr_code_url : null,
+      ...(typeof dados.criado_em === "string" ? { criado_em: dados.criado_em } : {}),
       ...(typeof dados.expires_at === "string" ? { expires_at: dados.expires_at } : {}),
       ...(typeof dados.codigo_rastreio === "string" ? { codigo_rastreio: dados.codigo_rastreio } : {}),
       ...(typeof dados.produto_nome === "string" ? { produto_nome: dados.produto_nome } : {}),

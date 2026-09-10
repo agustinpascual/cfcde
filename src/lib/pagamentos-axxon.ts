@@ -221,11 +221,20 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
           city: texto(endereco.localidade), state: texto(endereco.uf), zipCode: digitos(endereco.cep) } },
       metadata: { external_reference: referencia, payment_attempt: tentativa }, postbackUrl,
     });
-    // Persiste o ID ANTES da consulta/validação/QR: uma falha posterior pode
-    // retomar esta cobrança, sem POST duplicado nem troca de gateway.
-    etapa = "persistencia_id";
-    const { error } = await db.from("pedidos").update({ pix_id: idAxxon(criado.id) }).eq("referencia", referencia);
-    if (error) throw new Error("Cobrança criada, registro em conferência");
+    // No PIX, a persistência do ID e o GET que traz o QR não dependem um do
+    // outro. Executá-los juntos corta uma espera de rede sem devolver o código
+    // antes de o ID estar salvo, mantendo a recuperação e a idempotência.
+    etapa = metodo === "pix" ? "persistencia_e_consulta" : "persistencia_id";
+    const persistirId = db.from("pedidos").update({ pix_id: idAxxon(criado.id) }).eq("referencia", referencia);
+    let consultaPix: PagamentoAxxon | null = null;
+    if (metodo === "pix") {
+      const [persistencia, consulta] = await Promise.all([persistirId, consultarPagamentoAxxon(criado.id)]);
+      if (persistencia.error) throw new Error("Cobrança criada, registro em conferência");
+      consultaPix = consulta;
+    } else {
+      const { error } = await persistirId;
+      if (error) throw new Error("Cobrança criada, registro em conferência");
+    }
     const enviarEmailDoPix = (brcode: string) => depois(enviarPixPorEmail({
       referencia, clienteNome: nome, clienteEmail: email,
       itens: valores.itens.map((item) => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos })),
@@ -244,7 +253,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       });
     }
     etapa = "consulta_criada";
-    const consultado = await consultarPagamentoAxxon(criado.id);
+    const consultado = consultaPix ?? await consultarPagamentoAxxon(criado.id);
     conferirPagamentoAxxon(consultado, { pix_id: idAxxon(criado.id), referencia, valor_centavos: totalCobrado, metodo_pagamento: metodo });
     const p = { ...consultado, nextAction: criado.nextAction ?? consultado.nextAction };
     // O PIX pendente já foi validado contra o pedido acima. Não bloqueia a

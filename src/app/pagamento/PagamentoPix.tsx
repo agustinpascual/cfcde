@@ -25,6 +25,7 @@ export default function PagamentoPix() {
   const [carregando, setCarregando] = useState(true);
   const [copiado, setCopiado] = useState(false);
   const [mostrarWhatsApp, setMostrarWhatsApp] = useState(false);
+  const [segundosRestantes, setSegundosRestantes] = useState(600);
   const [pago, setPago] = useState<{ rastreio: string | null; pedido: string | null } | null>(null);
   const abertoEm = useRef<number | null>(null);
   /* Marca a cópia do código e se o retorno à aba já foi registrado. Depois de
@@ -110,6 +111,18 @@ export default function PagamentoPix() {
     };
   }, [cobranca]);
 
+  useEffect(() => {
+    if (!cobranca || cobranca.metodo !== "pix" || pago) return;
+    const criadoEm = Date.parse(cobranca.criado_em ?? "");
+    const limiteDezMinutos = (Number.isFinite(criadoEm) ? criadoEm : Date.now()) + 10 * 60 * 1000;
+    const expiraGateway = Date.parse(cobranca.expires_at ?? "");
+    const limite = Number.isFinite(expiraGateway) ? Math.min(limiteDezMinutos, expiraGateway) : limiteDezMinutos;
+    const atualizar = () => setSegundosRestantes(Math.max(0, Math.ceil((limite - Date.now()) / 1000)));
+    const inicio = window.setTimeout(atualizar, 0);
+    const intervalo = window.setInterval(atualizar, 1000);
+    return () => { window.clearTimeout(inicio); window.clearInterval(intervalo); };
+  }, [cobranca, pago]);
+
   async function copiar() {
     if (!cobranca?.qr_code) return;
     let sucesso = false;
@@ -136,6 +149,7 @@ export default function PagamentoPix() {
   const whatsappHref = cobranca
     ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Olá, preciso de ajuda com o pagamento PIX do pedido ${cobranca.pedido}.`)}`
     : `https://wa.me/${WHATSAPP}`;
+  const tempoPix = `${String(Math.floor(segundosRestantes / 60)).padStart(2, "0")}:${String(segundosRestantes % 60).padStart(2, "0")}`;
 
   if (carregando) return <div className={s.tela} />;
 
@@ -220,16 +234,14 @@ export default function PagamentoPix() {
     <div className={s.tela}>
       <Cabecalho />
       <main className={`${s.corpo} ${s.pixEntrada}`}>
-        <section className={s.pixPronto} aria-label="Código PIX pronto">
-          <span className={s.pixProntoIcone} aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-          </span>
-          <div><strong>Seu PIX está pronto</strong><span>Copie o código e conclua no aplicativo do seu banco.</span></div>
-        </section>
         <div className={s.resumo}>
           <p className={s.resumoRotulo}>Valor a pagar</p>
           <p className={s.valor}>{money.format(cobranca.total / 100)}</p>
           <p className={s.pedido}>Pedido nº <b>{cobranca.pedido}</b></p>
+          <div className={`${s.timerPix} ${segundosRestantes === 0 ? s.timerEncerrado : ""}`} role="timer" aria-live="off" aria-label={`Tempo para pagar: ${tempoPix}`}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span>Tempo para pagar</span><strong>{tempoPix}</strong>
+          </div>
         </div>
 
         <div className={s.cartao}>
