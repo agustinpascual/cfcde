@@ -36,8 +36,9 @@ const mascararNumero = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarg
 const mascararValidade = (e: React.FormEvent<HTMLInputElement>) => { const d = digitos(e.currentTarget.value).slice(0, 4); e.currentTarget.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
 const somenteDigitos = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 4); };
 
-export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, produtoNome, onEnviado }: {
-  publicKey: string; parcelasMax: number; total: number; payload: PayloadCartao; produtoNome: string; onEnviado?: () => void;
+export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, produtoNome, onEnviado, onDocumentoRecusado }: {
+  publicKey: string; parcelasMax: number; total: number; payload: PayloadCartao; produtoNome: string;
+  onEnviado?: () => void; onDocumentoRecusado?: (mensagem: string) => void;
 }) {
   const [sdk, setSdk] = useState<"carregando" | "pronto" | "erro">("carregando");
   const [ocupado, setOcupado] = useState(false);
@@ -166,7 +167,12 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       }
       if (!r.ok) {
         liberarTentativaEncerrada(payload.produto, "cartao", tentativa, dados);
-        throw new Error(dados.erro || "Não foi possível processar o cartão.");
+        const mensagemErro = dados.erro || "Não foi possível processar o cartão.";
+        if (typeof mensagemErro === "string" && /CPF|CNPJ|documento/i.test(mensagemErro)) {
+          onDocumentoRecusado?.(mensagemErro);
+          return;
+        }
+        throw new Error(mensagemErro);
       }
       criada = true;
       const statusInicial = dados.status === "paid" ? "approved" : dados.status;

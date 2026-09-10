@@ -549,7 +549,13 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
                   {!pixCharge && <div className={styles.pixInstructions}><PixLogo /><p>Ao gerar o Código Pix do pedido você pode pagar escaneando o <b>QR Code</b> ou <b>Copiar e Colar</b>.</p></div>}
                   {pixCharge && <div className={styles.pixResult} role="status"><h2>PIX gerado com sucesso</h2><p>Pedido <b>{pixCharge.pedido}</b> · valor <b>{money.format(pixCharge.total / 100)}</b></p>{pixCharge.qr_code_url && <Image className={styles.qr} src={pixCharge.qr_code_url} alt="QR Code PIX" width={220} height={220} unoptimized />}<label>Código PIX copia e cola<textarea readOnly value={pixCharge.qr_code} /></label><button className={styles.copyButton} type="button" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código PIX"}</button></div>}
                 </> : cartaoDisponivel && gatewayConfig?.publicKey
-                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={{ ...paymentPayload, produto: cartKey }} produtoNome={productName} onEnviado={() => { finalizado.current = true; abandonoPendente.current = null; }} />
+                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={{ ...paymentPayload, produto: cartKey }} produtoNome={productName} onEnviado={() => { finalizado.current = true; abandonoPendente.current = null; }} onDocumentoRecusado={mensagem => {
+                      setStep(2); setPaymentExpanded(false); setPaymentError(""); setError(mensagem);
+                      window.setTimeout(() => {
+                        documentInput.current?.focus({ preventScroll: true });
+                        documentInput.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }, 0);
+                    }} />
                   : <p>Cartão indisponível no momento. Nenhum dado de cartão foi solicitado.</p>}
                 <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
               </div>}
