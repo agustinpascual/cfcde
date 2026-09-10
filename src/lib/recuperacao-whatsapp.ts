@@ -43,6 +43,28 @@ async function recuperarPix(atraso: number, modelo: string, botaoCopiar: boolean
   resultado.encontrados = data?.length ?? 0;
 
   for (const pedido of data ?? []) {
+    const telefone = telefoneValido(pedido.cliente_telefone);
+    if (!telefone) {
+      /* Telefone inválido não ficará ocupando o cron para sempre, mas também
+         não será contabilizado como envio. */
+      await db.from("pedidos").update({
+        recuperacao_pix_em: new Date().toISOString(),
+        recuperacao_pix_erro: "Telefone ausente ou inválido.",
+      }).eq("id", pedido.id).is("recuperacao_pix_em", null);
+      resultado.ignorados++;
+      continue;
+    }
+    if (!pedido.pix_copia_cola) {
+      /* O reconciliador pode preencher o QR numa execução seguinte. Não
+         reserva a recuperação antes disso, pois reservar significaria dizer
+         que a mensagem saiu quando nenhum código pôde ser enviado. */
+      await db.from("pedidos").update({
+        recuperacao_pix_erro: "Código Pix ainda indisponível; aguardando reconciliação.",
+        recuperacao_pix_tentativas: Number(pedido.recuperacao_pix_tentativas ?? 0) + 1,
+      }).eq("id", pedido.id).is("recuperacao_pix_em", null);
+      resultado.ignorados++;
+      continue;
+    }
     const agora = new Date().toISOString();
     const { data: reservado } = await db.from("pedidos")
       .update({ recuperacao_pix_em: agora, recuperacao_pix_erro: null })
@@ -50,8 +72,6 @@ async function recuperarPix(atraso: number, modelo: string, botaoCopiar: boolean
       .select("id").maybeSingle();
     if (!reservado) { resultado.ignorados++; continue; }
     try {
-      const telefone = telefoneValido(pedido.cliente_telefone);
-      if (!telefone || !pedido.pix_copia_cola) { resultado.ignorados++; continue; }
       const mensagem = preencherMensagemRecuperacao(modelo, {
         nome: primeiroNome(pedido.cliente_nome), pedido: pedido.referencia,
         valor: moeda(pedido.valor_centavos), codigo_pix: pedido.pix_copia_cola,

@@ -52,4 +52,7 @@ test("painel e ações de recuperação usam os modelos salvos", () => {
   assert.match(envio, /buttonText/);
   assert.match(recuperacao, /enviarWhatsAppComBotaoCopiar/);
   assert.match(recuperacao, /await enviarWhatsApp\(telefone, mensagem\)/, "mantém fallback de texto quando o botão falha");
+  assert.match(recuperacao, /Código Pix ainda indisponível; aguardando reconciliação/);
+  assert.match(recuperacao, /if \(!pedido\.pix_copia_cola\)[\s\S]*?continue;[\s\S]*?recuperacao_pix_em: agora/,
+    "não reserva a recuperação antes de possuir o código Pix");
 });
