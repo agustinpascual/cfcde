@@ -27,6 +27,11 @@ declare global {
     gtag?: (...args: unknown[]) => void;
     cdpMarketingQueue?: Array<[string, DadosEvento, boolean]>;
     cdpTrackMarketing?: (evento: string, dados?: DadosEvento, somenteGoogle?: boolean) => void;
+    cdpMetaMarkerSignatures?: string[];
+    cdpGoogleMarkerSignatures?: string[];
+    cdpScanMarketing?: (elemento?: HTMLElement) => void;
+    cdpMetaLoaded?: () => void;
+    cdpGoogleLoaded?: () => void;
   }
 }
 
@@ -107,16 +112,51 @@ function aplicarConfig(config: ConfigMarketing) {
   for (const [evento, dados, somenteGoogle] of window.cdpMarketingQueue?.splice(0) ?? []) {
     distribuir([evento, dados], somenteGoogle);
   }
+  window.cdpScanMarketing = (elemento) => enviarMarcadores(elemento);
+  window.cdpMetaLoaded = metaCarregada;
+  window.cdpGoogleLoaded = googleCarregado;
+}
+
+function enviarMarcadores(elemento?: HTMLElement) {
+  const elementos = elemento ? [elemento] : [...document.querySelectorAll<HTMLElement>("[data-evento-marketing]")];
+  for (const marcador of elementos) {
+    const chave = marcador.dataset.eventoMarketing ?? "";
+    const identidade = marcador.dataset.eventoIdentidade ?? "";
+    if (!chave || !identidade) continue;
+    const [nome, parametros] = JSON.parse(chave) as EventoPendente;
+    if (metaPronto) {
+      const enviadas = window.cdpMetaMarkerSignatures ??= [];
+      if (!enviadas.includes(identidade)) {
+        enviadas.push(identidade);
+        try { window.fbq?.("track", nome, parametros); } catch { /* não interrompe a página */ }
+      }
+      if (enviadas.length > 100) enviadas.shift();
+    }
+    if (googlePronto) {
+      const enviadas = window.cdpGoogleMarkerSignatures ??= [];
+      if (!enviadas.includes(identidade)) {
+        enviadas.push(identidade);
+        const google = dadosGoogle(nome, parametros);
+        try {
+          if (tagGoogle.startsWith("GTM-")) window.dataLayer?.push({ event: google.nome, ...google.parametros });
+          else window.gtag?.("event", google.nome, google.parametros);
+        } catch { /* não interrompe a página */ }
+      }
+      if (enviadas.length > 100) enviadas.shift();
+    }
+  }
 }
 
 function metaCarregada() {
   metaPronto = true;
   for (const evento of filaMeta.splice(0)) enviarMeta(evento);
+  enviarMarcadores();
 }
 
 function googleCarregado() {
   googlePronto = true;
   for (const evento of filaGoogle.splice(0)) enviarGoogle(evento);
+  enviarMarcadores();
 }
 
 export const dadosProdutoPixel = (id: string, nome: string, centavos: number, quantidade = 1) => ({
@@ -130,15 +170,10 @@ export function EventoMeta({ evento, dados, umaVezPor }: {
 }) {
   const chave = JSON.stringify([evento, dados]);
   const identidade = umaVezPor === undefined ? chave : `${evento}:${umaVezPor}`;
-  const ultima = useRef("");
-  /* O callback de ref acompanha o commit real do produto no DOM. Em páginas
-     pré-renderizadas, o efeito passivo podia ser postergado/descartado durante
-     a hidratação e ViewContent não saía, embora cliques posteriores saíssem. */
-  return <i hidden aria-hidden="true" data-evento-marketing={evento} ref={(elemento) => {
-    if (!elemento || ultima.current === identidade) return;
-    ultima.current = identidade;
-    const [nome, parametros] = JSON.parse(chave);
-    queueMicrotask(() => pixel(nome, parametros));
+  /* O marcador existe já no HTML pré-renderizado. O carregador central o lê
+     quando cada SDK fica pronto, mesmo que o React adie a hidratação da página. */
+  return <i hidden aria-hidden="true" data-evento-marketing={chave} data-evento-identidade={identidade} ref={(elemento) => {
+    if (elemento) queueMicrotask(() => window.cdpScanMarketing?.(elemento));
   }} />;
 }
 
@@ -191,6 +226,7 @@ export default function MetaPixel() {
     pixel("PageView");
     const busca = new URLSearchParams(consulta).get("q")?.trim();
     if (pathname === "/busca" && busca) pixel("Search", { search_string: busca.slice(0, 80) });
+    queueMicrotask(() => window.cdpScanMarketing?.());
   }, [pathname, consulta, config]);
 
   if (!config || !publico(pathname)) return null;
@@ -201,7 +237,7 @@ export default function MetaPixel() {
   return (
     <>
       {ids.length ? <>
-        <Script id="meta-pixel" strategy="lazyOnload" onReady={metaCarregada}>{`
+        <Script id="meta-pixel" strategy="lazyOnload">{`
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
@@ -209,6 +245,7 @@ t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
 ${ids.map((id) => `fbq('set','autoConfig',false,'${id}');fbq('init','${id}');`).join("")}
 fbq('track','PageView');
+window.cdpMetaLoaded&&window.cdpMetaLoaded();
         `}</Script>
         <noscript>{ids.map((id) => (
           // eslint-disable-next-line @next/next/no-img-element
@@ -218,19 +255,21 @@ fbq('track','PageView');
       </> : null}
 
       {google ? google.startsWith("GTM-") ? (
-        <Script id="google-tag-manager" strategy="lazyOnload" onReady={googleCarregado}>{`
+        <Script id="google-tag-manager" strategy="lazyOnload">{`
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
 var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
 j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${google}');
 window.dataLayer.push({event:'page_view',page_location:window.location.href,page_path:window.location.pathname+window.location.search});
+window.cdpGoogleLoaded&&window.cdpGoogleLoaded();
         `}</Script>
       ) : <>
         <Script id="google-tag-sdk" src={`https://www.googletagmanager.com/gtag/js?id=${google}`} strategy="lazyOnload" />
-        <Script id="google-tag-init" strategy="lazyOnload" onReady={googleCarregado}>{`
+        <Script id="google-tag-init" strategy="lazyOnload">{`
 window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
 window.gtag=gtag;gtag('js',new Date());gtag('config','${google}',{send_page_view:false});
 gtag('event','page_view',{page_location:window.location.href,page_path:window.location.pathname+window.location.search});
+window.cdpGoogleLoaded&&window.cdpGoogleLoaded();
         `}</Script>
       </> : null}
     </>
