@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import {
+  Building2, CreditCard, Mail, MessageCircle, Target, Truck,
+  type LucideIcon,
+} from "lucide-react";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import FormIntegracao from "@/components/painel/FormIntegracao";
@@ -40,9 +44,18 @@ const NOTAS: Record<ChaveConfig, string> = {
   EMPRESA_LOGO: "Caminho do logo, ex.: /sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png",
 };
 
-const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: string[] }[] = [
+type Servico = {
+  nome: string;
+  papel: string;
+  chaves: ChaveConfig[];
+  passos: string[];
+  icone: LucideIcon;
+};
+
+const SERVICOS: Servico[] = [
   {
     nome: "AxxonPay", papel: "PIX e cartão tokenizado pelo SDK oficial",
+    icone: CreditCard,
     chaves: ["AXXONPAY_PUBLIC_KEY", "AXXONPAY_SECRET_KEY"],
     passos: ["Obtenha Public Key e Secret Key na área de integrações da AxxonPay, não a senha de login.",
       "Configure o webhook normalizado para https://cafecomdeusepai.com/api/webhooks/axxonpay.",
@@ -50,16 +63,19 @@ const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: st
   },
   {
     nome: "PinPay", papel: "Cobranças PIX e webhook de pagamento",
+    icone: CreditCard,
     chaves: ["PINPAY_TOKEN", "PINPAY_WEBHOOK_SECRET"],
     passos: ["Cadastrar https://cafecomdeusepai.com/api/webhooks/pinpay no painel da PinPay", "Marcar o evento payment_approved"],
   },
   {
     nome: "Resend", papel: "E-mails de confirmação de pedido e pagamento",
+    icone: Mail,
     chaves: ["RESEND_API_KEY", "RESEND_REMETENTE"],
     passos: ["Verificar o domínio na Resend (SPF + DKIM)", "Sem domínio verificado só dá para enviar ao e-mail da própria conta"],
   },
   {
     nome: "Meta Pixel", papel: "Rastreia visitas, início de checkout e compras",
+    icone: Target,
     chaves: ["META_CAPI_TOKEN"],
     passos: [
       "O ID do pixel fica no build (NEXT_PUBLIC_META_PIXEL_ID); só o token é editável aqui",
@@ -69,6 +85,7 @@ const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: st
   },
   {
     nome: "Correios", papel: "Cria a encomenda e devolve o código de rastreio",
+    icone: Truck,
     chaves: ["CORREIOS_URL", "CORREIOS_SECRET"],
     passos: [
       "A chamada sai do servidor da loja, nunca do navegador — o segredo não pode ir para o JavaScript da página",
@@ -78,6 +95,7 @@ const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: st
   },
   {
     nome: "Dados da empresa", papel: "Saem impressos no recibo de compra do cliente",
+    icone: Building2,
     chaves: ["EMPRESA_RAZAO_SOCIAL", "EMPRESA_CNPJ", "EMPRESA_IE", "EMPRESA_ENDERECO", "EMPRESA_TELEFONE", "EMPRESA_LOGO"],
     passos: [
       "O recibo abre em cada pedido, no botão \u201cRecibo\u201d",
@@ -86,10 +104,29 @@ const SERVICOS: { nome: string; papel: string; chaves: ChaveConfig[]; passos: st
   },
   {
     nome: "Z-API (WhatsApp)", papel: "Atendimento e disparos pelo WhatsApp",
+    icone: MessageCircle,
     chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN"],
     passos: ["Conectar o número na Z-API", "Apontar o webhook de mensagens para /api/webhooks/zapi"],
   },
 ];
+
+const GRUPOS = [
+  {
+    titulo: "Pagamentos",
+    descricao: "Credenciais usadas para criar cobranças e receber confirmações.",
+    servicos: ["AxxonPay", "PinPay"],
+  },
+  {
+    titulo: "Comunicação e marketing",
+    descricao: "Canais de relacionamento, mensagens e acompanhamento de conversões.",
+    servicos: ["Resend", "Meta Pixel", "Z-API (WhatsApp)"],
+  },
+  {
+    titulo: "Operação da loja",
+    descricao: "Dados fiscais do recibo, postagem e rastreamento dos pedidos.",
+    servicos: ["Correios", "Dados da empresa"],
+  },
+] as const;
 
 export default async function Page() {
   if (!painelConfigurado()) redirect("/painel");
@@ -97,6 +134,18 @@ export default async function Page() {
 
   const [vivos, chaves] = await Promise.all([lerAoVivo(), estadoDasChaves()]);
   const porChave = new Map(chaves.map((c) => [c.chave, c]));
+
+  const estadoServico = (serv: Servico) => {
+    const estados = serv.chaves.map((c) => porChave.get(c)!).filter(Boolean);
+    const preenchidas = estados.filter((e) => e.preenchida).length;
+    const estado = preenchidas === 0 ? "faltando" : preenchidas === estados.length ? "ok" : "parcial";
+    return { estados, estado } as const;
+  };
+  const totais = SERVICOS.reduce((acc, serv) => {
+    const { estado } = estadoServico(serv);
+    acc[estado] += 1;
+    return acc;
+  }, { ok: 0, parcial: 0, faltando: 0 });
 
   const _inst = await estadoInstalacao();
 
@@ -117,36 +166,71 @@ export default async function Page() {
         </div>
       )}
 
-      <div className={i.lista}>
+      <section className={i.visaoGeral} aria-label="Resumo das integrações">
+        <div className={i.visaoTexto}>
+          <span className={i.sobretitulo}>Central de conexões</span>
+          <h2>Serviços conectados à loja</h2>
+          <p>Configure pagamentos, comunicação e operação em um só lugar.</p>
+        </div>
+        <div className={i.resumoEstados}>
+          <div><strong>{totais.ok}</strong><span>Conectados</span></div>
+          <div><strong>{totais.parcial}</strong><span>Parciais</span></div>
+          <div><strong>{totais.faltando}</strong><span>Pendentes</span></div>
+        </div>
+      </section>
+
+      <div className={i.gatewayDestaque}>
         <GatewaysPagamento inicial={await lerGateways()} editavel={temChaveMestra()} />
-        {SERVICOS.map((serv) => {
-          const estados = serv.chaves.map((c) => porChave.get(c)!).filter(Boolean);
-          const preenchidas = estados.filter((e) => e.preenchida).length;
-          const estado = preenchidas === 0 ? "faltando" : preenchidas === estados.length ? "ok" : "parcial";
-          const rotulo = { ok: "Conectado", parcial: "Parcial", faltando: "Não configurado" }[estado];
+      </div>
 
-          return (
-            <section key={serv.nome} className={`${s.cartao} ${i.card}`}>
-              <header className={i.cabecalho}>
-                <div>
-                  <h2 className={i.nome}>{serv.nome}</h2>
-                  <p className={i.papel}>{serv.papel}</p>
-                </div>
-                <span className={`${i.estado} ${i[estado]}`}>{rotulo}</span>
-              </header>
-
-              <div className={i.campos}>
-                {estados.map((e) => (
-                  <FormIntegracao key={e.chave} estado={e} nota={NOTAS[e.chave]} />
-                ))}
+      <div className={i.grupos}>
+        {GRUPOS.map((grupo) => (
+          <section key={grupo.titulo} className={i.grupo}>
+            <header className={i.grupoCabecalho}>
+              <div>
+                <h2>{grupo.titulo}</h2>
+                <p>{grupo.descricao}</p>
               </div>
+              <span>{grupo.servicos.length} serviços</span>
+            </header>
 
-              {estado !== "ok" && (
-                <ol className={i.passos}>{serv.passos.map((p) => <li key={p}>{p}</li>)}</ol>
-              )}
-            </section>
-          );
-        })}
+            <div className={i.grade}>
+              {SERVICOS.filter((serv) => grupo.servicos.some((nome) => nome === serv.nome)).map((serv) => {
+                const { estados, estado } = estadoServico(serv);
+                const rotulo = { ok: "Conectado", parcial: "Parcial", faltando: "Não configurado" }[estado];
+                const Icone = serv.icone;
+
+                return (
+                  <article key={serv.nome} className={`${s.cartao} ${i.card} ${i[`card${estado}`]}`}>
+                    <header className={i.cabecalho}>
+                      <div className={i.identidade}>
+                        <span className={i.icone} aria-hidden="true"><Icone size={19} strokeWidth={1.8} /></span>
+                        <div>
+                          <h3 className={i.nome}>{serv.nome}</h3>
+                          <p className={i.papel}>{serv.papel}</p>
+                        </div>
+                      </div>
+                      <span className={`${i.estado} ${i[estado]}`}>{rotulo}</span>
+                    </header>
+
+                    <div className={i.campos}>
+                      {estados.map((e) => (
+                        <FormIntegracao key={e.chave} estado={e} nota={NOTAS[e.chave]} />
+                      ))}
+                    </div>
+
+                    {estado !== "ok" && (
+                      <div className={i.configAjuda}>
+                        <p>Como configurar</p>
+                        <ol className={i.passos}>{serv.passos.map((p) => <li key={p}>{p}</li>)}</ol>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </Casca>
   );

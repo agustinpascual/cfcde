@@ -1,9 +1,37 @@
-.bloco { padding: 24px; margin: 0 0 24px; border: 1px solid #e6e1da; border-radius: 14px; background: #fff; }
-.bloco h2 { margin: 0; font-size: 19px; }
-.bloco p { color: #635e55; font-size: 13px; line-height: 1.6; }
-.bloco form { display: grid; gap: 16px; max-width: 650px; }
-.bloco label { display: grid; gap: 8px; font-size: 13px; font-weight: 600; }
-.bloco select { width: 100%; padding: 12px; border: 1px solid #ccc6bc; border-radius: 8px; background: white; color: #282621; }
-.bloco button { padding: 12px 16px; border: 0; border-radius: 8px; background: #282621; color: white; cursor: pointer; }
+.bloco { overflow: hidden; border: 1px solid var(--cdp-borda); border-radius: 16px; background: #fff; box-shadow: 0 8px 30px rgba(36,29,20,.04); }
+.cabecalho { display: flex; align-items: flex-start; gap: 14px; padding: 22px 24px; border-bottom: 1px solid var(--cdp-borda); background: #fcfbf9; }
+.icone { flex: 0 0 42px; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 11px; background: var(--cdp-menu); color: #fff; }
+.cabecalho > div { min-width: 0; }
+.sobretitulo { display: block; margin-bottom: 3px; color: var(--cdp-ouro-escuro); font-size: 9.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.bloco h2 { margin: 0; color: var(--cdp-tinta); font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.bloco p { color: var(--cdp-tinta-2); font-size: 12.5px; line-height: 1.55; }
+.cabecalho p { margin-top: 4px; }
+.badge { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 6px 10px; border-radius: 999px; background: var(--cdp-ok-fundo); color: var(--cdp-ok); font-size: 10.5px; font-weight: 750; }
+.bloco form { display: grid; gap: 18px; padding: 22px 24px 24px; }
+.seletores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.bloco label { display: flex; flex-direction: column; min-width: 0; padding: 15px; border: 1px solid var(--cdp-borda); border-radius: 11px; background: #fff; }
+.bloco label > span { color: var(--cdp-tinta); font-size: 13px; font-weight: 750; }
+.bloco label > small { margin: 3px 0 10px; color: var(--cdp-tinta-3); font-size: 10.5px; line-height: 1.45; }
+.bloco select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: var(--cdp-fundo); color: var(--cdp-tinta); font-size: 13px; }
+.bloco select:focus { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: 1px; }
+.seguranca { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid var(--cdp-ok-borda); border-radius: 10px; background: var(--cdp-ok-fundo); }
+.seguranca svg { flex: 0 0 auto; margin-top: 1px; color: var(--cdp-ok); }
+.seguranca p { color: var(--cdp-ok); }
+.salvar.salvar { justify-self: start; min-height: 44px; padding: 0 18px; border: 0; border-radius: 9px; background: var(--cdp-menu); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+.salvar.salvar:hover:not(:disabled) { background: var(--cdp-menu-2); }
 .bloco button:disabled { opacity: .5; cursor: not-allowed; }
-.sandbox { border-top: 1px solid #e6e1da; margin-top: 20px; padding-top: 16px; }
+.mensagem { margin: -8px 24px 22px; padding: 10px 12px; border-radius: 8px; background: var(--cdp-ok-fundo); color: var(--cdp-ok) !important; font-weight: 600; }
+.sandbox { margin: 0 24px 24px; padding: 17px; border: 1px solid var(--cdp-aviso-borda); border-radius: 11px; background: var(--cdp-aviso-fundo); }
+.sandbox h3 { color: var(--cdp-aviso); font-size: 13.5px; }
+.sandbox p { margin: 5px 0 12px; color: var(--cdp-aviso); }
+.sandbox button { min-height: 40px; padding: 0 14px; border: 1px solid var(--cdp-aviso-borda); border-radius: 8px; background: #fff; color: var(--cdp-aviso); font-size: 12px; font-weight: 650; }
+
+@media (max-width: 680px) {
+  .cabecalho { flex-wrap: wrap; padding: 19px 17px; }
+  .badge { order: 3; margin-left: 56px; }
+  .bloco form { padding: 18px 17px 20px; }
+  .seletores { grid-template-columns: 1fr; }
+  .salvar.salvar { width: 100%; }
+  .mensagem { margin: -5px 17px 20px; }
+  .sandbox { margin: 0 17px 20px; }
+}

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CreditCard, ShieldCheck, Zap } from "lucide-react";
 import type { ConfigGateways } from "@/lib/gateways-config";
 import s from "./gateways.module.css";
 
@@ -22,19 +23,39 @@ export default function GatewaysPagamento({ inicial, editavel }: { inicial: Conf
     finally { setSalvando(false); }
   }
   return <section className={s.bloco}>
-    <h2>Gateways de pagamento</h2>
-    <p>A troca vale para novas cobranças. Pedidos existentes permanecem no gateway de origem. Não há troca automática após erro de cobrança.</p>
+    <header className={s.cabecalho}>
+      <span className={s.icone} aria-hidden="true"><CreditCard size={22} strokeWidth={1.8} /></span>
+      <div>
+        <span className={s.sobretitulo}>Roteamento de cobranças</span>
+        <h2>Gateways de pagamento</h2>
+        <p>Defina por onde cada nova cobrança será processada.</p>
+      </div>
+      <span className={s.badge}><Zap size={13} fill="currentColor" /> Em uso</span>
+    </header>
     <form onSubmit={salvar}>
-      <label>Gateway do PIX<select disabled={!editavel || salvando} value={config.pix} onChange={e => setConfig({ ...config, pix: e.target.value as ConfigGateways["pix"] })}>
-        <option value="pinpay">PinPay</option><option value="axxonpay">AxxonPay</option>
-      </select></label>
-      <label>Cartão de crédito<select disabled={!editavel || salvando} value={config.cartao} onChange={e => setConfig({ ...config, cartao: e.target.value as ConfigGateways["cartao"] })}>
-        <option value="desativado">Desativado</option><option value="sandbox">Sandbox local — apenas testes no painel</option><option value="axxonpay">AxxonPay (adquirente Bloopi)</option>
-      </select></label>
-      <p>Com a AxxonPay/Bloopi o cliente digita o cartão no checkout da loja e o servidor o repassa à adquirente sem gravar nem registrar. A ativação valida as credenciais e a adquirente antes de salvar. Homologue com uma compra real de valor baixo antes de divulgar.</p>
-      <button disabled={!editavel || salvando}>{salvando ? "Validando e salvando…" : "Validar credenciais e salvar seleção"}</button>
+      <div className={s.seletores}>
+        <label>
+          <span>Pagamento por PIX</span>
+          <small>Gateway responsável por gerar o QR Code.</small>
+          <select disabled={!editavel || salvando} value={config.pix} onChange={e => setConfig({ ...config, pix: e.target.value as ConfigGateways["pix"] })}>
+            <option value="pinpay">PinPay</option><option value="axxonpay">AxxonPay</option>
+          </select>
+        </label>
+        <label>
+          <span>Cartão de crédito</span>
+          <small>Processador usado no checkout da loja.</small>
+          <select disabled={!editavel || salvando} value={config.cartao} onChange={e => setConfig({ ...config, cartao: e.target.value as ConfigGateways["cartao"] })}>
+            <option value="desativado">Desativado</option><option value="sandbox">Sandbox local — apenas testes no painel</option><option value="axxonpay">AxxonPay (adquirente Bloopi)</option>
+          </select>
+        </label>
+      </div>
+      <div className={s.seguranca}>
+        <ShieldCheck size={18} aria-hidden="true" />
+        <p>A seleção vale apenas para novas cobranças. Os dados do cartão não são armazenados pela loja e pedidos existentes permanecem no gateway de origem.</p>
+      </div>
+      <button className={s.salvar} disabled={!editavel || salvando}>{salvando ? "Validando e salvando…" : "Validar e salvar configuração"}</button>
     </form>
-    <p role="status">{mensagem}</p>
+    {mensagem && <p className={s.mensagem} role="status">{mensagem}</p>}
     {config.cartao === "sandbox" && <div className={s.sandbox}>
       <h3>Simulador local — não é uma cobrança</h3>
       <p>Não coleta cartão, não chama o gateway e não registra vendas. No checkout público, cartão fica indisponível. Isto não substitui a homologação com a AxxonPay.</p>
