@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 type DadosEvento = Record<string, unknown> | undefined;
 type EventoPendente = [string, DadosEvento];
-type ConfigMarketing = { metaPixelIds: string[]; googleTagId: string };
+type ConfigMarketing = { metaPixelIds: string[]; googleTagIds: string[]; googleTagId?: string };
 
 const IDS_FALLBACK = [...new Set((process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "")
   .split(",").map((id) => id.trim()).filter((id) => /^\d{8,25}$/.test(id)))];
@@ -15,7 +15,7 @@ const filaMeta: EventoPendente[] = [];
 const filaGoogle: EventoPendente[] = [];
 let configResolvida = false;
 let idsMeta: string[] = [];
-let tagGoogle = "";
+let tagsGoogle: string[] = [];
 let metaPronto = false;
 let googlePronto = false;
 
@@ -32,6 +32,7 @@ declare global {
     cdpScanMarketing?: (elemento?: HTMLElement) => void;
     cdpMetaLoaded?: () => void;
     cdpGoogleLoaded?: () => void;
+    cdpGoogleReadyCount?: number;
   }
 }
 
@@ -69,12 +70,12 @@ function enviarMeta([evento, dados]: EventoPendente) {
 }
 
 function enviarGoogle([evento, dados]: EventoPendente) {
-  if (!tagGoogle) return;
+  if (!tagsGoogle.length) return;
   if (!googlePronto) { guardar(filaGoogle, [evento, dados]); return; }
   const { nome, parametros } = dadosGoogle(evento, dados);
   try {
-    if (tagGoogle.startsWith("GTM-")) window.dataLayer?.push({ event: nome, ...parametros });
-    else window.gtag?.("event", nome, parametros);
+    if (tagsGoogle.some((tag) => !tag.startsWith("GTM-"))) window.gtag?.("event", nome, parametros);
+    else window.dataLayer?.push({ event: nome, ...parametros });
   } catch { /* marketing nunca interrompe a compra */ }
 }
 
@@ -103,7 +104,8 @@ export function eventoGoogle(evento: string, dados?: Record<string, unknown>) {
 
 function aplicarConfig(config: ConfigMarketing) {
   idsMeta = [...new Set(config.metaPixelIds.filter((id) => /^\d{8,25}$/.test(id)))];
-  tagGoogle = /^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/i.test(config.googleTagId) ? config.googleTagId.toUpperCase() : "";
+  tagsGoogle = [...new Set(config.googleTagIds
+    .map((tag) => tag.toUpperCase()).filter((tag) => /^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/.test(tag)))];
   configResolvida = true;
   /* A ponte fica em window porque páginas e layout podem chegar em chunks
      distintos. Assim eventos emitidos pelo produto/carrinho nunca dependem
@@ -138,8 +140,8 @@ function enviarMarcadores(elemento?: HTMLElement) {
         enviadas.push(identidade);
         const google = dadosGoogle(nome, parametros);
         try {
-          if (tagGoogle.startsWith("GTM-")) window.dataLayer?.push({ event: google.nome, ...google.parametros });
-          else window.gtag?.("event", google.nome, google.parametros);
+          if (tagsGoogle.some((tag) => !tag.startsWith("GTM-"))) window.gtag?.("event", google.nome, google.parametros);
+          else window.dataLayer?.push({ event: google.nome, ...google.parametros });
         } catch { /* não interrompe a página */ }
       }
       if (enviadas.length > 100) enviadas.shift();
@@ -205,12 +207,14 @@ export default function MetaPixel() {
       const dados = await resposta.json() as ConfigMarketing;
       const segura = {
         metaPixelIds: Array.isArray(dados.metaPixelIds) ? dados.metaPixelIds : [],
-        googleTagId: typeof dados.googleTagId === "string" ? dados.googleTagId : "",
+        googleTagIds: Array.isArray(dados.googleTagIds)
+          ? dados.googleTagIds
+          : typeof dados.googleTagId === "string" && dados.googleTagId ? [dados.googleTagId] : [],
       };
       concluir(segura);
     }).catch(() => {
       if (controlador.signal.aborted) return;
-      const fallback = { metaPixelIds: IDS_FALLBACK, googleTagId: "" };
+      const fallback = { metaPixelIds: IDS_FALLBACK, googleTagIds: [] };
       concluir(fallback);
     });
     return () => controlador.abort();
@@ -231,8 +235,17 @@ export default function MetaPixel() {
 
   if (!config || !publico(pathname)) return null;
   const ids = [...new Set(config.metaPixelIds.filter((id) => /^\d{8,25}$/.test(id)))];
-  const google = /^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/i.test(config.googleTagId)
-    ? config.googleTagId.toUpperCase() : "";
+  const google = [...new Set(config.googleTagIds.map((tag) => tag.toUpperCase())
+    .filter((tag) => /^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/.test(tag)))];
+  const googleGtm = google.filter((tag) => tag.startsWith("GTM-"));
+  const googleDiretas = google.filter((tag) => !tag.startsWith("GTM-"));
+  const scriptsGoogle = googleGtm.length + (googleDiretas.length ? 1 : 0);
+  const googleProntoScript = `window.cdpGoogleReadyCount=(window.cdpGoogleReadyCount||0)+1;
+if(window.cdpGoogleReadyCount===${scriptsGoogle}){
+${googleDiretas.length
+    ? "gtag('event','page_view',{page_location:window.location.href,page_path:window.location.pathname+window.location.search});"
+    : "window.dataLayer.push({event:'page_view',page_location:window.location.href,page_path:window.location.pathname+window.location.search});"}
+window.cdpGoogleLoaded&&window.cdpGoogleLoaded();}`;
 
   return (
     <>
@@ -254,22 +267,22 @@ window.cdpMetaLoaded&&window.cdpMetaLoaded();
         ))}</noscript>
       </> : null}
 
-      {google ? google.startsWith("GTM-") ? (
-        <Script id="google-tag-manager" strategy="lazyOnload">{`
+      {googleGtm.map((tag) => (
+        <Script id={`google-tag-manager-${tag}`} key={tag} strategy="lazyOnload">{`
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
 var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
 j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${google}');
-window.dataLayer.push({event:'page_view',page_location:window.location.href,page_path:window.location.pathname+window.location.search});
-window.cdpGoogleLoaded&&window.cdpGoogleLoaded();
+})(window,document,'script','dataLayer','${tag}');
+${googleProntoScript}
         `}</Script>
-      ) : <>
-        <Script id="google-tag-sdk" src={`https://www.googletagmanager.com/gtag/js?id=${google}`} strategy="lazyOnload" />
+      ))}
+      {googleDiretas.length ? <>
+        <Script id="google-tag-sdk" src={`https://www.googletagmanager.com/gtag/js?id=${googleDiretas[0]}`} strategy="lazyOnload" />
         <Script id="google-tag-init" strategy="lazyOnload">{`
 window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
-window.gtag=gtag;gtag('js',new Date());gtag('config','${google}',{send_page_view:false});
-gtag('event','page_view',{page_location:window.location.href,page_path:window.location.pathname+window.location.search});
-window.cdpGoogleLoaded&&window.cdpGoogleLoaded();
+window.gtag=gtag;gtag('js',new Date());
+${googleDiretas.map((tag) => `gtag('config','${tag}',{send_page_view:false});`).join("")}
+${googleProntoScript}
         `}</Script>
       </> : null}
     </>

@@ -94,6 +94,7 @@
 .pixelsCabecalho button { display: inline-flex; align-items: center; gap: 6px; }
 .pixelsLista { display: flex; flex-direction: column; gap: 9px; }
 .pixelLinha { display: grid; grid-template-columns: 28px minmax(130px,.7fr) minmax(190px,1.3fr) 36px; align-items: end; gap: 9px; padding: 11px; border: 1px solid var(--cdp-borda); border-radius: 11px; background: #fcfbf9; }
+.googleLinha { grid-template-columns: 28px minmax(180px,1fr) 36px; }
 .pixelNumero { align-self: center; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--cdp-ouro-fundo); color: var(--cdp-ouro-escuro); font-size: 10px; font-weight: 800; }
 .pixelLinha label { display: flex; min-width: 0; flex-direction: column; gap: 5px; color: var(--cdp-tinta-2); font-size: 10px; font-weight: 700; }
 .pixelLinha input { width: 100%; min-width: 0; height: 39px; padding: 8px 10px; border: 1px solid var(--cdp-borda); border-radius: 8px; background: #fff; color: var(--cdp-tinta); font-family: ui-monospace, Menlo, monospace; font-size: 11px; outline: none; }

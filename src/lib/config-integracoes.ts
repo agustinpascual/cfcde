@@ -15,7 +15,7 @@ export const CHAVES = [
   "GEMINI_API_KEY",
   /* Marketing: META_PIXELS guarda a relação ID/token em um único pacote
      cifrado; GOOGLE_TAG_ID é público e vai para o navegador. */
-  "META_PIXELS", "GOOGLE_TAG_ID",
+  "META_PIXELS", "GOOGLE_TAG_ID", "GOOGLE_TAGS",
   "BBF_PROVISIONAMENTO_TOKEN", "BBF_PROVISIONAMENTO_URL",
   /* Dados do emitente, usados no recibo de compra. Não são segredos —
      saem impressos no documento que o cliente recebe. */
@@ -37,7 +37,7 @@ const PUBLICOS: ChaveConfig[] = [
   "EMPRESA_ENDERECO", "EMPRESA_TELEFONE", "EMPRESA_LOGO",
   "CORREIOS_URL",
   "PAGAMENTOS_GATEWAYS",
-  "GOOGLE_TAG_ID",
+  "GOOGLE_TAG_ID", "GOOGLE_TAGS",
 ];
 
 let cache: { em: number; valores: Map<string, string> } | null = null;

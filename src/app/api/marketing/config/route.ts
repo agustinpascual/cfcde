@@ -9,6 +9,6 @@ export async function GET() {
       headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=300" },
     });
   } catch {
-    return Response.json({ metaPixelIds: [], googleTagId: "" }, { status: 503 });
+    return Response.json({ metaPixelIds: [], googleTagIds: [], googleTagId: "" }, { status: 503 });
   }
 }

@@ -8,11 +8,12 @@ import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import FormIntegracao from "@/components/painel/FormIntegracao";
 import GatewaysPagamento from "@/components/painel/GatewaysPagamento";
+import GoogleTagsForm from "@/components/painel/GoogleTagsForm";
 import MetaPixelsForm from "@/components/painel/MetaPixelsForm";
 import { lerGateways } from "@/lib/gateways-config";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { estadoDasChaves, type ChaveConfig } from "@/lib/config-integracoes";
-import { pixelsMetaParaPainel } from "@/lib/marketing-config";
+import { lerTagsGoogle, pixelsMetaParaPainel } from "@/lib/marketing-config";
 import { temChaveMestra } from "@/lib/cofre";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
@@ -43,6 +44,7 @@ const NOTAS: Record<ChaveConfig, string> = {
   META_CAPI_TOKEN: "Token da API de Conversões (Eventos > Configurar > API de Conversões)",
   META_PIXELS: "IDs e tokens dos pixels da Meta, armazenados juntos e cifrados",
   GOOGLE_TAG_ID: "ID da tag do Google, ex.: G-…, GT-…, AW-… ou GTM-…",
+  GOOGLE_TAGS: "Lista de tags do Google Analytics, Ads e Tag Manager",
   CORREIOS_URL: "Endpoint que cria a encomenda, ex.: https://….supabase.co/functions/v1/pedido-pago",
   CORREIOS_SECRET: "Valor do cabeçalho x-integration-secret — nunca sai do servidor",
   EMPRESA_LOGO: "Caminho do logo, ex.: /sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png",
@@ -90,7 +92,7 @@ const SERVICOS: Servico[] = [
   {
     nome: "Google Tag", papel: "Google Analytics, Google Ads ou Google Tag Manager",
     icone: BarChart3,
-    chaves: ["GOOGLE_TAG_ID"],
+    chaves: ["GOOGLE_TAGS"],
     passos: [
       "Cole o identificador completo fornecido pelo Google (G-, GT-, AW- ou GTM-)",
       "PageView, produto, carrinho, checkout e pagamento são enviados automaticamente",
@@ -146,7 +148,9 @@ export default async function Page() {
   if (!painelConfigurado()) redirect("/painel");
   if (!(await autenticado())) redirect("/painel/entrar");
 
-  const [vivos, chaves, pixelsMeta] = await Promise.all([lerAoVivo(), estadoDasChaves(), pixelsMetaParaPainel()]);
+  const [vivos, chaves, pixelsMeta, tagsGoogle] = await Promise.all([
+    lerAoVivo(), estadoDasChaves(), pixelsMetaParaPainel(), lerTagsGoogle(),
+  ]);
   const porChave = new Map(chaves.map((c) => [c.chave, c]));
 
   const estadoServico = (serv: Servico) => {
@@ -154,6 +158,9 @@ export default async function Page() {
       const preenchidas = pixelsMeta.filter((pixel) => pixel.tokenPreenchido).length;
       const estado = pixelsMeta.length === 0 ? "faltando" : preenchidas === pixelsMeta.length ? "ok" : "parcial";
       return { estados: [], estado } as const;
+    }
+    if (serv.nome === "Google Tag") {
+      return { estados: [], estado: tagsGoogle.length ? "ok" : "faltando" } as const;
     }
     const estados = serv.chaves.map((c) => porChave.get(c)!).filter(Boolean);
     const preenchidas = estados.filter((e) => e.preenchida).length;
@@ -232,13 +239,17 @@ export default async function Page() {
                       <span className={`${i.estado} ${i[estado]}`}>{rotulo}</span>
                     </header>
 
-                    {serv.nome === "Meta Pixel"
-                      ? <MetaPixelsForm inicial={pixelsMeta} editavel={temChaveMestra()} />
-                      : <div className={i.campos}>
+                    {serv.nome === "Meta Pixel" ? (
+                      <MetaPixelsForm inicial={pixelsMeta} editavel={temChaveMestra()} />
+                    ) : serv.nome === "Google Tag" ? (
+                      <GoogleTagsForm inicial={tagsGoogle} editavel={temChaveMestra()} />
+                    ) : (
+                      <div className={i.campos}>
                           {estados.map((e) => (
                             <FormIntegracao key={e.chave} estado={e} nota={NOTAS[e.chave]} />
                           ))}
-                        </div>}
+                      </div>
+                    )}
 
                     {estado !== "ok" && (
                       <div className={i.configAjuda}>
