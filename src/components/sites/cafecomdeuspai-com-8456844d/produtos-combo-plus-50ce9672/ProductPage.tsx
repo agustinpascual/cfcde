@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { type PointerEvent as ReactPointerEvent, useRef, useState } from "react";
 import { MobilePurchaseBar, ShippingCalculator } from "../shared/ProductPurchaseTools";
 import StockUrgency, { type EstoqueLote } from "../shared/StockUrgency";
 import { assetRoot, desconto, galeria, moeda, parcelas, type Oferta, type Produto } from "./produto";
@@ -25,6 +25,7 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
   /* Galeria do próprio produto quando houver; senão, a compartilhada. */
   const fotos = produto.galeria ?? galeria;
   const [selected, setSelected] = useState(0);
+  const galleryDrag = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const abatimento = desconto(oferta);
   /* Com mais de um pacote, a escolha substitui o seletor de quantidade —
      dois controles de quantidade na mesma tela só confundem. */
@@ -32,6 +33,45 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
   const [quantity, setQuantity] = useState(1);
   const [descriptionOpen, setDescriptionOpen] = useState(true);
   const [cookies, setCookies] = useState(true);
+
+  function moveGallery(direction: -1 | 1) {
+    setSelected((current) => (current + direction + fotos.length) % fotos.length);
+  }
+
+  function startGalleryDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    galleryDrag.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function finishGalleryDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    const start = galleryDrag.current;
+    if (!start || start.pointerId !== event.pointerId) return;
+
+    galleryDrag.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    const distanceX = event.clientX - start.x;
+    const distanceY = event.clientY - start.y;
+    if (Math.abs(distanceX) < 40 || Math.abs(distanceX) <= Math.abs(distanceY)) return;
+
+    moveGallery(distanceX < 0 ? 1 : -1);
+  }
+
+  function cancelGalleryDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (galleryDrag.current?.pointerId !== event.pointerId) return;
+    galleryDrag.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
 
   return (
     <main className={styles.page}>
@@ -43,16 +83,23 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
           <div className={styles.gallery}>
             <div className={styles.thumbs} aria-label="Imagens do produto">
               {fotos.map((file, index) => (
-                <button className={selected === index ? styles.thumbActive : ""} key={file} onClick={() => setSelected(index)} aria-label={`Ver imagem ${index + 1}`}>
+                <button type="button" className={selected === index ? styles.thumbActive : ""} key={file} onClick={() => setSelected(index)} aria-label={`Ver imagem ${index + 1}`} aria-current={selected === index ? "true" : undefined}>
                   <Image src={`${assetRoot}/${file}`} alt="" width={72} height={72} />
                 </button>
               ))}
             </div>
             <div className={styles.galleryMain}>
-              <div className={styles.mainImage}>
-                <Image src={`${assetRoot}/${fotos[selected]}`} alt={produto.nome} fill priority sizes="(max-width: 767px) 100vw, 58vw" />
+              <div
+                className={styles.mainImage}
+                role="group"
+                aria-label={`Imagem ${selected + 1} de ${fotos.length}. Arraste para o lado para navegar`}
+                onPointerDown={startGalleryDrag}
+                onPointerUp={finishGalleryDrag}
+                onPointerCancel={cancelGalleryDrag}
+              >
+                <Image src={`${assetRoot}/${fotos[selected]}`} alt={produto.nome} fill priority sizes="(max-width: 767px) 100vw, 58vw" draggable={false} />
               </div>
-              <div className={styles.dots} aria-hidden="true">{fotos.map((file, index) => <button key={file} className={selected === index ? styles.dotActive : ""} onClick={() => setSelected(index)} />)}</div>
+              <div className={styles.dots} role="group" aria-label="Selecionar imagem">{fotos.map((file, index) => <button type="button" key={file} className={selected === index ? styles.dotActive : ""} onClick={() => setSelected(index)} aria-label={`Ver imagem ${index + 1}`} aria-current={selected === index ? "true" : undefined} />)}</div>
               <ShippingCalculator />
             </div>
           </div>
