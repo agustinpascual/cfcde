@@ -48,6 +48,19 @@ test("cofre repete uma falha transitória sem perder a credencial", async () => 
   assert.equal(mod.consultas(), 2);
 });
 
+test("leituras simultâneas compartilham uma única consulta ao cofre", async () => {
+  const mod = carregar([
+    { data: [{ chave: "PINPAY_TOKEN", valor_cifrado: "token-ok" }], error: null },
+  ]);
+  const [primeiro, segundo] = await Promise.all([
+    mod.api.ler("PINPAY_TOKEN"),
+    mod.api.ler("PINPAY_TOKEN"),
+  ]);
+  assert.equal(primeiro, "token-ok");
+  assert.equal(segundo, "token-ok");
+  assert.equal(mod.consultas(), 1);
+});
+
 test("cofre não apresenta valor indecifrável como credencial ausente", async () => {
   const mod = carregar([
     { data: [{ chave: "PINPAY_TOKEN", valor_cifrado: "incompatível" }], error: null },

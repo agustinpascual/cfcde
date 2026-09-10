@@ -24,7 +24,9 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
       consultas++;
       const pedido = [...pedidos.values()].find(p => p.pix_id === `axxon_${id}`);
       if (consultar) return consultar(id, pedido, consultas);
-      return { id, amount: pedido.valor_centavos, status: "PENDING", method: pedido.metodo_pagamento === "pix" ? "pix" : "credit_card", metadata: { external_reference: pedido.referencia }, qrCode: "PIX-FICTICIO" };
+      // No PIX real, o GET da adquirente corre em paralelo à persistência do
+      // ID. O mock não deve depender da ordem interna dessas duas operações.
+      return { id, amount: pedido?.valor_centavos ?? 2500, status: "PENDING", method: pedido?.metodo_pagamento === "cartao" ? "credit_card" : "pix", metadata: { external_reference: pedido?.referencia }, qrCode: "PIX-FICTICIO" };
     },
   };
   class Consulta {
@@ -60,6 +62,7 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
     "./precos": { calcularCarrinhoCafe: () => ({ total: 2500, subtotal: 2500, desconto: 0,
       frete: { centavos: 0, nome: "PAC" }, kit: { nome: "1x Produto teste" }, quantidadeTotal: 1,
       itens: [{ slug: "teste", nome: "Produto teste", quantidade: 1, totalCentavos: 2500 }] }) },
+    "./documento-br": { documentoBrasileiroValido: () => true },
     "./confirmar-pedido": { depois: () => {}, confirmarPorEmail: async () => { confirmacoes++; }, registrarCompraNoPixel: async () => {}, enviarPixPorEmail: async () => {} },
     "./entrega-app": { entregarAcessoApp: async () => {} },
   };
@@ -85,7 +88,9 @@ function pedidoFicticio(referencia, id, pix_id = null) {
 
 test("reenvio mantém os mesmos seis dígitos e não cria outro pagamento", async () => {
   const a = ambiente();
-  const primeira = await (await a.processarAxxon(body, "pix")).json();
+  const primeiraResposta = await a.processarAxxon(body, "pix");
+  const primeira = await primeiraResposta.json();
+  assert.equal(primeiraResposta.status, 200, JSON.stringify({ primeira, logs: a.logs() }));
   const segunda = await (await a.processarAxxon(body, "pix")).json();
   assert.match(primeira.pedido, /^[1-9]\d{5}$/);
   assert.equal(segunda.pedido, primeira.pedido);

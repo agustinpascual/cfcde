@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { type PointerEvent as ReactPointerEvent, useRef, useState } from "react";
 import { MobilePurchaseBar, ShippingCalculator } from "../shared/ProductPurchaseTools";
 import StockUrgency, { type EstoqueLote } from "../shared/StockUrgency";
@@ -76,7 +77,7 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
   return (
     <main className={styles.page}>
       <section className={styles.product}>
-        <a className={styles.back} href="/">← Voltar</a>
+        <Link className={styles.back} href="/">← Voltar</Link>
         <div className={styles.badges}>{abatimento ? <span>-{abatimento}%</span> : null}<span>Frete grátis</span></div>
         <div className={styles.breadcrumb}>{produto.breadcrumb}</div>
         <div className={styles.productGrid}>

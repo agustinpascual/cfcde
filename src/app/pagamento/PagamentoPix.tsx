@@ -151,7 +151,17 @@ export default function PagamentoPix() {
     : `https://wa.me/${WHATSAPP}`;
   const tempoPix = `${String(Math.floor(segundosRestantes / 60)).padStart(2, "0")}:${String(segundosRestantes % 60).padStart(2, "0")}`;
 
-  if (carregando) return <div className={s.tela} />;
+  if (carregando) return (
+    <div className={s.tela}>
+      <Cabecalho />
+      <main className={`${s.corpo} ${s.carregandoPagamento}`} role="status" aria-label="Carregando pagamento">
+        <span className={s.carregandoLinha} />
+        <span className={s.carregandoTitulo} />
+        <span className={s.carregandoTexto} />
+        <div className={s.carregandoCartao}><span /></div>
+      </main>
+    </div>
+  );
 
   if (!cobranca) {
     return (
@@ -234,67 +244,74 @@ export default function PagamentoPix() {
     <div className={s.tela}>
       <Cabecalho />
       <main className={`${s.corpo} ${s.pixEntrada}`}>
-        <div className={s.resumo}>
-          <p className={s.resumoRotulo}>Valor a pagar</p>
-          <p className={s.valor}>{money.format(cobranca.total / 100)}</p>
-          <p className={s.pedido}>Pedido nº <b>{cobranca.pedido}</b></p>
+        <div className={s.topoPagamento}>
+          <div>
+            <p className={s.etapa}><span aria-hidden="true" /> Aguardando pagamento</p>
+            <h1>Pague com Pix</h1>
+            <p>Use o QR Code ou copie o código no aplicativo do seu banco.</p>
+          </div>
           <div className={`${s.timerPix} ${segundosRestantes === 0 ? s.timerEncerrado : ""}`} role="timer" aria-live="off" aria-label={`Tempo para pagar: ${tempoPix}`}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-            <span>Tempo para pagar</span><strong>{tempoPix}</strong>
+            <span>{segundosRestantes === 0 ? "Tempo encerrado" : "Tempo para pagar"}</span><strong>{tempoPix}</strong>
           </div>
         </div>
 
-        <div className={s.cartao}>
-          {cobranca.qr_code_url && (
-            <>
-              <Image className={s.qr} src={cobranca.qr_code_url} alt="QR Code para pagamento PIX"
-                width={232} height={232} unoptimized priority />
-              <p className={s.qrLegenda}>Aponte a câmera do app do seu banco</p>
-            </>
-          )}
+        <div className={s.pagamentoGrid}>
+          <section className={s.cartao} aria-label="Código para pagamento Pix">
+            {cobranca.qr_code_url && (
+              <div className={s.qrBloco}>
+                <div className={s.qrMoldura}>
+                  <Image className={s.qr} src={cobranca.qr_code_url} alt="QR Code para pagamento PIX"
+                    width={232} height={232} unoptimized priority />
+                </div>
+                <div>
+                  <strong>Escaneie o QR Code</strong>
+                  <p>Aponte a câmera do aplicativo do seu banco.</p>
+                </div>
+              </div>
+            )}
 
-          <p className={s.ou}>ou copie o código</p>
+            <p className={s.ou}>ou use o Pix Copia e Cola</p>
 
-          <label>
-            <span className="sr-only" />
+            <label className={s.codigoLabel} htmlFor="pix-codigo">Código Pix</label>
             <textarea id="pix-codigo" className={s.codigo} readOnly value={cobranca.qr_code}
               aria-label="Código PIX copia e cola" onFocus={(e) => e.currentTarget.select()} />
-          </label>
-          <button type="button" className={`${s.copiar} ${copiado ? s.copiado : ""}`} onClick={copiar}>
-            <span className={s.copiarConteudo}>
-              {copiado ? <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg> : <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>}
-              {copiado ? "Código copiado! Abra seu banco" : "Copiar código PIX"}
-            </span>
-          </button>
+            <button type="button" className={`${s.copiar} ${copiado ? s.copiado : ""}`} onClick={copiar}>
+              <span className={s.copiarConteudo}>
+                {copiado ? <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg> : <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>}
+                {copiado ? "Código copiado — abra seu banco" : "Copiar código Pix"}
+              </span>
+            </button>
+            <p className={s.confirmacaoAutomatica}>
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              A confirmação é automática. Você não precisa enviar comprovante.
+            </p>
+          </section>
+
+          <aside className={s.colunaResumo}>
+            <section className={s.resumoPedido} aria-label="Resumo do pedido">
+              <p className={s.resumoRotulo}>Resumo do pedido</p>
+              <div className={s.produtoResumo}>
+                <span className={s.produtoImagem}>
+                  <Image src={cobranca.produto_imagem ?? PRODUTO_IMAGEM_PADRAO} alt="" width={64} height={64} />
+                </span>
+                <span><strong>{cobranca.produto_nome ?? "Box Café com Deus Pai 2027"}</strong><small>Pedido nº {cobranca.pedido}</small></span>
+              </div>
+              <div className={s.totalLinha}><span>Total</span><strong>{money.format(cobranca.total / 100)}</strong></div>
+            </section>
+
+            <section className={s.passos}>
+              <h2 className={s.passosTitulo}>Como pagar</h2>
+              <ol className={s.lista}>
+                <li className={s.passo}><span className={s.passoNum}>1</span><span className={s.passoTexto}>Copie o código ou escaneie o QR Code.</span></li>
+                <li className={s.passo}><span className={s.passoNum}>2</span><span className={s.passoTexto}>No banco, escolha <b>Pix Copia e Cola</b>.</span></li>
+                <li className={s.passo}><span className={s.passoNum}>3</span><span className={s.passoTexto}>Confira o valor e confirme.</span></li>
+              </ol>
+            </section>
+          </aside>
         </div>
 
-        <section className={s.passos}>
-          <h2 className={s.passosTitulo}>Como pagar</h2>
-          <ol className={s.lista}>
-            <li className={s.passo}>
-              <span className={s.passoNum}>1</span>
-              <span className={s.passoTexto}>Copie o código acima.</span>
-            </li>
-            <li className={s.passo}>
-              <span className={s.passoNum}>2</span>
-              <span className={s.passoTexto}>
-                No app do seu banco, escolha <b>PIX</b> e depois <b>Copia e Cola</b>.
-              </span>
-            </li>
-            <li className={s.passo}>
-              <span className={s.passoNum}>3</span>
-              <span className={s.passoTexto}>Confira o valor e confirme.</span>
-            </li>
-          </ol>
-          <p className={s.passosNota}>
-            A confirmação leva poucos segundos e aparece aqui mesmo, sozinha.
-          </p>
-        </section>
-
-        <p className={s.nota}>
-          Não feche esta página antes de pagar. O código vale por tempo limitado —
-          se expirar, é só refazer o pedido.
-        </p>
+        <p className={s.nota}><strong>Não feche esta página.</strong> Assim que o banco confirmar, mostraremos a aprovação automaticamente.</p>
 
         {mostrarWhatsApp && (
           <aside className={s.ajudaWhatsApp} role="status" aria-label="Atendimento pelo WhatsApp">

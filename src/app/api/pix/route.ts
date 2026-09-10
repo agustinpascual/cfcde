@@ -90,51 +90,64 @@ export async function POST(req: Request) {
        dado autoritativo, então geramos a imagem aqui a partir dele — sem
        depender de serviço externo de QR. */
     const brcode = cobranca.pix?.qr_code ?? "";
-    let imagemQr = cobranca.pix?.qr_code_url ?? null;
-    if (brcode) {
-      try {
-        imagemQr = await QRCode.toDataURL(brcode, {
+    const imagemDoGateway = cobranca.pix?.qr_code_url ?? null;
+    const gerarImagem = brcode
+      ? QRCode.toDataURL(brcode, {
           errorCorrectionLevel: "M",
           margin: 1,
           width: 420,
           color: { dark: "#151515", light: "#ffffff" },  // preto da marca, não o navy antigo
-        });
-      } catch (e) {
+        }).catch((e) => {
         console.error("[pinpay] falha ao gerar QR local:", (e as Error).message);
-      }
-    }
+        return imagemDoGateway;
+      })
+      : Promise.resolve(imagemDoGateway);
 
     /* Registra o pedido. Se o banco falhar, a cobrança já existe na PinPay —
-       então logamos e seguimos, em vez de derrubar a compra do cliente. */
+       então logamos e seguimos, em vez de derrubar a compra do cliente.
+       A imagem do QR e o INSERT correm juntos: não há motivo para somar essas
+       duas esperas depois que a adquirente já devolveu a cobrança. */
     const db = supabaseAdmin();
-    if (db) {
-      const { error } = await db.from("pedidos").insert({
-        referencia: pedido,
-        pix_id: cobranca.id,
-        status: "pendente",
-        valor_centavos: valores.total,
-        subtotal_centavos: valores.subtotal,
-        desconto_centavos: valores.desconto,
-        frete_centavos: valores.frete.centavos,
-        kit: valores.kit.nome,
-        quantidade: "quantidadeTotal" in valores ? valores.quantidadeTotal : qtd,
-        frete_tipo: valores.frete.nome,
-        cliente_nome: nome,
-        cliente_email: email,
-        cliente_documento: documento,
-        cliente_telefone: soDigitos(body.celular) || null,
-        endereco: (body.endereco && typeof body.endereco === "object") ? body.endereco : null,
-      });
-      if (error) console.error("[pix] falha ao registrar pedido:", error.message);
-      else {
-        /* Guarda o copia-e-cola e o QR para exibir no painel. Update à parte:
-           se as colunas ainda não existirem (migration 0024), o pedido já foi
-           gravado acima e só o QR fica de fora — sem quebrar a venda. */
-        const { error: e2 } = await db.from("pedidos")
-          .update({ pix_copia_cola: brcode || null, pix_qr_url: imagemQr })
-          .eq("referencia", pedido);
-        if (e2) console.error("[pix] QR não salvo (rodar migration 0024):", e2.message);
-      }
+    const dadosPedido = {
+      referencia: pedido,
+      pix_id: cobranca.id,
+      status: "pendente",
+      valor_centavos: valores.total,
+      subtotal_centavos: valores.subtotal,
+      desconto_centavos: valores.desconto,
+      frete_centavos: valores.frete.centavos,
+      kit: valores.kit.nome,
+      quantidade: "quantidadeTotal" in valores ? valores.quantidadeTotal : qtd,
+      frete_tipo: valores.frete.nome,
+      cliente_nome: nome,
+      cliente_email: email,
+      cliente_documento: documento,
+      cliente_telefone: soDigitos(body.celular) || null,
+      endereco: (body.endereco && typeof body.endereco === "object") ? body.endereco : null,
+    };
+    const registrar = db
+      ? db.from("pedidos").insert({
+        ...dadosPedido,
+        pix_copia_cola: brcode || null,
+        pix_qr_url: imagemDoGateway,
+      })
+      : Promise.resolve({ error: null });
+    const [imagemQr, registro] = await Promise.all([gerarImagem, registrar]);
+    let erroRegistro = registro.error;
+    /* Compatibilidade com instalações que ainda não receberam as colunas de
+       QR: tenta o registro essencial, sem deixar uma cobrança órfã. */
+    if (db && erroRegistro && /pix_(copia_cola|qr_url)/i.test(erroRegistro.message)) {
+      const fallback = await db.from("pedidos").insert(dadosPedido);
+      erroRegistro = fallback.error;
+    }
+    if (erroRegistro) console.error("[pix] falha ao registrar pedido:", erroRegistro.message);
+    else if (db && imagemQr && imagemQr !== imagemDoGateway && !registro.error) {
+      /* A imagem local é grande e não deve atrasar a tela. O copia-e-cola e o
+         pedido já estão salvos; apenas troca a imagem provisória no painel. */
+      depois(Promise.resolve(db.from("pedidos").update({ pix_qr_url: imagemQr }).eq("referencia", pedido))
+        .then(({ error }) => {
+          if (error) console.error("[pix] QR não salvo:", error.message);
+        }));
     }
 
     /* Manda o código por e-mail. Em segundo plano: o cliente não pode esperar

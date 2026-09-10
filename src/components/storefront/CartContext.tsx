@@ -52,6 +52,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           })
           .filter((item): item is ItemCarrinho => item !== null);
 
+        // Estado persistido só existe no navegador; a hidratação após montar é intencional.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setItens(remontados);
       }
     } catch {

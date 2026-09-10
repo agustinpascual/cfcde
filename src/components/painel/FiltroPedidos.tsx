@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import Link from "next/link";
 import s from "./filtro.module.css";
 
 /* Filtro da lista de pedidos. Form GET puro: os valores viram query params,
@@ -43,7 +44,7 @@ export default function FiltroPedidos({
 
       <button type="submit" className={s.aplicar}>Filtrar</button>
       {(busca || status || metodo || de || ate) && (
-        <a href="/painel/pedidos" className={s.limpar}>Limpar</a>
+        <Link href="/painel/pedidos" className={s.limpar}>Limpar</Link>
       )}
     </form>
   );

@@ -32,6 +32,13 @@ const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const FINAIS = ["approved", "failed", "expired", "refunded"];
 const esperar = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms));
+const classificarErroSdk = (erro: unknown) => {
+  const texto = erro instanceof Error ? erro.message : String(erro ?? "");
+  if (/chave pública|autenticação/i.test(texto)) return "chave_publica";
+  if (/Bloopi/i.test(texto)) return "provedor_bloopi";
+  if (/carregar|load|network|fetch/i.test(texto)) return "rede_script";
+  return "inicializacao";
+};
 
 const mascararNumero = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 "); };
 const mascararValidade = (e: React.FormEvent<HTMLInputElement>) => { const d = digitos(e.currentTarget.value).slice(0, 4); e.currentTarget.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
@@ -64,10 +71,13 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     setMensagem("");
     let ultimoErro: unknown;
     try {
-      // Alguns navegadores terminam o evento de carregamento antes de o
-      // provedor interno do SDK estar pronto. Três tentativas curtas evitam
-      // transformar essa condição transitória em cartão indisponível.
-      for (let tentativa = 0; tentativa < 3; tentativa++) {
+      // O SDK principal ainda carrega o provedor interno (Bloopi) depois do
+      // onReady. Em redes móveis essa segunda etapa pode falhar por alguns
+      // segundos. Mantém a tela em carregamento e repete com backoff antes de
+      // declarar o cartão indisponível.
+      const esperas = [0, 500, 1000, 1500, 2500];
+      for (let tentativa = 0; tentativa < esperas.length; tentativa++) {
+        if (esperas[tentativa]) await esperar(esperas[tentativa]);
         try {
           if (!window.Axxon) throw new Error("SDK indisponível");
           await window.Axxon.setPublicKey(publicKey);
@@ -75,13 +85,14 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
           return;
         } catch (erro) {
           ultimoErro = erro;
-          if (tentativa < 2) await esperar(350 * (tentativa + 1));
         }
       }
       throw ultimoErro;
-    } catch {
+    } catch (erro) {
+      const motivo = classificarErroSdk(erro);
+      registrar("checkout_parcial", { etapa: "Pagamento", falha_cartao: "sdk_init", motivo });
       setSdk("erro");
-      setMensagem("Não foi possível iniciar o pagamento por cartão. Tente novamente em instantes ou pague com Pix.");
+      setMensagem("O ambiente seguro do cartão não terminou de carregar. Confira sua conexão e toque em “Tentar carregar novamente”.");
     } finally {
       inicializandoSdk.current = false;
     }

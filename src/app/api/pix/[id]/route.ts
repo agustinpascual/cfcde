@@ -35,6 +35,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       pago_em: string | null; valor_centavos: number;
     } | null = null;
     const db = supabaseAdmin();
+    /* Enquanto o banco informa se o webhook já confirmou, inicia também a
+       consulta à adquirente. Quando ainda está pendente, as duas latências
+       deixam de ser somadas e a tela recebe o estado novo mais cedo. */
+    const cancelarGateway = new AbortController();
+    const consultaGateway = consultarPix(id, AbortSignal.any([
+      cancelarGateway.signal,
+      AbortSignal.timeout(8000),
+    ]));
     if (db) {
       const { data, error } = await db.from("pedidos")
         .select("referencia,codigo_rastreio,status,pago_em,valor_centavos")
@@ -47,6 +55,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
     // Se o webhook já confirmou, não aguarda uma segunda chamada ao gateway.
     if (pedido?.status === "aprovado" || pedido?.status === "estornado") {
+      cancelarGateway.abort();
+      void consultaGateway.catch(() => undefined);
       return NextResponse.json({
         id, status: pedido.status === "aprovado" ? "approved" : "refunded",
         paid_at: pedido.pago_em, amount: pedido.valor_centavos,
@@ -54,7 +64,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       }, { headers: { "Cache-Control": "no-store" } });
     }
 
-    const pix = await consultarPix(id, AbortSignal.timeout(8000));
+    const pix = await consultaGateway;
     if (pedido && (pix.amount !== pedido.valor_centavos ||
         (pix.external_reference && pix.external_reference !== pedido.referencia))) {
       throw new Error("Dados da transação divergem do pedido");

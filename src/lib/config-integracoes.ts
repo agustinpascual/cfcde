@@ -37,10 +37,21 @@ const PUBLICOS: ChaveConfig[] = [
 ];
 
 let cache: { em: number; valores: Map<string, string> } | null = null;
+let carregamento: Promise<Map<string, string>> | null = null;
 const TTL = 30_000;
 
 async function doBanco(): Promise<Map<string, string>> {
   if (cache && Date.now() - cache.em < TTL) return cache.valores;
+  /* Um checkout com PIX e cartão pode pedir várias chaves ao mesmo tempo.
+     Num isolate frio todas compartilham a mesma leitura, em vez de abrir
+     consultas iguais contra o Supabase e aumentar a latência. */
+  if (carregamento) return carregamento;
+  carregamento = carregarDoBanco();
+  try { return await carregamento; }
+  finally { carregamento = null; }
+}
+
+async function carregarDoBanco(): Promise<Map<string, string>> {
   const db = supabaseAdmin();
   if (!db || !temChaveMestra()) return new Map();
 

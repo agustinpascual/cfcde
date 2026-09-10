@@ -84,7 +84,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     async function loadGatewayConfig(attempt = 0) {
       try {
         const response = await fetch(`/api/pagamentos/config?ts=${Date.now()}`, {
-          signal: controller.signal,
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]),
           cache: "no-store",
         });
         if (!response.ok) throw new Error("Configuração indisponível");
@@ -166,6 +166,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     if (prefill) return;
     try {
       const savedCep = localStorage.getItem(LAST_CEP_KEY)?.replace(/\D/g, "").slice(0, 8);
+      // Preferências client-only são hidratadas após a montagem de propósito.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (savedCep?.length === 8) setCep(savedCep);
       const savedContact = JSON.parse(localStorage.getItem(SAVED_CONTACT_KEY) ?? "null") as { email?: unknown; phone?: unknown } | null;
       if (savedContact && typeof savedContact.email === "string" && typeof savedContact.phone === "string") {
@@ -257,6 +259,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
 
   useEffect(() => {
     if (cep.length !== 8) {
+      // CEP incompleto redefine imediatamente o estado derivado da consulta.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCepStatus("idle");
       setShippingMethod(null);
       return;
@@ -406,6 +410,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     try { salvo = localStorage.getItem("cdp-cupom"); } catch {}
     const codigo = (daUrl || salvo || "").trim().toUpperCase();
     if (!codigo || !cupomValidoCarrinho(codigo, products.map((item) => item.slug))) return;
+    // Cupom persistido/da URL só está disponível depois que o cliente hidrata.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCoupon(codigo);
     setCupomAplicado(codigo);
     setCouponOpen(true);

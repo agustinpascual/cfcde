@@ -10,6 +10,8 @@ export function CookieBar() {
 
   useEffect(() => {
     try {
+      // A preferência só existe no navegador e precisa ser hidratada após montar.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!localStorage.getItem(CHAVE)) setVisivel(true);
     } catch {
       /* navegação privada / storage bloqueado: não insiste */

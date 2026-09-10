@@ -67,6 +67,12 @@ export async function sincronizarAxxon(p: PagamentoAxxon) {
   if (status === "pending" && !["PENDING", "PROCESSING", "REQUIRES_ACTION"].includes(p.status.toUpperCase())) {
     console.warn("[axxonpay] status não mapeado", { id: p.id, status: p.status });
   }
+  /* Polling de pagamento aberto não precisa regravar o mesmo ID a cada
+     consulta. Evitar este UPDATE reduz a resposta do status e a carga no
+     banco; estados finais e recuperações sem ID continuam persistidos. */
+  if (status === "pending" && pedido.pix_id === idAxxon(p.id)) {
+    return { pedido: pedido.referencia, codigo_rastreio: pedido.codigo_rastreio, status };
+  }
   const novo = { approved: "aprovado", failed: "falhou", expired: "expirado", refunded: "estornado" }[status];
   // Eventos fora de ordem não rebaixam uma aprovação ou desfazem um estorno.
   const podeMudar = novo && pedido.status !== "estornado" && (pedido.status !== "aprovado" || novo === "estornado");

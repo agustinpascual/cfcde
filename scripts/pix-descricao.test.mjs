@@ -28,6 +28,7 @@ test("PinPay recebe referência real, link oficial e todos os itens do pedido", 
       insert: async dados => { registrado = dados; return { error: null }; },
       update: () => ({ eq: async () => ({ error: null }) }),
     }) }) },
+    "@/lib/documento-br": { documentoBrasileiroValido: () => true },
   };
   const fonte = readFileSync(new URL("../src/app/api/pix/route.ts", import.meta.url), "utf8");
   const js = ts.transpileModule(fonte, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;

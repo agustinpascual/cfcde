@@ -46,8 +46,8 @@
   .coupon>div button{font-size:9px;font-weight:400}
   .coupon p{font-size:8px}
   .total{margin-bottom:17px}
-  .checkout,.footer .continue{height:26px;border-radius:5px;font-size:10px}
-  .footer .continue{margin-top:10px;border-width:1.5px}
+  .checkout,.footer .continue{height:40px;border-radius:8px;font-size:13px}
+  .footer .continue{margin-top:9px;border-width:1.5px}
   .empty svg{width:38px;height:38px}
   .empty h3{font-size:15px}
   .empty p{font-size:10px}

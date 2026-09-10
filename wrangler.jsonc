@@ -34,6 +34,12 @@
 		{ "pattern": "cafecomdeusepai.com", "custom_domain": true },
 		{ "pattern": "www.cafecomdeusepai.com", "custom_domain": true }
 	],
+	// Segunda proteção para pagamentos cujo webhook não seja entregue. A tela
+	// continua consultando em 1 s; o cron recupera pedidos mesmo se o cliente
+	// fechar o navegador antes do retorno do banco.
+	"triggers": {
+		"crons": ["* * * * *"]
+	},
 
 	"observability": {
 		"enabled": true

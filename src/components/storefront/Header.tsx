@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Menu, X, Search, ShoppingBag } from "lucide-react";
+import Link from "next/link";
 import { marca, menu } from "./brand";
 import { useCarrinho } from "./CartContext";
 import { useScrollLock } from "./useScrollLock";
@@ -33,9 +34,9 @@ export function Header() {
         </button>
 
         {/* Wordmark. Troque por <Image src={marca.logo} /> quando tiver o arquivo. */}
-        <a href="/" className="shrink-0 text-[15px] font-semibold tracking-[.18em] uppercase">
+        <Link href="/" className="shrink-0 text-[15px] font-semibold tracking-[.18em] uppercase">
           {marca.nome}
-        </a>
+        </Link>
 
         <nav className="ml-6 hidden flex-1 items-center gap-7 lg:flex">
           {menu.map((item) => (
