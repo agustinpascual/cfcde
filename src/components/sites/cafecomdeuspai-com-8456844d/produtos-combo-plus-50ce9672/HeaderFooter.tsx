@@ -19,6 +19,7 @@ import { RASTREIO_BASE } from "@/lib/rastreio";
 
 const assetRoot =
   "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672";
+const whatsappNumber = "5547920057518";
 
 const navigation = [
   /* As três primeiras têm página de seção própria, alimentada pelo catálogo.
@@ -192,12 +193,12 @@ export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }:
 
 function FooterColumn({ column }: { column: (typeof footerColumns)[number] }) {
   return (
-    <details className={styles.footerColumn}>
-      <summary>{column.title}<ChevronDown aria-hidden="true" /></summary>
+    <section className={styles.footerColumn}>
+      <h2 className={styles.footerTitle}>{column.title}</h2>
       <ul>
         {column.links.map(([label, href]) => <li key={label}>{href.startsWith("/") ? <Link href={href}>{label}</Link> : <a href={href}>{label}</a>}</li>)}
       </ul>
-    </details>
+    </section>
   );
 }
 
@@ -220,14 +221,14 @@ export function SiteFooter() {
           </div>
         </div>
         {footerColumns.map((column) => <FooterColumn key={column.title} column={column} />)}
-        <details className={styles.footerColumn}>
-          <summary>Dúvidas sobre seus pedidos?<ChevronDown aria-hidden="true" /></summary>
+        <section className={styles.footerColumn}>
+          <h2 className={styles.footerTitle}>Dúvidas sobre seus pedidos?</h2>
           <div className={styles.helpText}>
-            <p><strong>SAC: (47) 3224-9292</strong><br />Resposta por WhatsApp em até <strong>72h úteis</strong>.</p>
+            <p><strong>SAC: <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">(47) 92005-7518</a></strong><br />Resposta por WhatsApp em até <strong>72h úteis</strong>.</p>
             <p><strong>Dica:</strong> não recebeu o código de rastreio?<br />Confira sua <strong>caixa de spam</strong> e <strong>lixeira</strong>.</p>
             <a className={styles.trackingLink} href={RASTREIO_BASE} target="_blank" rel="noopener noreferrer">Acompanhe o seu pedido</a>
           </div>
-        </details>
+        </section>
       </div>
 
       <div className={styles.legalStrip}>

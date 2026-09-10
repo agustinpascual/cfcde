@@ -18,7 +18,7 @@ export default function Page() {
       <h2>Uso responsável</h2>
       <p>Ao utilizar o site, o cliente se compromete a fornecer dados corretos e atualizados. Tentativas de fraude, interferência técnica ou uso indevido podem resultar no bloqueio da operação.</p>
       <h2>Atendimento</h2>
-      <p>Em caso de dúvida sobre uma compra, entre em contato com o SAC pelo número <strong>(47) 3224-9292</strong>.</p>
+      <p>Em caso de dúvida sobre uma compra, entre em contato com o SAC pelo número <strong>(47) 92005-7518</strong>.</p>
     </PaginaInstitucional>
   );
 }

@@ -11,7 +11,7 @@ export const marca = {
      o PNG abaixo (mesmo arquivo do favicon e dos ícones do app). */
   logo: "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png" as string | null,
   tagline: "Devocionais, canecas, cafés e combos para começar o dia com Deus.",
-  whatsapp: "554732249292",
+  whatsapp: "5547920057518",
 };
 
 export const avisoTopo = "Espaço para o aviso do topo — frete, cupom ou prazo";

@@ -16,9 +16,9 @@ export default function Page() {
       <div className={s.highlight}>
         <h2>Central de atendimento</h2>
         <p>Tenha em mãos o número do pedido e o e-mail usado na compra para agilizar a consulta.</p>
-        <p><strong>SAC: (47) 3224-9292</strong></p>
+        <p><strong>SAC: (47) 92005-7518</strong></p>
         <div className={s.actions}>
-          <a className={s.button} href="https://wa.me/554732249292" target="_blank" rel="noopener noreferrer">Falar pelo WhatsApp</a>
+          <a className={s.button} href="https://wa.me/5547920057518" target="_blank" rel="noopener noreferrer">Falar pelo WhatsApp</a>
           <a className={`${s.button} ${s.buttonSecondary}`} href={RASTREIO_BASE} target="_blank" rel="noopener noreferrer">Rastrear pedido</a>
         </div>
       </div>

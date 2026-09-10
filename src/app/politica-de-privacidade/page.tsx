@@ -18,8 +18,8 @@ export default function Page() {
       <h2>Segurança e funcionamento</h2>
       <p>Também podemos usar dados técnicos, como endereço IP, navegador e eventos de navegação, para segurança, funcionamento do site e medição de desempenho. O acesso é limitado às finalidades necessárias e aos prestadores envolvidos na operação da loja.</p>
       <h2>Fale com a gente</h2>
-      <p>Para dúvidas sobre privacidade ou sobre os dados de um pedido, entre em contato com o SAC pelo número <strong>(47) 3224-9292</strong>.</p>
-      <a className={s.button} href="https://wa.me/554732249292" target="_blank" rel="noopener noreferrer">Falar com o atendimento</a>
+      <p>Para dúvidas sobre privacidade ou sobre os dados de um pedido, entre em contato com o SAC pelo número <strong>(47) 92005-7518</strong>.</p>
+      <a className={s.button} href="https://wa.me/5547920057518" target="_blank" rel="noopener noreferrer">Falar com o atendimento</a>
     </PaginaInstitucional>
   );
 }

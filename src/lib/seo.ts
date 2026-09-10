@@ -95,7 +95,7 @@ export function jsonLdLoja() {
       description: marca.tagline,
       contactPoint: {
         "@type": "ContactPoint",
-        telephone: "+55 47 3224-9292",
+        telephone: "+55 47 92005-7518",
         contactType: "customer service",
         areaServed: "BR",
         availableLanguage: "Portuguese",

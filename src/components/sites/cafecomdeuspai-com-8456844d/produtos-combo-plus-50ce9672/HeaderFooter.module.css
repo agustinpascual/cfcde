@@ -28,14 +28,11 @@
 .socials a { width:36px; height:36px; display:grid; place-items:center; border-radius:50%; color:#111; background:#fff; }
 .socials svg { width:17px; height:17px; stroke-width:1.7; }
 .footerColumn { min-width:0; }
-.footerColumn summary { list-style:none; font-size:12px; font-weight:700; line-height:1.35; text-transform:none; cursor:default; }
-.footerColumn summary::-webkit-details-marker { display:none; }
-.footerColumn summary svg { display:none; }
+.footerTitle { margin:0; font-size:12px; font-weight:700; line-height:1.35; text-transform:none; }
 .footerColumn ul { margin:18px 0 0; padding:0; list-style:none; }
 .footerColumn li+li { margin-top:10px; }
 .footerColumn a,.helpText { color:#555; font-size:11px; line-height:1.55; text-decoration:none; }
 .footerColumn a:hover { color:#000; text-decoration:underline; }
-.footerColumn:not([open])>ul,.footerColumn:not([open])>.helpText { display:block; }
 .helpText { margin-top:18px; }
 .helpText p { margin:0 0 12px; }
 .trackingLink { display:inline-block; color:#111!important; font-weight:700; text-decoration:underline!important; }
@@ -75,11 +72,8 @@
   .footerBrand { align-items:center; gap:16px; padding-bottom:24px; }
   .footerBrand>a,.footerBrand img { width:66px; height:75px; }
   .footerColumn { border-top:1px solid #dededb; }
-  .footerColumn summary { min-height:50px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
-  .footerColumn summary svg { width:15px; height:15px; display:block; transition:transform .2s; }
-  .footerColumn[open] summary svg { transform:rotate(180deg); }
+  .footerTitle { padding:15px 0 10px; }
   .footerColumn ul,.helpText { margin:0; padding:0 0 16px; }
-  .footerColumn:not([open])>ul,.footerColumn:not([open])>.helpText { display:none; }
   .legalStrip { padding:22px 8px 0; display:flex; flex-direction:column; align-items:center; gap:22px; }
   .paymentBlock,.secureBlock { width:100%; text-align:center; }
   .payments,.secureBlock span { justify-content:center; }
@@ -89,9 +83,9 @@
 
 .promoBar,.header,.mobileMenu{font-family:var(--font-work-sans),"Work Sans",sans-serif}
 .footer{font-family:var(--font-inter),Inter,sans-serif}
-.footerColumn summary{font-size:16px;font-weight:500;line-height:24px}
+.footerTitle{font-size:16px;font-weight:500;line-height:24px}
 .footerColumn li,.helpText{font-size:14px;line-height:21px}
-@media(max-width:767px){.footerColumn summary{font-size:13px;line-height:20px}.footerColumn li,.helpText{font-size:12px;line-height:18px}}
+@media(max-width:767px){.footerTitle{font-size:13px;line-height:20px}.footerColumn li,.helpText{font-size:12px;line-height:18px}}
 
 /* ===== Cabeçalho sobreposto (home) =====
    Sai do fluxo e flutua sobre o banner. Texto e ícones em branco, porque o
