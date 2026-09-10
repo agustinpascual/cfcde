@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
-  const segredo = process.env.CRON_SECRET;
+  /* Na VPS o agendador roda dentro do próprio container. Instalações antigas
+     já têm PAINEL_SENHA, então ela funciona como fallback até um segredo
+     exclusivo ser definido, sem deixar a rota pública. */
+  const segredo = process.env.CRON_SECRET || process.env.PAINEL_SENHA;
   if (!segredo || req.headers.get("authorization") !== `Bearer ${segredo}`) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
