@@ -60,7 +60,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
 
       <FiltroPedidos busca={sp.busca} status={sp.status} metodo={sp.metodo} de={sp.de} ate={sp.ate} />
 
-      <section className={s.cartao}>
+      <section className={`${s.cartao} ${s.cartaoTabela}`}>
         {pedidos.length === 0 ? (
           <p className={s.vazio}>
             {temFiltro
@@ -71,7 +71,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
           </p>
         ) : (
           <div className={s.tabelaWrap}>
-            <table className={s.tabela}>
+            <table className={`${s.tabela} ${s.tabelaResponsiva} ${s.tabelaPedidos}`}>
               <thead>
                 <tr>
                   <th>Pedido</th><th>Cliente</th><th>Status</th>
@@ -81,24 +81,24 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
               <tbody>
                 {pedidos.map((p) => (
                   <tr key={p.id} className={s.linhaPedido}>
-                    <td className={s.mono}>
+                    <td className={s.mono} data-label="Pedido">
                       <Link href={`/painel/pedidos/${p.id}`} className={s.linkPedido}
                         aria-label={`Abrir pedido ${p.referencia}${p.cliente_nome ? ` de ${p.cliente_nome}` : ""}`}>
                         {p.referencia}
                       </Link>
                     </td>
-                    <td>
+                    <td data-label="Cliente">
                       {p.cliente_nome ?? "—"}
                       {p.cliente_email && <><br /><span className={s.mono}>{p.cliente_email}</span></>}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <span className={`${s.selo} ${SELO[p.status] ?? s.seloNeutro}`}>
                         {ROTULO[p.status] ?? p.status}
                       </span>
                       <span className={s.formaPgto}>{formaPagamento(p.metodo_pagamento)}</span>
                     </td>
-                    <td className={s.dir}><strong>{moeda(p.valor_centavos)}</strong></td>
-                    <td className={`${s.mono} ${s.pedidoData}`}>
+                    <td className={s.dir} data-label="Valor"><strong>{moeda(p.valor_centavos)}</strong></td>
+                    <td className={`${s.mono} ${s.pedidoData}`} data-label="Data">
                       {quando(p.criado_em)}<span className={s.pedidoSeta} aria-hidden>→</span>
                     </td>
                   </tr>

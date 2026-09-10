@@ -45,7 +45,7 @@ export default async function Page() {
         </div>
       )}
 
-      <section className={s.cartao}>
+      <section className={`${s.cartao} ${s.cartaoTabela}`}>
         {!erro && carrinhos.length === 0 ? (
           <p className={s.vazio}>
             Nenhum carrinho abandonado por aqui. Quando alguém preencher os dados
@@ -54,7 +54,7 @@ export default async function Page() {
           </p>
         ) : carrinhos.length > 0 ? (
           <div className={s.tabelaWrap}>
-            <table className={s.tabela}>
+            <table className={`${s.tabela} ${s.tabelaResponsiva} ${s.tabelaAbandonados}`}>
               <thead>
                 <tr>
                   <th>Contato</th><th>Parou em</th><th>Produto</th>
@@ -64,23 +64,23 @@ export default async function Page() {
               <tbody>
                 {carrinhos.map((c) => (
                   <tr key={c.sessao}>
-                    <td>
+                    <td data-label="Contato">
                       {c.nome ?? "Sem nome"}
                       {c.email && <><br /><span className={s.mono}>{c.email}</span></>}
                       {tel(c.telefone) && <><br /><span className={s.mono}>{tel(c.telefone)}</span></>}
                     </td>
-                    <td>
+                    <td data-label="Parou em">
                       <span className={`${s.selo} ${s.seloPendente}`}>{c.etapa}</span>
                     </td>
-                    <td>{c.produto_nome ?? "—"}</td>
-                    <td className={s.dir}>{c.valor ? <strong>{moeda(c.valor)}</strong> : "—"}</td>
-                    <td>
+                    <td data-label="Produto">{c.produto_nome ?? "—"}</td>
+                    <td className={s.dir} data-label="Valor">{c.valor ? <strong>{moeda(c.valor)}</strong> : "—"}</td>
+                    <td data-label="Origem">
                       {[c.cidade, c.uf].filter(Boolean).join(" - ") || "—"}
                       {c.dispositivo && <><br /><span className={s.formaPgto}>
                         {rotuloDispositivo(c.dispositivo)}
                       </span></>}
                     </td>
-                    <td className={s.mono}>{quando(c.atualizado_em)}</td>
+                    <td className={s.mono} data-label="Última atividade">{quando(c.atualizado_em)}</td>
                   </tr>
                 ))}
               </tbody>

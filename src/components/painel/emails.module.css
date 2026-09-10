@@ -99,7 +99,7 @@
 }
 .solta:hover { border-color: var(--cdp-tinta-3); background: var(--cdp-fundo); }
 .btnArquivo {
-  flex: 0 0 auto; min-height: 36px; padding: 0 15px;
+  flex: 0 0 auto; min-height: 42px; padding: 0 15px;
   border: 1px solid var(--cdp-borda); border-radius: 8px; background: #fff;
   font-size: 13px; font-weight: 600; color: var(--cdp-tinta); cursor: pointer;
 }

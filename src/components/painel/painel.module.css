@@ -310,6 +310,94 @@
   .pagBotao, .pagNumero { min-height: 44px; min-width: 44px; }
 }
 
+/* No celular, as listas operacionais viram cartões completos. A tabela continua
+   sem alterações no desktop, mas nenhuma informação fica escondida atrás de
+   rolagem horizontal em telas estreitas. */
+@media (max-width: 860px) {
+  .cartaoTabela {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .tabelaResponsiva,
+  .tabelaResponsiva tbody {
+    display: block;
+    width: 100%;
+  }
+  .tabelaResponsiva thead { display: none; }
+  .tabelaResponsiva tbody {
+    display: grid;
+    gap: 10px;
+  }
+  .tabelaResponsiva tr {
+    display: grid;
+    min-width: 0;
+    padding: 14px 15px;
+    border: 1px solid var(--cdp-borda);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(36, 29, 20, .025);
+  }
+  .tabelaResponsiva td {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+  .tabelaResponsiva td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: var(--cdp-tinta-3);
+    font-family: inherit;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+  .tabelaResponsiva tbody tr:hover { background: #fff; }
+
+  .tabelaPedidos tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "pedido status"
+      "cliente cliente"
+      "valor data";
+    column-gap: 14px;
+    row-gap: 14px;
+  }
+  .tabelaPedidos td:nth-child(1) { grid-area: pedido; }
+  .tabelaPedidos td:nth-child(2) { grid-area: cliente; }
+  .tabelaPedidos td:nth-child(3) { grid-area: status; text-align: right; }
+  .tabelaPedidos td:nth-child(4) { grid-area: valor; text-align: left; }
+  .tabelaPedidos td:nth-child(5) { grid-area: data; text-align: right; }
+  .tabelaPedidos td:nth-child(3)::before { text-align: right; }
+  .tabelaPedidos td:nth-child(5)::before { text-align: right; }
+  .tabelaPedidos .formaPgto { text-align: right; }
+  .tabelaPedidos .pedidoSeta { margin-left: 7px; }
+
+  .tabelaAbandonados tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "contato etapa"
+      "produto produto"
+      "valor atividade"
+      "origem origem";
+    column-gap: 14px;
+    row-gap: 14px;
+  }
+  .tabelaAbandonados td:nth-child(1) { grid-area: contato; }
+  .tabelaAbandonados td:nth-child(2) { grid-area: etapa; text-align: right; }
+  .tabelaAbandonados td:nth-child(3) { grid-area: produto; }
+  .tabelaAbandonados td:nth-child(4) { grid-area: valor; text-align: left; }
+  .tabelaAbandonados td:nth-child(5) { grid-area: origem; }
+  .tabelaAbandonados td:nth-child(6) { grid-area: atividade; text-align: right; }
+  .tabelaAbandonados td:nth-child(2)::before,
+  .tabelaAbandonados td:nth-child(6)::before { text-align: right; }
+}
+
 @media (max-width: 359px) {
   .kpisCompactos { grid-template-columns: 1fr; }
 }

@@ -14,13 +14,20 @@
 .exemplo { background: var(--cdp-fundo); border: 1px solid var(--cdp-borda); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; position: relative; }
 .exArea { width: 100%; border: 1px solid var(--cdp-borda); border-radius: 8px; padding: 9px 11px; font-size: 13px; line-height: 1.55; font-family: inherit; resize: vertical; outline: none; }
 .exArea:focus { border-color: var(--cdp-ouro-escuro); }
-.remover { align-self: flex-start; font-size: 12px; color: var(--cdp-erro); text-decoration: underline; }
-.adicionar { margin-top: 12px; border: 1px dashed var(--cdp-tinta-3); border-radius: 9px; padding: 11px 16px; font-size: 13px; font-weight: 600; color: var(--cdp-tinta-2); width: 100%; }
+.remover.remover { align-self: flex-start; min-height: 40px; padding: 0 4px; font-size: 12px; color: var(--cdp-erro); text-decoration: underline; }
+.adicionar.adicionar { min-height: 44px; margin-top: 12px; border: 1px dashed var(--cdp-tinta-3); border-radius: 9px; padding: 11px 16px; font-size: 13px; font-weight: 600; color: var(--cdp-tinta-2); width: 100%; }
 .adicionar:hover { border-color: var(--cdp-ouro-escuro); color: var(--cdp-ouro-escuro); }
 
 .rodape { display: flex; align-items: center; gap: 14px; }
-.salvar { background: var(--cdp-menu); color: #fff; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 13px 24px; }
+.salvar.salvar { min-height: 46px; background: var(--cdp-menu); color: #fff; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 13px 24px; }
 .salvar:hover { background: var(--cdp-menu-2); }
 .salvar:disabled { opacity: .5; cursor: default; }
 .msgOk { font-size: 13px; color: var(--cdp-ok); font-weight: 600; }
 .msgErro { font-size: 13px; color: var(--cdp-erro); }
+
+@media (max-width: 600px) {
+  .form { gap: 16px; }
+  .bloco { padding: 16px; }
+  .rodape { align-items: stretch; flex-direction: column; }
+  .salvar.salvar { width: 100%; }
+}
