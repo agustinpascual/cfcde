@@ -6,13 +6,14 @@ import Imprimir from "@/components/painel/Imprimir";
 import { lerPedido, moeda } from "@/components/painel/dados";
 import { ler } from "@/lib/config-integracoes";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
+import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 import s from "@/components/painel/recibo.module.css";
 
 export const metadata: Metadata = { title: "Recibo", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const data = (v?: string | null) =>
-  v ? new Date(v).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
+  v ? formatarDataHoraBrasilia(v, { year: "2-digit" }) : "—";
 
 const PAGAMENTO: Record<string, string> = {
   pix: "PIX", cartao: "Cartão de crédito", cartao_sandbox: "Cartão (teste)",

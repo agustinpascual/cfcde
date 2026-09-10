@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { FUSO_BRASILIA } from "@/lib/data-brasilia";
 
 /* Leituras do painel. Tudo pelo service_role no servidor — o navegador
    nunca fala direto com o banco. Se o Supabase não estiver configurado,
@@ -96,9 +97,8 @@ export const PERIODOS: Record<string, { dias: number; rotulo: string }> = {
   "90d": { dias: 90, rotulo: "90 dias" },
 };
 
-const FUSO_PAINEL = "America/Sao_Paulo";
 const FORMATO_DATA_PAINEL = new Intl.DateTimeFormat("en-CA", {
-  timeZone: FUSO_PAINEL, year: "numeric", month: "2-digit", day: "2-digit",
+  timeZone: FUSO_BRASILIA, year: "numeric", month: "2-digit", day: "2-digit",
 });
 
 /** Data civil usada pelo painel, sem depender do fuso UTC do servidor. */

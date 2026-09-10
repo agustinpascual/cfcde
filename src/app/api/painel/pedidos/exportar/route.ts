@@ -1,5 +1,6 @@
 import { autenticado } from "@/lib/painel-auth";
 import { exportarPedidos, expandirStatus, expandirMetodo, type PedidoExport } from "@/components/painel/dados";
+import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,10 +12,7 @@ const ROTULO_STATUS: Record<string, string> = {
 const metodoLegivel = (m: string) => (m === "pix" ? "PIX" : m.startsWith("cartao") ? "Cartão" : m);
 
 const dataBR = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-    timeZone: "America/Sao_Paulo",
-  }) : "";
+  iso ? formatarDataHoraBrasilia(iso) : "";
 
 /* Valor em reais com vírgula decimal, sem "R$": o Excel-BR lê como número. */
 const reais = (centavos: number) => (centavos / 100).toFixed(2).replace(".", ",");

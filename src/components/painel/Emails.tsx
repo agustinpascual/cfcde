@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import e from "./emails.module.css";
 import { marca } from "@/components/storefront/brand";
+import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 
 type Contato = { email: string; nome: string | null; origem: string; inscrito: boolean };
 type Campanha = {
@@ -337,7 +338,7 @@ export default function Emails() {
                   <td><span className={`${e.selo} ${e[c.status] ?? ""}`}>{c.status}</span></td>
                   <td>{c.enviados}/{c.total}</td>
                   <td>{c.falhas}</td>
-                  <td>{new Date(c.criada_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                  <td>{formatarDataHoraBrasilia(c.criada_em, { year: undefined })}</td>
                 </tr>
               ))}
             </tbody>

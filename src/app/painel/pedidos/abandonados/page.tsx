@@ -6,16 +6,14 @@ import Recarrega from "@/components/painel/Recarrega";
 import SubAbasPedidos from "@/components/painel/SubAbasPedidos";
 import { lerAoVivo, lerCarrinhosComEstado, moeda, rotuloDispositivo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
+import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 import s from "@/components/painel/painel.module.css";
 
 export const metadata: Metadata = { title: "Carrinhos abandonados", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const quando = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
-    timeZone: "America/Sao_Paulo",
-  });
+  formatarDataHoraBrasilia(iso, { year: "2-digit" });
 
 const tel = (v: string | null) => {
   if (!v) return null;

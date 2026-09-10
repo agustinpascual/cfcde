@@ -1,5 +1,6 @@
 import { rotuloDispositivo, type Jornada, type EventoJornada } from "./dados";
 import s from "./jornada.module.css";
+import { formatarHoraBrasilia } from "@/lib/data-brasilia";
 
 /* Linha do tempo do comportamento do cliente naquela compra: clicou em
    comprar, quanto levou para preencher, copiou o PIX, voltou depois de copiar.
@@ -8,9 +9,7 @@ import s from "./jornada.module.css";
 /* O Worker roda em UTC; sem fixar o fuso, o horário apareceria 3h adiantado.
    As durações são deltas e não dependem disto — só o relógio absoluto. */
 const hora = (iso: string) =>
-  new Date(iso).toLocaleTimeString("pt-BR", {
-    hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "America/Sao_Paulo",
-  });
+  formatarHoraBrasilia(iso, { second: "2-digit" });
 
 /* Duração curta e legível: "8 s", "1 min 34 s", "2 h 05 min". */
 function dur(segundos: number): string {

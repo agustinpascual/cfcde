@@ -3,6 +3,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import { ler } from "./config-integracoes";
 import type { DadosPedido } from "./emails-modelos";
 import { sitePublicoEmail } from "./site-email";
+import { formatarDataBrasilia, formatarHoraBrasilia } from "./data-brasilia";
 
 /* Comprovante de venda em PDF, anexado ao e-mail de pagamento confirmado.
 
@@ -187,13 +188,13 @@ export async function reciboPdf(
   // linha 1
   celula("NOME / RAZÃO SOCIAL", d.clienteNome ?? "", M, y, L * 0.55, H);
   celula("CPF / CNPJ", formatarDoc(d.clienteDocumento), M + L * 0.55, y, L * 0.2, H);
-  celula("DATA DE EMISSÃO", emitido.toLocaleDateString("pt-BR"), M + L * 0.75, y, L * 0.25, H);
+  celula("DATA DE EMISSÃO", formatarDataBrasilia(emitido), M + L * 0.75, y, L * 0.25, H);
   y -= H;
   // linha 2
   celula("ENDEREÇO", e.endereco, M, y, L * 0.55, H);
   celula("BAIRRO / DISTRITO", e.bairro, M + L * 0.55, y, L * 0.2, H);
   celula("CEP", e.cep, M + L * 0.75, y, L * 0.125, H);
-  celula("SAÍDA", emitido.toLocaleDateString("pt-BR"), M + L * 0.875, y, L * 0.125, H);
+  celula("SAÍDA", formatarDataBrasilia(emitido), M + L * 0.875, y, L * 0.125, H);
   y -= H;
   // linha 3 — e-mail em campo próprio, é como o cliente é contatado
   celula("E-MAIL", d.clienteEmail ?? "", M, y, L * 0.55, H);
@@ -204,7 +205,7 @@ export async function reciboPdf(
   celula("TELEFONE", d.clienteTelefone ?? "", M + L * 0.34, y, L * 0.16, H);
   celula("UF", e.uf, M + L * 0.5, y, L * 0.08, H);
   celula("INSCRIÇÃO ESTADUAL", "Isento", M + L * 0.58, y, L * 0.29, H);
-  celula("HORA DA SAÍDA", emitido.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+  celula("HORA DA SAÍDA", formatarHoraBrasilia(emitido),
     M + L * 0.87, y, L * 0.13, H);
   y -= H + 14;
 

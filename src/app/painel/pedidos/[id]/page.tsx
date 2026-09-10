@@ -11,6 +11,7 @@ import { ipBloqueado, lerAoVivo, lerJornada, lerPedido, moeda, rotuloDispositivo
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import { ler } from "@/lib/config-integracoes";
 import { MENSAGEM_PIX_PADRAO } from "@/lib/mensagens-recuperacao";
+import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 import s from "@/components/painel/painel.module.css";
 import d from "@/components/painel/pedido.module.css";
 
@@ -27,10 +28,7 @@ const ROTULO: Record<string, string> = {
 };
 const formaPagamento = (metodo: string) => metodo === "cartao" ? "Cartão · AxxonPay" : metodo === "cartao_sandbox" ? "Cartão sandbox" : "PIX";
 const quando = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-    timeZone: "America/Sao_Paulo",   // Worker roda em UTC; fixa o horário no Brasil
-  }) : "—";
+  iso ? formatarDataHoraBrasilia(iso) : "—";
 
 const doc = (v: string | null) => {
   if (!v) return "—";

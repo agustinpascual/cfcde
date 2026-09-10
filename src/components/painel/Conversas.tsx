@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import w from "./whatsapp.module.css";
+import { formatarDataBrasilia, formatarHoraBrasilia } from "@/lib/data-brasilia";
 
 /* Duas colunas no estilo WhatsApp Web: lista à esquerda, thread à direita.
    A lista atualiza a cada 8s e a conversa aberta a cada 4s — a Z-API entrega
@@ -33,12 +34,11 @@ function quando(iso: string) {
   if (min < 1) return "agora";
   if (min < 60) return `${min}min`;
   if (min < 1440) return `${Math.floor(min / 60)}h`;
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return formatarDataBrasilia(iso, { year: undefined });
 }
-const hora = (iso: string) =>
-  new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+const hora = (iso: string) => formatarHoraBrasilia(iso);
 const diaCheio = (iso: string) =>
-  new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  formatarDataBrasilia(iso, { month: "long" });
 
 export default function Conversas({ inicial }: { inicial: Conversa[] }) {
   const [conversas, setConversas] = useState(inicial);

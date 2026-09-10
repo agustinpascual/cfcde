@@ -11,6 +11,7 @@ import Recarrega from "@/components/painel/Recarrega";
 import SubAbasPedidos from "@/components/painel/SubAbasPedidos";
 import { estadoInstalacao, configurado, lerAoVivo, lerCarrinhos, lerPaginaPedidos, moeda, POR_PAGINA } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
+import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 import s from "@/components/painel/painel.module.css";
 
 export const metadata: Metadata = { title: "Pedidos", robots: { index: false, follow: false } };
@@ -26,9 +27,7 @@ const ROTULO: Record<string, string> = {
 };
 const formaPagamento = (metodo: string) => metodo === "cartao" ? "Cartão · AxxonPay" : metodo === "cartao_sandbox" ? "Cartão sandbox" : "PIX";
 const quando = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
-  });
+  formatarDataHoraBrasilia(iso, { year: "2-digit" });
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ p?: string; busca?: string; status?: string; metodo?: string; de?: string; ate?: string }> }) {
   if (!painelConfigurado()) redirect("/painel");
