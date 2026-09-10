@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { processarAvisosPix } from "@/lib/aviso-pix";
+import { processarRecuperacoesWhatsApp } from "@/lib/recuperacao-whatsapp";
+import { reconciliarPendentes } from "@/lib/reconciliar";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,9 +13,13 @@ export async function GET(req: Request) {
   }
 
   try {
-    return NextResponse.json({ ok: true, ...(await processarAvisosPix()) });
+    /* Primeiro atualiza o estado real no gateway. Assim um Pix pago segundos
+       antes do ciclo nunca recebe mensagem de cobrança pendente. */
+    const pagamentos = await reconciliarPendentes(30);
+    const recuperacoes = await processarRecuperacoesWhatsApp();
+    return NextResponse.json({ ok: true, pagamentos, recuperacoes });
   } catch (e) {
-    console.error("[aviso-pix] falha:", (e as Error).message);
-    return NextResponse.json({ erro: "Falha ao processar avisos." }, { status: 500 });
+    console.error("[recuperacoes] falha:", (e as Error).message);
+    return NextResponse.json({ erro: "Falha ao processar recuperações." }, { status: 500 });
   }
 }

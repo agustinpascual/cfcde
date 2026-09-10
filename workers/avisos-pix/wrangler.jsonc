@@ -4,9 +4,9 @@
 	"main": "index.ts",
 	"compatibility_date": "2026-09-03",
 
-	// 12h UTC = 9h de Brasília — o mesmo horário que estava no vercel.json.
+	// A cada minuto para respeitar os atrasos configurados no painel.
 	"triggers": {
-		"crons": ["0 12 * * *"]
+		"crons": ["* * * * *"]
 	},
 
 	"vars": {

@@ -35,6 +35,8 @@ const NOTAS: Record<ChaveConfig, string> = {
   ZAPI_CLIENT_TOKEN: "Token de segurança da conta Z-API",
   WHATSAPP_MSG_PIX_PENDENTE: "Modelo de recuperação de Pix, editado na aba WhatsApp",
   WHATSAPP_MSG_CARRINHO_ABANDONADO: "Modelo de recuperação de carrinho, editado na aba WhatsApp",
+  WHATSAPP_RECUPERACAO_PIX_MINUTOS: "Tempo da recuperação automática de Pix, editado na aba WhatsApp",
+  WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS: "Tempo da recuperação automática de carrinho, editado na aba WhatsApp",
   GEMINI_API_KEY: "Chave do Google AI Studio — dá ao robô compreensão de linguagem",
   BBF_PROVISIONAMENTO_URL: "URL do endpoint que cria a conta no app (app-bella-two)",
   BBF_PROVISIONAMENTO_TOKEN: "Token x-bbf-token que autoriza a criação de acesso",

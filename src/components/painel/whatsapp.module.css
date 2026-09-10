@@ -36,7 +36,9 @@
 .modeloCard header p { margin-top: 3px; font-size: 12px; line-height: 1.45; color: var(--cdp-tinta-2); }
 .modeloCard label { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 700; color: var(--cdp-tinta-2); }
 .modeloCard textarea { width: 100%; min-height: 176px; resize: vertical; padding: 12px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: #fff; color: var(--cdp-tinta); font: 13px/1.5 inherit; }
-.modeloCard textarea:focus { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: -1px; }
+.modeloCard select { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: #fff; color: var(--cdp-tinta); font: 13px inherit; }
+.modeloCard textarea:focus, .modeloCard select:focus { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: -1px; }
+.regraExclusiva { margin: 7px 0 13px; font-size: 11.5px; line-height: 1.45; color: var(--cdp-tinta-3); }
 .variaveis { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
 .variaveis span { width: 100%; font-size: 11px; color: var(--cdp-tinta-3); }
 .variaveis code { padding: 3px 7px; border: 1px solid var(--cdp-borda); border-radius: 5px; background: #fff; color: var(--cdp-tinta-2); font-size: 11px; }

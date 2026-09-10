@@ -40,8 +40,8 @@ async function dispararAvisos(env: Env) {
   });
   const corpo = await resposta.text();
 
-  if (!resposta.ok) console.error(`[avisos-pix] ${resposta.status} em ${alvo}: ${corpo}`);
-  else console.log(`[avisos-pix] ok: ${corpo}`);
+  if (!resposta.ok) console.error(`[recuperacoes] ${resposta.status} em ${alvo}: ${corpo}`);
+  else console.log(`[recuperacoes] ok: ${corpo}`);
 
   return { status: resposta.status, corpo };
 }

@@ -623,8 +623,8 @@ let consultaInstalacao: Promise<EstadoTabela[]> | null = null;
    o webhook do WhatsApp morria inteiro porque `saudou_em` não tinha sido
    criada, e nada na tela indicava isso. */
 const COLUNAS: Record<string, string[]> = {
-  pedidos: ["metodo_pagamento", "aviso_pix_em"],
-  sessoes: ["ip"],
+  pedidos: ["metodo_pagamento", "aviso_pix_em", "recuperacao_pix_em"],
+  sessoes: ["ip", "recuperacao_carrinho_em"],
   conversas: ["saudou_em"],
   treinamento: ["escalar_mensagem", "saudacao_ativa", "saudacao_mensagem", "atendente_nome"],
 };
