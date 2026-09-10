@@ -14,6 +14,11 @@
 .logo { width: 62px; height: auto; display: block; }
 
 .corpo { flex: 1 1 auto; width: 100%; max-width: 560px; margin: 0 auto; padding: 26px 20px 60px; }
+.pixEntrada{animation:pixPaginaEntrada .48s cubic-bezier(.2,.8,.2,1) both}
+.pixPronto{display:flex;align-items:center;gap:13px;margin:4px 0 24px;padding:14px 16px;border:1px solid #bcd6c6;border-radius:13px;background:linear-gradient(135deg,#edf8f2,#f9fcfa);color:#245a43;box-shadow:0 8px 24px rgba(47,107,79,.07);animation:pixProntoEntrada .55s .1s cubic-bezier(.2,.8,.2,1) both}
+.pixProntoIcone{position:relative;display:grid;flex:0 0 42px;width:42px;height:42px;place-items:center;border-radius:50%;background:#2f6b4f;color:#fff;box-shadow:0 5px 16px rgba(47,107,79,.24);animation:pixProntoPop .55s .22s cubic-bezier(.18,.89,.32,1.28) both}
+.pixProntoIcone::after{content:"";position:absolute;inset:-5px;border:2px solid rgba(47,107,79,.16);border-radius:50%;animation:pixProntoOnda .85s .35s ease-out both}.pixProntoIcone svg path{stroke-dasharray:24;stroke-dashoffset:24;animation:pixProntoCheck .38s .36s ease-out forwards}
+.pixPronto>div{display:grid;gap:3px}.pixPronto strong{font-size:15px}.pixPronto span{font-size:12.5px;line-height:1.4;color:#547264}.pixPronto .pixProntoIcone{color:#fff}
 
 .aviso {
   display: flex; align-items: center; gap: 9px; justify-content: center;
@@ -68,6 +73,7 @@
 }
 .copiar.copiar:hover { background: #2d2926; }
 .copiado.copiado { background: #2f6b4f; }
+.copiarConteudo{display:flex;align-items:center;justify-content:center;gap:9px}.copiado .copiarConteudo{animation:pixCopiadoPop .32s cubic-bezier(.2,.9,.3,1.25)}
 
 /* Passo a passo — deliberadamente discreto. É texto de apoio: quem já paga
    PIX não lê, e quem lê precisa de frase curta, não de parágrafo. Os números
@@ -115,6 +121,7 @@
 }
 .ajudaWhatsApp a:hover { background: #188247; }
 @keyframes ajudaEntrada { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pixPaginaEntrada{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}@keyframes pixProntoEntrada{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}@keyframes pixProntoPop{from{opacity:0;transform:scale(.55) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes pixProntoOnda{from{opacity:.8;transform:scale(.7)}to{opacity:0;transform:scale(1.35)}}@keyframes pixProntoCheck{to{stroke-dashoffset:0}}@keyframes pixCopiadoPop{50%{transform:scale(1.025)}}
 
 .rodape { text-align: center; font-size: 12.5px; color: #8b8279; margin-top: 26px; line-height: 1.6; }
 .rodape a { color: #8a6f42; text-decoration: underline; text-underline-offset: 2px; }
@@ -212,8 +219,8 @@
 @keyframes sucessoBrilho { 0% { opacity: 0; transform: translate(0,0) scale(.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x),var(--y)) scale(1); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .sucesso, .sucessoIcone, .sucessoIcone::before, .brilho, .ajudaWhatsApp { animation: none; }
-  .sucessoIcone svg path { animation: none; stroke-dashoffset: 0; }
+  .sucesso, .sucessoIcone, .sucessoIcone::before, .brilho, .ajudaWhatsApp,.pixEntrada,.pixPronto,.pixProntoIcone,.pixProntoIcone::after,.copiado .copiarConteudo { animation: none; }
+  .sucessoIcone svg path,.pixProntoIcone svg path { animation: none; stroke-dashoffset: 0; }
 }
 
 @media (max-width: 480px) {

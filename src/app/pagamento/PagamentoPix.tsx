@@ -219,7 +219,13 @@ export default function PagamentoPix() {
   return (
     <div className={s.tela}>
       <Cabecalho />
-      <main className={s.corpo}>
+      <main className={`${s.corpo} ${s.pixEntrada}`}>
+        <section className={s.pixPronto} aria-label="Código PIX pronto">
+          <span className={s.pixProntoIcone} aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          </span>
+          <div><strong>Seu PIX está pronto</strong><span>Copie o código e conclua no aplicativo do seu banco.</span></div>
+        </section>
         <div className={s.resumo}>
           <p className={s.resumoRotulo}>Valor a pagar</p>
           <p className={s.valor}>{money.format(cobranca.total / 100)}</p>
@@ -243,7 +249,10 @@ export default function PagamentoPix() {
               aria-label="Código PIX copia e cola" onFocus={(e) => e.currentTarget.select()} />
           </label>
           <button type="button" className={`${s.copiar} ${copiado ? s.copiado : ""}`} onClick={copiar}>
-            {copiado ? "Código copiado" : "Copiar código PIX"}
+            <span className={s.copiarConteudo}>
+              {copiado ? <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg> : <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>}
+              {copiado ? "Código copiado! Abra seu banco" : "Copiar código PIX"}
+            </span>
           </button>
         </div>
 

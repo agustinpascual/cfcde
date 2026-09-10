@@ -10,6 +10,7 @@ import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
 import s from "./cartao.module.css";
+import a from "./cartao-animacoes.module.css";
 
 /* Cartão AxxonPay com adquirente Bloopi (decisão do lojista em docs/axxonpay.md).
    Os campos são não controlados: número, validade e CVV nunca entram no state
@@ -254,18 +255,19 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         )}
       </label>
       <button className={s.botao} type="submit" disabled={sdk !== "pronto" || ocupado}>
-        {sdk === "carregando" ? "Carregando pagamento seguro…" : sdk === "erro" ? "Cartão indisponível" : ocupado ? "Processando com segurança…" : `Pagar ${money.format(planoSelecionado.total / 100)}`}
+        {sdk === "carregando" ? "Carregando pagamento seguro…" : sdk === "erro" ? "Cartão indisponível" : ocupado ? <span className={a.botaoCarregando}><LoaderCircle aria-hidden="true" /> Validando pagamento…</span> : `Pagar ${money.format(planoSelecionado.total / 100)}`}
       </button>
+      {ocupado && <div className={a.validacao} role="status" aria-live="polite"><span className={a.escudo}><ShieldCheck aria-hidden="true" /></span><div><strong>Protegendo sua compra</strong><p>Validando os dados e preparando a autenticação do banco.</p><span className={a.progresso}><i /></span></div></div>}
       <p className={s.aviso}><ShieldCheck aria-hidden="true" /><span>Pagamento processado em ambiente seguro.</span></p>
     </form>}
     {cobranca && <div className={s.resultado} role="status" aria-live="polite">
       {status === "approved" ? <><h2>Pagamento aprovado</h2><p>Pedido <b>{cobranca.pedido}</b> · {money.format(cobranca.total / 100)}. Você receberá o comprovante e as informações do pedido por e-mail.</p></>
         : status === "failed" || status === "expired" ? <><h2>Pagamento não aprovado</h2><p>O emissor não autorizou esta tentativa. Nenhum valor foi cobrado.</p></>
         : status === "refunded" ? <><h2>Pagamento estornado</h2><p>Pedido <b>{cobranca.pedido}</b>.</p></>
-        : <div className={s.tresDs}>
-            <span className={s.icone3ds} aria-hidden="true">{fase3ds === "conferindo" ? <ShieldCheck /> : <LoaderCircle className={fase3ds === "erro" ? "" : s.girando} />}</span>
+        : <div className={`${s.tresDs} ${a.tresDs}`}>
+            <span className={`${s.icone3ds} ${a.icone3ds}`} aria-hidden="true">{fase3ds === "conferindo" ? <ShieldCheck /> : <LoaderCircle className={fase3ds === "erro" ? "" : s.girando} />}</span>
             <div><h2>{fase3ds === "abrindo" || fase3ds === "desafio" ? "Autenticação de segurança" : "Confirmando o pagamento…"}</h2>
-              <p>Pedido <b>{cobranca.pedido}</b>. {fase3ds === "abrindo" ? "Abrindo a tela segura do seu banco…" : fase3ds === "desafio" ? "Conclua a verificação na tela do banco. Não feche nem atualize esta página." : "Aguarde enquanto confirmamos o resultado do pagamento."}</p></div>
+              <p>Pedido <b>{cobranca.pedido}</b>. {fase3ds === "abrindo" ? "Abrindo a tela segura do seu banco…" : fase3ds === "desafio" ? "Conclua a verificação na tela do banco. Não feche nem atualize esta página." : "Aguarde enquanto confirmamos o resultado do pagamento."}</p><span className={a.progresso}><i /></span></div>
           </div>}
     </div>}
     {mensagem && <p className={s.mensagem} role="alert">{mensagem}</p>}

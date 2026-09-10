@@ -139,6 +139,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
 
   const [paymentError, setPaymentError] = useState("");
   const [generatingPix, setGeneratingPix] = useState(false);
+  const [pixStage, setPixStage] = useState<"idle" | "criando" | "pronto">("idle");
   const [copied, setCopied] = useState(false);
   const [withoutNumber, setWithoutNumber] = useState(Boolean(prefill?.withoutNumber));
   const [sameInvoiceData, setSameInvoiceData] = useState(true);
@@ -427,7 +428,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   };
 
   async function generatePix() {
-    setGeneratingPix(true); setPaymentError(""); setPixCharge(null);
+    setGeneratingPix(true); setPixStage("criando"); setPaymentError(""); setPixCharge(null);
     try {
       const tentativa = tentativaPagamento(cartKey, "pix");
       const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, tentativa }), signal: AbortSignal.timeout(35000) });
@@ -448,6 +449,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
         throw new Error(data.erro || "Não foi possível gerar o PIX.");
       }
       setPixCharge(data);
+      setPixStage("pronto");
       finalizado.current = true;   // saiu do funil de abandono: PIX gerado
       abandonoPendente.current = null;
       pixel("AddPaymentInfo", { ...dadosProdutoPixel(cartKey, productName, data.total, products.reduce((sum, item) => sum + item.quantity, 0)), payment_method: "pix" });
@@ -463,9 +465,12 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
           produto_imagem: product.image,
         });
       } catch { /* storage bloqueado */ }
+      // Uma confirmação curta evita que a troca imediata de rota pareça um
+      // piscar ou uma tela travada, sem acrescentar espera perceptível.
+      await new Promise<void>(resolve => window.setTimeout(resolve, 360));
       router.push("/pagamento");
     } catch (error) { setPaymentError(error instanceof Error ? error.message : "Não foi possível gerar o PIX."); }
-    finally { setGeneratingPix(false); }
+    finally { setGeneratingPix(false); setPixStage("idle"); }
   }
 
   async function copyPix() {
@@ -577,6 +582,19 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
           onAplicar={aplicarCupomSaida}
         />
       ) : null}
+      {generatingPix && (
+        <div className={styles.pixGeneratingOverlay} role="status" aria-live="polite" aria-label={pixStage === "pronto" ? "PIX gerado" : "Gerando PIX"}>
+          <div className={`${styles.pixGeneratingCard} ${pixStage === "pronto" ? styles.pixGeneratingReady : ""}`}>
+            <span className={styles.pixGeneratingIcon} aria-hidden="true">
+              {pixStage === "pronto" ? <Check /> : <PixLogo />}
+            </span>
+            <strong>{pixStage === "pronto" ? "PIX gerado com sucesso!" : "Preparando seu PIX…"}</strong>
+            <p>{pixStage === "pronto" ? "Abrindo a tela para copiar o código." : "Estamos criando o código seguro do seu pedido."}</p>
+            <span className={styles.pixGeneratingTrack} aria-hidden="true"><i /></span>
+            <small>Não feche esta página</small>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
