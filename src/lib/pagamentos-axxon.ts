@@ -40,7 +40,7 @@ export async function respostaAxxon(p: PagamentoAxxon, referencia: string) {
 export async function sincronizarAxxon(p: PagamentoAxxon) {
   const db = supabaseAdmin();
   if (!db) throw new Error("Banco indisponível");
-  const consulta = () => db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,codigo_rastreio");
+  const consulta = () => db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,codigo_rastreio,pix_copia_cola");
   const { data: encontrado, error } = await consulta().eq("pix_id", idAxxon(p.id)).maybeSingle();
   let pedido = encontrado;
   if (error) throw new Error("Não foi possível consultar o pedido");
@@ -71,6 +71,17 @@ export async function sincronizarAxxon(p: PagamentoAxxon) {
      consulta. Evitar este UPDATE reduz a resposta do status e a carga no
      banco; estados finais e recuperações sem ID continuam persistidos. */
   if (status === "pending" && pedido.pix_id === idAxxon(p.id)) {
+    /* O GET da Axxon é também a fonte de recuperação para cobranças antigas
+       cujo QR chegou ao checkout, mas não foi persistido. Assim o cron
+       preenche o código antes de tentar mandar a mensagem de WhatsApp. */
+    if ((p.paymentMethod ?? p.method) === "pix" && p.qrCode && pedido.pix_copia_cola !== p.qrCode) {
+      const imagem = await QRCode.toDataURL(p.qrCode, { width: 420, margin: 1 });
+      const { error: erroQr } = await db.from("pedidos").update({
+        pix_copia_cola: p.qrCode,
+        pix_qr_url: imagem,
+      }).eq("referencia", pedido.referencia).eq("pix_id", idAxxon(p.id));
+      if (erroQr) throw new Error("Não foi possível salvar o código Pix");
+    }
     return { pedido: pedido.referencia, codigo_rastreio: pedido.codigo_rastreio, status };
   }
   const novo = { approved: "aprovado", failed: "falhou", expired: "expirado", refunded: "estornado" }[status];
@@ -271,7 +282,17 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     etapa = "resposta";
     // Criação/3DS não são aprovação: confirma por GET autenticado ou webhook.
     const resposta = await respostaAxxon(p, referencia);
-    if (metodo === "pix" && p.qrCode) enviarEmailDoPix(p.qrCode);
+    if (metodo === "pix" && p.qrCode) {
+      /* A recuperação por WhatsApp lê o código do pedido, não da resposta que
+         ficou no navegador. Persistir antes de responder impede que uma aba
+         fechada deixe uma cobrança válida impossível de recuperar. */
+      const { error: erroQr } = await db.from("pedidos").update({
+        pix_copia_cola: p.qrCode,
+        pix_qr_url: resposta.qr_code_url,
+      }).eq("referencia", referencia).eq("pix_id", idAxxon(p.id));
+      if (erroQr) throw new Error("Cobrança criada, código Pix em conferência");
+      enviarEmailDoPix(p.qrCode);
+    }
     return Response.json(resposta);
   } catch (erro) {
     const http = (erro as { status?: unknown } | null)?.status;

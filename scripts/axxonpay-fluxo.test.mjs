@@ -96,6 +96,7 @@ test("reenvio mantém os mesmos seis dígitos e não cria outro pagamento", asyn
   assert.equal(segunda.pedido, primeira.pedido);
   assert.equal(segunda.id, primeira.id);
   assert.equal(a.contadores().chamadas, 1);
+  assert.equal(a.pedidos.get(primeira.pedido).pix_copia_cola, "PIX-FICTICIO");
 });
 test("colisão de número com outro gateway é resolvida antes da cobrança", async () => {
   const a = ambiente({ numeros: ["123456", "654321"] });
@@ -195,6 +196,7 @@ test("timeout no GET preserva ID e reenvio recupera PIX sem nova cobrança", asy
   const recuperado = await a.processarAxxon(body, "pix");
   assert.equal(recuperado.status, 200);
   assert.equal((await recuperado.json()).qr_code, "PIX-FICTICIO");
+  assert.equal(a.pedido().pix_copia_cola, "PIX-FICTICIO");
   assert.equal(a.contadores().chamadas, 1);
 });
 test("valor divergente no GET nunca é aceito, mas preserva ID para conferência", async () => {
