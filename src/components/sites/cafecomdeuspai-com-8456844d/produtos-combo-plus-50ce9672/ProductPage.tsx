@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
-import { type PointerEvent as ReactPointerEvent, useRef, useState } from "react";
+import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { MobilePurchaseBar, ShippingCalculator } from "../shared/ProductPurchaseTools";
 import StockUrgency, { type EstoqueLote } from "../shared/StockUrgency";
 import { assetRoot, desconto, galeria, moeda, parcelas, type Oferta, type Produto } from "./produto";
@@ -27,6 +27,7 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
   const fotos = produto.galeria ?? galeria;
   const [selected, setSelected] = useState(0);
   const galleryDrag = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+  const imagensPreparadas = useRef(new Set<number>());
   const abatimento = desconto(oferta);
   /* Com mais de um pacote, a escolha substitui o seletor de quantidade —
      dois controles de quantidade na mesma tela só confundem. */
@@ -35,12 +36,54 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
   const [descriptionOpen, setDescriptionOpen] = useState(true);
   const [cookies, setCookies] = useState(true);
 
+  function prepararImagem(indice: number) {
+    const normalizado = (indice + fotos.length) % fotos.length;
+    if (imagensPreparadas.current.has(normalizado) || normalizado === selected) return;
+    imagensPreparadas.current.add(normalizado);
+    const { props } = getImageProps({
+      src: `${assetRoot}/${fotos[normalizado]}`,
+      alt: "",
+      fill: true,
+      sizes: "(max-width: 767px) 100vw, 58vw",
+    });
+    const imagem = new window.Image();
+    imagem.decoding = "async";
+    if (props.sizes) imagem.sizes = props.sizes;
+    if (props.srcSet) imagem.srcset = props.srcSet;
+    imagem.src = props.src;
+    void imagem.decode?.().catch(() => {});
+  }
+
+  useEffect(() => {
+    /* A primeira foto é o LCP. Assim que o navegador fica livre, baixa e
+       decodifica as demais variantes otimizadas. O gesto seguinte troca uma
+       imagem já no cache, inclusive em redes móveis lentas. */
+    const prepararRestantes = () => {
+      for (let i = 1; i < fotos.length; i++) prepararImagem(i);
+    };
+    const navegador = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (navegador.requestIdleCallback) {
+      const id = navegador.requestIdleCallback(prepararRestantes, { timeout: 1200 });
+      return () => navegador.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(prepararRestantes, 250);
+    return () => window.clearTimeout(id);
+    // A galeria vem de uma constante do catálogo e não muda durante a página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fotos]);
+
   function moveGallery(direction: -1 | 1) {
     setSelected((current) => (current + direction + fotos.length) % fotos.length);
   }
 
   function startGalleryDrag(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    prepararImagem(selected + 1);
+    prepararImagem(selected - 1);
 
     galleryDrag.current = {
       pointerId: event.pointerId,
@@ -98,7 +141,16 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
                 onPointerUp={finishGalleryDrag}
                 onPointerCancel={cancelGalleryDrag}
               >
-                <Image src={`${assetRoot}/${fotos[selected]}`} alt={produto.nome} fill priority sizes="(max-width: 767px) 100vw, 58vw" draggable={false} />
+                <Image
+                  key={fotos[selected]}
+                  src={`${assetRoot}/${fotos[selected]}`}
+                  alt={produto.nome}
+                  fill
+                  preload={selected === 0}
+                  loading={selected === 0 ? undefined : "eager"}
+                  sizes="(max-width: 767px) 100vw, 58vw"
+                  draggable={false}
+                />
               </div>
               <div className={styles.dots} role="group" aria-label="Selecionar imagem">{fotos.map((file, index) => <button type="button" key={file} className={selected === index ? styles.dotActive : ""} onClick={() => setSelected(index)} aria-label={`Ver imagem ${index + 1}`} aria-current={selected === index ? "true" : undefined} />)}</div>
               <ShippingCalculator />

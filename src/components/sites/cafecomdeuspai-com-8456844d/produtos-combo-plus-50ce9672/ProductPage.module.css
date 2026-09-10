@@ -10,6 +10,9 @@
 .mainImage{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .mainImage:active{cursor:grabbing}
 .mainImage img{pointer-events:none;user-select:none;-webkit-user-drag:none}
+.mainImage img{animation:galeriaEntrada .16s ease-out}
+@keyframes galeriaEntrada{from{opacity:.72}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.mainImage img{animation:none}}
 @media(max-width:767px){.info{display:none}.galleryMain{display:block}.page{padding-bottom:145px}.cookies{display:none}}
 
 /* O bloco do 1º lote vive na coluna da direita, entre o frete e a quantidade.
