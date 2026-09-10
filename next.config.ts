@@ -30,6 +30,12 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.cafecomdeusepai.com" }],
+        destination: "https://cafecomdeusepai.com/:path*",
+        permanent: true,
+      },
+      {
         source: "/produtos/combo-plus2027",
         destination: "/produto/box-plus2027",
         permanent: true,
