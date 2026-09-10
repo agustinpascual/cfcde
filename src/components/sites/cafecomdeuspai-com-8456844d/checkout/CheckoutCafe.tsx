@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, LockKeyhole, Mail, MapPin, Truck, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
@@ -122,6 +123,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   const [draftShipping, setDraftShipping] = useState<"pac" | "sedex">("pac");
   const [paymentExpanded, setPaymentExpanded] = useState(false);
   const [savePaymentData, setSavePaymentData] = useState(false);
+  const firstNameInput = useRef<HTMLInputElement>(null);
+  const addressNumberInput = useRef<HTMLInputElement>(null);
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const shippingFeeCents = shippingMethod === "sedex" ? 2032 : 0;
   /* Mesma conta do servidor (lib/promocoes): cupom primeiro, Pix sobre o
@@ -264,6 +267,32 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   function updateAddress(field: keyof Address, value: string) {
     setAddress(current => ({ ...current, [field]: value }));
     if (error) setError("");
+  }
+
+  function selectShipping(method: "pac" | "sedex") {
+    const openingDeliveryFields = shippingMethod === null;
+    // Renderiza os dados de entrega ainda dentro do gesto do usuário. Assim o
+    // foco também abre o teclado no Safari do iPhone, que bloqueia focos tardios.
+    flushSync(() => {
+      setShippingMethod(method);
+      setError("");
+    });
+    if (openingDeliveryFields) {
+      firstNameInput.current?.focus({ preventScroll: true });
+      firstNameInput.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function changePhone(value: string) {
+    const previousLength = phone.replace(/\D/g, "").length;
+    const formatted = formatPhone(value);
+    const currentLength = formatted.replace(/\D/g, "").length;
+    setPhone(formatted);
+    if (error) setError("");
+    if (!withoutNumber && previousLength < 11 && currentLength === 11) {
+      addressNumberInput.current?.focus({ preventScroll: true });
+      addressNumberInput.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }
 
   function changeCep() {
@@ -428,13 +457,13 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
                 {cep.length === 8 && <fieldset className={styles.shippingMethods}>
                   <legend>Envio em domicílio</legend>
                   <label className={shippingMethod === "pac" ? styles.shippingSelected : ""}>
-                    <input type="radio" name="shipping" checked={shippingMethod === "pac"} onChange={() => setShippingMethod("pac")} />
+                    <input type="radio" name="shipping" checked={shippingMethod === "pac"} onChange={() => selectShipping("pac")} />
                     <Truck aria-hidden="true" />
                     <span><b>Correios - PAC</b><small>Entrega prevista para {deliveryDate(25)}</small></span>
                     <strong>Grátis</strong>
                   </label>
                   <label className={shippingMethod === "sedex" ? styles.shippingSelected : ""}>
-                    <input type="radio" name="shipping" checked={shippingMethod === "sedex"} onChange={() => setShippingMethod("sedex")} />
+                    <input type="radio" name="shipping" checked={shippingMethod === "sedex"} onChange={() => selectShipping("sedex")} />
                     <Truck aria-hidden="true" />
                     <span><b>Correios - SEDEX</b><small>Entrega prevista para {deliveryDate(13)}</small></span>
                     <strong>R$ 20,32</strong>
@@ -443,13 +472,13 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
                 {shippingMethod && <div className={styles.deliveryData}>
                   <h3>Dados para entrega</h3>
                   <div className={styles.contactFields}>
-                    <input className={styles.input} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Nome" autoComplete="given-name" aria-label="Nome" />
+                    <input ref={firstNameInput} className={styles.input} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Nome" autoComplete="given-name" aria-label="Nome" />
                     <input className={styles.input} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Sobrenome" autoComplete="family-name" aria-label="Sobrenome" />
-                    <input className={`${styles.input} ${styles.fullRow}`} value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="Telefone com DDD" inputMode="tel" autoComplete="tel" aria-label="Telefone com DDD" />
+                    <input className={`${styles.input} ${styles.fullRow}`} value={phone} onChange={e => changePhone(e.target.value)} placeholder="Telefone com DDD" inputMode="tel" autoComplete="tel" aria-label="Telefone com DDD" />
                   </div>
                   <p role="status" className={`${styles.cepMessage} ${cepStatus === "error" ? styles.cepError : ""}`}>{cepStatus === "loading" ? "Buscando endereço..." : cepStatus === "partial" ? "CEP encontrado. Complete os campos do endereço que não foram preenchidos automaticamente." : cepStatus === "error" ? "Não foi possível buscar o CEP. Preencha o endereço manualmente." : ""}</p>
                   {cepStatus === "ready" ? <div className={styles.addressCard}><MapPin aria-hidden="true" /><div><span>{address.street}</span><b>CEP {cep} - {address.neighborhood}</b><span>{address.city} - {address.state}</span></div><button type="button" onClick={changeCep}>Alterar</button></div> : cepStatus === "partial" || cepStatus === "error" ? <div className={styles.addressEdit}><input className={styles.input} value={address.street} onChange={e => updateAddress("street", e.target.value)} placeholder="Rua / Endereço" aria-label="Endereço" autoComplete="address-line1" required /><input className={styles.input} value={address.neighborhood} onChange={e => updateAddress("neighborhood", e.target.value)} placeholder="Bairro" aria-label="Bairro" required /><input className={styles.input} value={address.city} onChange={e => updateAddress("city", e.target.value)} placeholder="Cidade" aria-label="Cidade" autoComplete="address-level2" required /><input className={styles.input} value={address.state} onChange={e => updateAddress("state", e.target.value.toUpperCase().slice(0,2))} placeholder="Estado" aria-label="Estado" autoComplete="address-level1" maxLength={2} required /></div> : null}
-                  <div className={styles.numberField}><input className={styles.input} value={address.number} disabled={withoutNumber} onChange={e => updateAddress("number", e.target.value)} placeholder="Número" autoComplete="address-line2" aria-label="Número" /><label><input type="checkbox" checked={withoutNumber} onChange={e => { setWithoutNumber(e.target.checked); if (e.target.checked) updateAddress("number", ""); }} /> Sem número</label></div>
+                  <div className={styles.numberField}><input ref={addressNumberInput} className={styles.input} value={address.number} disabled={withoutNumber} onChange={e => updateAddress("number", e.target.value)} placeholder="Número" autoComplete="address-line2" aria-label="Número" /><label><input type="checkbox" checked={withoutNumber} onChange={e => { setWithoutNumber(e.target.checked); if (e.target.checked) updateAddress("number", ""); }} /> Sem número</label></div>
                   <input className={styles.input} value={address.complement} onChange={e => updateAddress("complement", e.target.value)} placeholder="Apto, Bloco, Referência, etc. (opcional)" aria-label="Complemento" />
                   <div className={styles.invoiceData}><h3>Dados para nota fiscal <CircleHelp aria-label="Informações da nota fiscal" /></h3><input className={styles.input} value={documentNumber} onChange={e => setDocumentNumber(formatDocument(e.target.value))} placeholder="CPF ou CNPJ" inputMode="numeric" aria-label="CPF ou CNPJ" /><label className={styles.sameData}><input type="checkbox" checked={sameInvoiceData} onChange={e => setSameInvoiceData(e.target.checked)} /> Usar as mesmas informações da entrega</label></div>
                 </div>}

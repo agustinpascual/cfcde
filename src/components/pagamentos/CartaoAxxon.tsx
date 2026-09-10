@@ -251,6 +251,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       <button className={s.botao} type="submit" disabled={sdk !== "pronto" || ocupado}>
         {sdk === "carregando" ? "Carregando pagamento seguro…" : sdk === "erro" ? "Cartão indisponível" : ocupado ? "Processando com segurança…" : `Pagar ${money.format(planoSelecionado.total / 100)}`}
       </button>
+      <p className={s.aviso}><ShieldCheck aria-hidden="true" /><span>Pagamento processado em ambiente seguro.</span></p>
     </form>}
     {cobranca && <div className={s.resultado} role="status" aria-live="polite">
       {status === "approved" ? <><h2>Pagamento aprovado</h2><p>Pedido <b>{cobranca.pedido}</b> · {money.format(cobranca.total / 100)}. Você receberá o comprovante e as informações do pedido por e-mail.</p></>
