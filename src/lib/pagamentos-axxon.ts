@@ -9,6 +9,7 @@ import { entregarAcessoApp } from "./entrega-app";
 import { urlWebhookAxxon } from "./axxonpay-webhook";
 import { sortearNumeroPedido } from "./numero-pedido";
 import { calcularParcelamentoCartao, PARCELAS_MAX, semCartao, validarCartao, type CartaoBruto } from "./cartao";
+import { documentoBrasileiroValido } from "./documento-br";
 
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const texto = (valor: unknown) => typeof valor === "string" ? valor.trim().slice(0, 200) : "";
@@ -113,6 +114,9 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   if (body.loja !== "cafecomdeuspai" || nome.split(/\s+/).length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)
       || ![11, 14].includes(documento.length) || ![10, 11].includes(celular.length)) {
     return respostaErro("Confira nome completo, e-mail, CPF/CNPJ e telefone com DDD.");
+  }
+  if (!documentoBrasileiroValido(documento)) {
+    return respostaErro("Digite um CPF ou CNPJ válido. Confira os números antes de continuar.");
   }
   if (!["logradouro", "numero", "bairro", "localidade", "uf"].every(campo => texto(endereco[campo])) || digitos(endereco.cep).length !== 8) {
     return respostaErro("Complete o endereço para pagamento.");

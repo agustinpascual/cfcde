@@ -10,6 +10,7 @@ import { depois, enviarPixPorEmail } from "@/lib/confirmar-pedido";
 import { novoNumeroPedido } from "@/lib/numero-pedido";
 import { origemOficial } from "@/lib/origem";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { documentoBrasileiroValido } from "@/lib/documento-br";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
 
   if (nome.split(/\s+/).length < 2) return NextResponse.json({ erro: "Informe o nome completo." }, { status: 422 });
   if (!emailOk(email)) return NextResponse.json({ erro: "E-mail inválido." }, { status: 422 });
-  if (documento.length !== 11 && documento.length !== 14)
+  if (!documentoBrasileiroValido(documento))
     return NextResponse.json({ erro: "CPF ou CNPJ inválido." }, { status: 422 });
 
   let valores: ReturnType<typeof calcularTotal> | ReturnType<typeof calcularTotalCafe>;

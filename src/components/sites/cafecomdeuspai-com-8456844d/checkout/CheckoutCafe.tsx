@@ -14,6 +14,7 @@ import styles from "./CheckoutCafe.module.css";
 import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
 import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
+import { documentoBrasileiroValido } from "@/lib/documento-br";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
@@ -147,6 +148,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   const [savePaymentData, setSavePaymentData] = useState(false);
   const firstNameInput = useRef<HTMLInputElement>(null);
   const addressNumberInput = useRef<HTMLInputElement>(null);
+  const documentInput = useRef<HTMLInputElement>(null);
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const shippingFeeCents = shippingMethod === "sedex" ? 2032 : 0;
   /* Mesma conta do servidor (lib/promocoes): cupom primeiro, Pix sobre o
@@ -362,8 +364,10 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       setError(`Preencha os campos do endereço: ${faltando.join(", ")}.`);
       return;
     }
-    if (![11, 14].includes(documentDigits.length)) {
-      setError("Digite um CPF com 11 números ou CNPJ com 14 números.");
+    if (!documentoBrasileiroValido(documentDigits)) {
+      setError("Digite um CPF ou CNPJ válido. Confira todos os números.");
+      documentInput.current?.focus({ preventScroll: true });
+      documentInput.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setError(""); setStep(3); window.scrollTo({ top: 0, behavior: "smooth" });
@@ -430,6 +434,17 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       const data = await response.json();
       if (!response.ok) {
         liberarTentativaEncerrada(cartKey, "pix", tentativa, data);
+        const erroDocumento = typeof data.erro === "string" && /CPF|CNPJ|documento/i.test(data.erro);
+        if (erroDocumento) {
+          setStep(2);
+          setPaymentExpanded(false);
+          setError(data.erro);
+          window.setTimeout(() => {
+            documentInput.current?.focus({ preventScroll: true });
+            documentInput.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 0);
+          return;
+        }
         throw new Error(data.erro || "Não foi possível gerar o PIX.");
       }
       setPixCharge(data);
@@ -510,7 +525,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
                   {cepStatus === "ready" ? <div className={styles.addressCard}><MapPin aria-hidden="true" /><div><span>{address.street}</span><b>CEP {cep} - {address.neighborhood}</b><span>{address.city} - {address.state}</span></div><button type="button" onClick={changeCep}>Alterar</button></div> : cepStatus === "partial" || cepStatus === "error" ? <div className={styles.addressEdit}><input className={styles.input} value={address.street} onChange={e => updateAddress("street", e.target.value)} placeholder="Rua / Endereço" aria-label="Endereço" autoComplete="address-line1" required /><input className={styles.input} value={address.neighborhood} onChange={e => updateAddress("neighborhood", e.target.value)} placeholder="Bairro" aria-label="Bairro" required /><input className={styles.input} value={address.city} onChange={e => updateAddress("city", e.target.value)} placeholder="Cidade" aria-label="Cidade" autoComplete="address-level2" required /><input className={styles.input} value={address.state} onChange={e => updateAddress("state", e.target.value.toUpperCase().slice(0,2))} placeholder="Estado" aria-label="Estado" autoComplete="address-level1" maxLength={2} required /></div> : null}
                   <div className={styles.numberField}><input ref={addressNumberInput} className={styles.input} value={address.number} disabled={withoutNumber} onChange={e => updateAddress("number", e.target.value)} placeholder="Número" autoComplete="address-line2" aria-label="Número" /><label><input type="checkbox" checked={withoutNumber} onChange={e => { setWithoutNumber(e.target.checked); if (e.target.checked) updateAddress("number", ""); }} /> Sem número</label></div>
                   <input className={styles.input} value={address.complement} onChange={e => updateAddress("complement", e.target.value)} placeholder="Apto, Bloco, Referência, etc. (opcional)" aria-label="Complemento" />
-                  <div className={styles.invoiceData}><h3>Dados para nota fiscal <CircleHelp aria-label="Informações da nota fiscal" /></h3><input className={styles.input} value={documentNumber} onChange={e => setDocumentNumber(formatDocument(e.target.value))} placeholder="CPF ou CNPJ" inputMode="numeric" aria-label="CPF ou CNPJ" /><label className={styles.sameData}><input type="checkbox" checked={sameInvoiceData} onChange={e => setSameInvoiceData(e.target.checked)} /> Usar as mesmas informações da entrega</label></div>
+                  <div className={styles.invoiceData}><h3>Dados para nota fiscal <CircleHelp aria-label="Informações da nota fiscal" /></h3><input ref={documentInput} className={styles.input} value={documentNumber} onChange={e => { setDocumentNumber(formatDocument(e.target.value)); if (error) setError(""); }} placeholder="CPF ou CNPJ" inputMode="numeric" aria-label="CPF ou CNPJ" aria-invalid={Boolean(error && /CPF|CNPJ|documento/i.test(error))} /><label className={styles.sameData}><input type="checkbox" checked={sameInvoiceData} onChange={e => setSameInvoiceData(e.target.checked)} /> Usar as mesmas informações da entrega</label></div>
                 </div>}
               </section>
               {error && <p className={styles.error}>{error}</p>}<button className={styles.continue} type="submit">Continuar para pagamento</button>
