@@ -11,6 +11,8 @@ export type PagamentoNavegacao = {
   qr_code_url: string | null;
   expires_at?: string;
   codigo_rastreio?: string | null;
+  produto_nome?: string;
+  produto_imagem?: string;
 };
 
 type DadosPagamento = Partial<PagamentoNavegacao> & Pick<PagamentoNavegacao, "id" | "pedido" | "total">;
@@ -29,6 +31,8 @@ export function salvarPagamentoParaTela(dados: DadosPagamento) {
     qr_code_url: typeof dados.qr_code_url === "string" ? dados.qr_code_url : null,
     ...(typeof dados.expires_at === "string" ? { expires_at: dados.expires_at } : {}),
     ...(typeof dados.codigo_rastreio === "string" ? { codigo_rastreio: dados.codigo_rastreio } : {}),
+    ...(typeof dados.produto_nome === "string" ? { produto_nome: dados.produto_nome } : {}),
+    ...(typeof dados.produto_imagem === "string" ? { produto_imagem: dados.produto_imagem } : {}),
   };
   sessionStorage.setItem(CHAVE_PAGAMENTO, JSON.stringify(seguro));
 }
@@ -48,6 +52,8 @@ function normalizar(bruto: string, legado = false): PagamentoNavegacao | null {
       qr_code_url: typeof dados.qr_code_url === "string" ? dados.qr_code_url : null,
       ...(typeof dados.expires_at === "string" ? { expires_at: dados.expires_at } : {}),
       ...(typeof dados.codigo_rastreio === "string" ? { codigo_rastreio: dados.codigo_rastreio } : {}),
+      ...(typeof dados.produto_nome === "string" ? { produto_nome: dados.produto_nome } : {}),
+      ...(typeof dados.produto_imagem === "string" ? { produto_imagem: dados.produto_imagem } : {}),
     };
   } catch { return null; }
 }

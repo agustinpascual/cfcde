@@ -7,6 +7,7 @@ import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89
 import { urlRastreio } from "@/lib/rastreio";
 import { acompanharPix } from "@/lib/acompanhar-pix";
 import { lerPagamentoDaTela, type PagamentoNavegacao } from "@/lib/pagamento-navegacao";
+import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import s from "./pagamento.module.css";
 
 /* A cobrança viaja pelo sessionStorage: ela já está na mão do navegador
@@ -15,6 +16,7 @@ import s from "./pagamento.module.css";
 export type Cobranca = PagamentoNavegacao;
 
 const LOGO = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
+const PRODUTO_IMAGEM_PADRAO = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/box2027-1.webp";
 const WHATSAPP = "5547920057518";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -290,6 +292,13 @@ export default function PagamentoPix() {
         )}
 
       </main>
+      {cobranca.metodo === "pix" && (
+        <PurchaseNotifications
+          imagem={cobranca.produto_imagem ?? PRODUTO_IMAGEM_PADRAO}
+          nome={cobranca.produto_nome ?? "Box Café com Deus Pai 2027"}
+          juntoAoRodape
+        />
+      )}
     </div>
   );
 }

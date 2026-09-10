@@ -13,7 +13,6 @@ import { calcularDescontosCarrinho, cupomValidoCarrinho, DESCONTO_PIX, type Desc
 import styles from "./CheckoutCafe.module.css";
 import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
 import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
-import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
@@ -417,7 +416,15 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
          código e o passo a passo. Guardar no sessionStorage evita uma
          segunda ida ao servidor — o dado já está aqui. */
-      try { salvarPagamentoParaTela({ ...data, metodo: "pix", confirmado: data.status === "approved" || data.status === "paid" }); } catch { /* storage bloqueado */ }
+      try {
+        salvarPagamentoParaTela({
+          ...data,
+          metodo: "pix",
+          confirmado: data.status === "approved" || data.status === "paid",
+          produto_nome: productName,
+          produto_imagem: product.image,
+        });
+      } catch { /* storage bloqueado */ }
       router.push("/pagamento");
     } catch (error) { setPaymentError(error instanceof Error ? error.message : "Não foi possível gerar o PIX."); }
     finally { setGeneratingPix(false); }
@@ -517,7 +524,6 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
         <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary products={products} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} descontos={descontos} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
       </div>
       {shippingModalOpen && <div className={styles.shippingModalBackdrop} role="presentation" onMouseDown={() => setShippingModalOpen(false)}><div className={styles.shippingModal} role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title" onMouseDown={event => event.stopPropagation()}><span className={styles.modalHandle} aria-hidden="true" /><header><div><h2 id="shipping-modal-title">Entrega</h2><p>Escolha como deseja receber seu pedido</p></div><button type="button" aria-label="Fechar" onClick={() => setShippingModalOpen(false)}><X /></button></header><div className={styles.shippingModalBody}><b><Truck aria-hidden="true" /> Envio em domicílio</b><label className={draftShipping === "pac" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "pac"} onChange={() => setDraftShipping("pac")} /><span><b>Correios - PAC</b><small>Chega em {deliveryDate(25)}</small></span><strong>Grátis<small>R$ 20,32</small></strong></label><label className={draftShipping === "sedex" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "sedex"} onChange={() => setDraftShipping("sedex")} /><span><b>Correios - SEDEX</b><small>Chega em {deliveryDate(13)}</small></span><strong>R$ 20,32</strong></label></div><div className={styles.shippingModalActions}><button className={styles.shippingSave} type="button" onClick={() => { setShippingMethod(draftShipping); setShippingModalOpen(false); }}>Salvar forma de entrega</button><button className={styles.shippingCancel} type="button" onClick={() => setShippingModalOpen(false)}>Cancelar</button></div></div></div>}
-      <PurchaseNotifications imagem={product.image} nome={product.name} juntoAoRodape />
       {!cupomAplicado && cupomValidoCarrinho(CUPOM_SAIDA, products.map((item) => item.slug)) ? (
         <ExitOffer
           codigoDoCupom={CUPOM_SAIDA}
