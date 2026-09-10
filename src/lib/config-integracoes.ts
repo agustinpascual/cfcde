@@ -41,18 +41,40 @@ const TTL = 30_000;
 
 async function doBanco(): Promise<Map<string, string>> {
   if (cache && Date.now() - cache.em < TTL) return cache.valores;
-  const valores = new Map<string, string>();
   const db = supabaseAdmin();
-  if (db && temChaveMestra()) {
+  if (!db || !temChaveMestra()) return new Map();
+
+  /* A leitura acontece em rotas críticas (checkout e painel). Um erro curto de
+     rede/autenticação do Supabase não pode transformar credenciais existentes
+     em "não configuradas". Repete rapidamente e, se o isolate já teve uma
+     leitura boa, conserva o último valor conhecido. */
+  let ultimaFalha = "erro desconhecido";
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
     const { data, error } = await db.from("configuracoes").select("chave,valor_cifrado");
-    if (error) throw new Error("Não foi possível consultar as configurações. Nenhum gateway alternativo será selecionado.");
-    for (const linha of data ?? []) {
-      const v = decifrar(linha.valor_cifrado);
-      if (v) valores.set(linha.chave, v);
+    if (!error) {
+      const valores = new Map<string, string>();
+      let indecifraveis = 0;
+      for (const linha of data ?? []) {
+        const v = decifrar(linha.valor_cifrado);
+        if (v) valores.set(linha.chave, v);
+        else indecifraveis++;
+      }
+      if (indecifraveis) {
+        throw new Error("A CHAVE_MESTRA não corresponde às credenciais salvas no painel.");
+      }
+      cache = { em: Date.now(), valores };
+      return valores;
     }
+    ultimaFalha = error.message;
+    if (tentativa < 2) await new Promise((resolve) => setTimeout(resolve, 100 * (tentativa + 1)));
   }
-  cache = { em: Date.now(), valores };
-  return valores;
+
+  if (cache) {
+    console.warn("[integracoes] usando último cofre válido após falha temporária:", ultimaFalha);
+    return cache.valores;
+  }
+  console.error("[integracoes] cofre indisponível após 3 tentativas:", ultimaFalha);
+  throw new Error("Não foi possível consultar as configurações após 3 tentativas. Tente novamente em instantes.");
 }
 
 export const limparCache = () => { cache = null; };
