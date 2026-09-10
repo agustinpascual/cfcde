@@ -145,7 +145,7 @@ const nextConfig: NextConfig = {
          no Next 16 a última regra substitui Cache-Control da regra geral. */
       {
         source: "/api/pagamentos/config",
-        headers: [{ key: "Cache-Control", value: "private, max-age=30, stale-while-revalidate=120" }],
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
       },
       {
         source: "/api/pagamentos/sdk/bloopi",

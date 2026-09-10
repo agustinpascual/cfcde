@@ -211,4 +211,5 @@ test("CSP: hosts de 3DS só no checkout; o resto do site continua fechado", () =
   assert.match(checkout, /"form-action": "'self' https:"/, "Cardinal pode postar o desafio na URL ACS do emissor");
   assert.doesNotMatch(checkout, /"frame-ancestors"|"script-src": "'self' 'unsafe-inline' 'unsafe-eval' https:"/, "herda frame-ancestors 'none' e não abre script-src");
   assert.match(config, /source: "\/checkout\/:path\*", headers: \[\{ key: "Content-Security-Policy", value: cspCheckout \}\]/);
+  assert.match(config, /source: "\/api\/pagamentos\/config"[\s\S]*?"Cache-Control", value: "no-store, max-age=0"/, "a configuração do cartão não pode ficar obsoleta no navegador");
 });
