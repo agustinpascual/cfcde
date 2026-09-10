@@ -11,7 +11,6 @@ type ConfigMarketing = { metaPixelIds: string[]; googleTagId: string };
 const IDS_FALLBACK = [...new Set((process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "")
   .split(",").map((id) => id.trim()).filter((id) => /^\d{8,25}$/.test(id)))];
 const publico = (path: string) => path !== "/painel" && !path.startsWith("/painel/");
-const filaConfig: EventoPendente[] = [];
 const filaMeta: EventoPendente[] = [];
 const filaGoogle: EventoPendente[] = [];
 let configResolvida = false;
@@ -26,6 +25,8 @@ declare global {
     _fbq?: unknown;
     dataLayer?: Record<string, unknown>[];
     gtag?: (...args: unknown[]) => void;
+    cdpMarketingQueue?: Array<[string, DadosEvento, boolean]>;
+    cdpTrackMarketing?: (evento: string, dados?: DadosEvento, somenteGoogle?: boolean) => void;
   }
 }
 
@@ -80,24 +81,31 @@ function distribuir(evento: EventoPendente, somenteGoogle = false) {
 /** Envia o mesmo evento comercial para Meta e Google, com filas independentes. */
 export function pixel(evento: string, dados?: Record<string, unknown>) {
   if (typeof window === "undefined" || !publico(window.location.pathname)) return;
-  if (!configResolvida) { guardar(filaConfig, [evento, dados]); return; }
-  distribuir([evento, dados]);
+  if (window.cdpTrackMarketing) { window.cdpTrackMarketing(evento, dados, false); return; }
+  const fila = window.cdpMarketingQueue ??= [];
+  fila.push([evento, dados, false]);
+  if (fila.length > 100) fila.shift();
 }
 
 /** Purchase do Google no retorno aprovado; a Meta recebe Purchase pelo webhook. */
 export function eventoGoogle(evento: string, dados?: Record<string, unknown>) {
   if (typeof window === "undefined" || !publico(window.location.pathname)) return;
-  if (!configResolvida) { guardar(filaConfig, [`google:${evento}`, dados]); return; }
-  enviarGoogle([evento, dados]);
+  if (window.cdpTrackMarketing) { window.cdpTrackMarketing(evento, dados, true); return; }
+  const fila = window.cdpMarketingQueue ??= [];
+  fila.push([evento, dados, true]);
+  if (fila.length > 100) fila.shift();
 }
 
 function aplicarConfig(config: ConfigMarketing) {
   idsMeta = [...new Set(config.metaPixelIds.filter((id) => /^\d{8,25}$/.test(id)))];
   tagGoogle = /^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/i.test(config.googleTagId) ? config.googleTagId.toUpperCase() : "";
   configResolvida = true;
-  for (const [nome, dados] of filaConfig.splice(0)) {
-    if (nome.startsWith("google:")) enviarGoogle([nome.slice(7), dados]);
-    else distribuir([nome, dados]);
+  /* A ponte fica em window porque páginas e layout podem chegar em chunks
+     distintos. Assim eventos emitidos pelo produto/carrinho nunca dependem
+     de compartilhar o mesmo estado de módulo do componente do layout. */
+  window.cdpTrackMarketing = (evento, dados, somenteGoogle = false) => distribuir([evento, dados], somenteGoogle);
+  for (const [evento, dados, somenteGoogle] of window.cdpMarketingQueue?.splice(0) ?? []) {
+    distribuir([evento, dados], somenteGoogle);
   }
 }
 
