@@ -56,7 +56,9 @@ export async function configuracaoAdquirenteAxxon() {
   const provider = String(config.provider ?? "").toLowerCase();
   const modo = MODOS_CARTAO[provider];
   if (!modo) throw new Error("Esta adquirente não está homologada para cartão nesta loja.");
-  configCache = { publica, provider, modo, ate: Date.now() + 30_000 };
+  /* A adquirente muda somente pelo painel. Evita consultar a Axxon em cada
+     abertura do checkout, que adicionava cerca de um segundo ao cartão. */
+  configCache = { publica, provider, modo, ate: Date.now() + 5 * 60_000 };
   return { publica, provider, modo };
 }
 

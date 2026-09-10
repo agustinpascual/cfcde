@@ -135,6 +135,16 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
+      /* Exceções públicas e sem dados do comprador. A ordem é intencional:
+         no Next 16 a última regra substitui Cache-Control da regra geral. */
+      {
+        source: "/api/pagamentos/config",
+        headers: [{ key: "Cache-Control", value: "private, max-age=30, stale-while-revalidate=120" }],
+      },
+      {
+        source: "/api/pagamentos/sdk/bloopi",
+        headers: [{ key: "Cache-Control", value: "public, max-age=300, stale-while-revalidate=86400" }],
+      },
     ];
   },
 };

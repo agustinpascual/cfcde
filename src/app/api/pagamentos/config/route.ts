@@ -2,7 +2,7 @@ import { lerGateways } from "@/lib/gateways-config";
 import { configuracaoAdquirenteAxxon } from "@/lib/axxonpay";
 import { PARCELAS_MAX } from "@/lib/cartao";
 
-const headers = { "Cache-Control": "no-store" };
+const headers = { "Cache-Control": "private, max-age=30, stale-while-revalidate=120" };
 
 export async function GET() {
   try {

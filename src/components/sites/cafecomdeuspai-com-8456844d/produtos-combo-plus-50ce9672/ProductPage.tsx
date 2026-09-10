@@ -1,6 +1,6 @@
 "use client";
 
-import Image, { getImageProps } from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { MobilePurchaseBar, ShippingCalculator } from "../shared/ProductPurchaseTools";
@@ -40,40 +40,29 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
     const normalizado = (indice + fotos.length) % fotos.length;
     if (imagensPreparadas.current.has(normalizado) || normalizado === selected) return;
     imagensPreparadas.current.add(normalizado);
-    const { props } = getImageProps({
-      src: `${assetRoot}/${fotos[normalizado]}`,
-      alt: "",
-      fill: true,
-      sizes: "(max-width: 767px) 100vw, 58vw",
-    });
     const imagem = new window.Image();
     imagem.decoding = "async";
-    if (props.sizes) imagem.sizes = props.sizes;
-    if (props.srcSet) imagem.srcset = props.srcSet;
-    imagem.src = props.src;
+    imagem.src = `${assetRoot}/${fotos[normalizado]}`;
     void imagem.decode?.().catch(() => {});
   }
 
   useEffect(() => {
-    /* A primeira foto é o LCP. Assim que o navegador fica livre, baixa e
-       decodifica as demais variantes otimizadas. O gesto seguinte troca uma
-       imagem já no cache, inclusive em redes móveis lentas. */
-    const prepararRestantes = () => {
-      for (let i = 1; i < fotos.length; i++) prepararImagem(i);
-    };
+    /* Mantém somente a próxima foto pronta. Pré-processar a galeria inteira
+       de uma vez sobrecarrega o otimizador de imagens da VPS sob tráfego. */
+    const prepararProxima = () => prepararImagem(selected + 1);
     const navegador = window as Window & {
       requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
       cancelIdleCallback?: (id: number) => void;
     };
     if (navegador.requestIdleCallback) {
-      const id = navegador.requestIdleCallback(prepararRestantes, { timeout: 1200 });
+      const id = navegador.requestIdleCallback(prepararProxima, { timeout: 800 });
       return () => navegador.cancelIdleCallback?.(id);
     }
-    const id = window.setTimeout(prepararRestantes, 250);
+    const id = window.setTimeout(prepararProxima, 250);
     return () => window.clearTimeout(id);
-    // A galeria vem de uma constante do catálogo e não muda durante a página.
+    // prepararImagem usa refs e o catálogo não muda durante a página.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fotos]);
+  }, [fotos, selected]);
 
   function moveGallery(direction: -1 | 1) {
     setSelected((current) => (current + direction + fotos.length) % fotos.length);
@@ -148,6 +137,7 @@ export default function ProductPage({ produto, oferta, onOferta, onBuy, estoque 
                   fill
                   preload={selected === 0}
                   loading={selected === 0 ? undefined : "eager"}
+                  unoptimized={selected !== 0}
                   sizes="(max-width: 767px) 100vw, 58vw"
                   draggable={false}
                 />

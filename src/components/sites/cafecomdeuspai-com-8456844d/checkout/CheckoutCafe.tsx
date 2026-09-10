@@ -83,9 +83,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
 
     async function loadGatewayConfig(attempt = 0) {
       try {
-        const response = await fetch(`/api/pagamentos/config?ts=${Date.now()}`, {
+        const response = await fetch("/api/pagamentos/config", {
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]),
-          cache: "no-store",
         });
         if (!response.ok) throw new Error("Configuração indisponível");
         setGatewayConfig(await response.json());

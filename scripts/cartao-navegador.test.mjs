@@ -85,7 +85,9 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     await page.getByLabel("Nome", { exact: true }).fill("Teste");
     await page.getByLabel("Sobrenome", { exact: true }).fill("Local");
     await page.getByLabel("Telefone com DDD").fill("11999999999");
-    await page.getByLabel("CPF ou CNPJ").fill("00000000000");
+    // CPF matematicamente válido reservado para o cenário local; o POST da
+    // cobrança é interceptado e nenhum documento é enviado à adquirente.
+    await page.getByLabel("CPF ou CNPJ").fill("52998224725");
     await page.getByLabel("Número", { exact: true }).fill("123");
     await page.getByRole("button", { name: "Continuar para pagamento" }).click();
 
@@ -132,7 +134,8 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.equal(postCartao.body.produto, "testes:1");
     assert.ok(await page.evaluate(() => [...document.querySelectorAll("input[autocomplete^=cc-]")].every(i => i.value === "")), "campos de cartão limpos");
     assert.match(await page.locator("p[role=alert]").innerText(), /autenticação com o seu banco não foi concluída/);
-    for (const host of ["app.axxonpay.com.br", "app.bloopi.io", "api.bloopi.io"]) assert.ok(externos.has(host), `contatou ${host}`);
+    for (const host of ["app.axxonpay.com.br", "api.bloopi.io"]) assert.ok(externos.has(host), `contatou ${host}`);
+    assert.equal(externos.has("app.bloopi.io"), false, "SDK da Bloopi veio pela origem da loja");
     assert.deepEqual(violacoes, [], "sem violações de CSP");
     assert.deepEqual(erros, [], "sem erros de página");
     assert.equal(cobrancas, 0, "nenhum PIX gerado");

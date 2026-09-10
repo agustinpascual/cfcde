@@ -107,6 +107,14 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     setMensagem("");
     let ultimoErro: unknown;
     try {
+      /* A Axxon carrega a Bloopi por um segundo domínio. Algumas operadoras,
+         bloqueadores e WebViews deixam justamente essa requisição pendurada.
+         Entrega o mesmo SDK pela origem da loja antes da inicialização; a
+         rota contém apenas JavaScript público e nunca recebe dados do cartão. */
+      if (typeof window.Bloopi !== "function") {
+        try { await carregarBloopiPeloSite(); }
+        catch (erro) { ultimoErro = erro; }
+      }
       // O SDK principal ainda carrega o provedor interno (Bloopi) depois do
       // onReady. Em redes móveis essa segunda etapa pode falhar por alguns
       // segundos. Mantém a tela em carregamento e repete com backoff antes de
