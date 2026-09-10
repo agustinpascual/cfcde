@@ -8,7 +8,7 @@
 .arrows button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid #dedbd8; border-radius: 50%; background: #fff; cursor: pointer; color: #6c6661; transition: border-color .2s, color .2s; }
 .arrows button:hover { border-color: #956738; color: #956738; }
 .arrows span { font: 300 29px/28px Georgia, serif; transform: translateY(-1px); }
-.rail { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 66px) / 4); gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-inline: contain; }
+.rail { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 66px) / 4); gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
 .rail::-webkit-scrollbar { display: none; }
 .card { min-width: 0; color: inherit; text-decoration: none; scroll-snap-align: start; }
 .imageWrap { position: relative; aspect-ratio: 1; overflow: hidden; background: #fafafa; }
@@ -69,3 +69,16 @@
 @media(max-width:760px){.authorDesktop{display:none!important}.authorMobile{display:block!important}}
 .subdued,.imageWrap{background:#fff}.imageWrap img{transform:scale(var(--product-zoom,1.06))}.card:hover .imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .025))}
 @media(max-width:760px){.rail{grid-auto-columns:82%}.imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .02))}.card:hover .imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .035))}}
+
+/* As áreas abaixo da primeira vitrine só são pintadas quando se aproximam da
+   tela. O conteúdo continua presente no HTML (não depende de JavaScript para
+   aparecer), mas o navegador economiza trabalho na primeira dobra. */
+.commerce > section:not(:first-child) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 680px;
+}
+
+@media (max-width: 760px) {
+  .commerce > section:not(:first-child) { contain-intrinsic-size: auto 520px; }
+  .rail { touch-action: pan-x pan-y; }
+}

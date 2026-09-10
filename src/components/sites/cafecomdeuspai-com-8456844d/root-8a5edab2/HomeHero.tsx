@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { SiteHeader } from "@/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/HeaderFooter";
 import styles from "./HomeHero.module.css";
 
@@ -19,50 +18,20 @@ const slides = [
   },
 ];
 
-/* Com um banner só o carrossel vira imagem fixa: sem giro automático,
-   sem setas e sem bolinhas. Voltando a ter dois, tudo religa sozinho. */
-const carrossel = slides.length > 1;
-
 type HomeHeroProps = {
   cartCount?: number;
   onCartClick?: () => void;
 };
 
 export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
-
-  const showSlide = useCallback((index: number) => {
-    setCurrent((index + slides.length) % slides.length);
-  }, []);
-
-  useEffect(() => {
-    if (paused || !carrossel) return;
-    const timer = window.setInterval(() => {
-      setCurrent((slide) => (slide + 1) % slides.length);
-    }, 5000);
-    return () => window.clearInterval(timer);
-  }, [paused]);
+  const slide = slides[0];
 
   return (
     <>
       <SiteHeader cartCount={cartCount} onCartClick={onCartClick} transparente />
-      <section
-        className={styles.hero}
-        aria-roledescription={carrossel ? "carrossel" : undefined}
-        aria-label="Destaques Café com Deus Pai"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onFocusCapture={() => setPaused(true)}
-        onBlurCapture={() => setPaused(false)}
-      >
-        <div className={styles.track} style={{ transform: `translateX(-${current * 100}%)` }}>
-          {slides.map((slide, index) => (
-            <article
-              className={styles.slide}
-              key={slide.desktopImage}
-              aria-hidden={current !== index}
-            >
+      <section className={styles.hero} aria-label="Destaque Café com Deus Pai">
+        <div className={styles.track}>
+            <article className={styles.slide}>
               <picture>
                 {slide.mobileImage ? <source media="(max-width: 640px)" srcSet={slide.mobileImage} /> : null}
                 <Image
@@ -71,8 +40,8 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
                   alt={slide.alt}
                   width={1580}
                   height={600}
-                  fetchPriority={index === 0 ? "high" : undefined}
-                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority="high"
+                  loading="eager"
                   sizes="100vw"
                 />
               </picture>
@@ -84,44 +53,17 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
                 <div className={styles.overlay}>
                   {slide.titulo ? <h2 className={styles.chamada}>{slide.titulo}</h2> : null}
                   {slide.href && slide.button ? (
-                    <a
+                    <Link
                       className={styles.conheca}
                       href={slide.href}
-                      tabIndex={current === index ? 0 : -1}
                     >
                       {slide.button}
-                    </a>
+                    </Link>
                   ) : null}
                 </div>
               ) : null}
             </article>
-          ))}
         </div>
-
-        {carrossel ? (
-          <>
-          <button className={`${styles.arrow} ${styles.previous}`} type="button" aria-label="Banner anterior" onClick={() => showSlide(current - 1)}>
-            <ChevronLeft aria-hidden="true" />
-          </button>
-          <button className={`${styles.arrow} ${styles.next}`} type="button" aria-label="Próximo banner" onClick={() => showSlide(current + 1)}>
-            <ChevronRight aria-hidden="true" />
-          </button>
-
-          <div className={styles.dots} role="group" aria-label="Escolher banner">
-            {slides.map((slide, index) => (
-              <button
-                key={slide.desktopImage}
-                className={index === current ? styles.activeDot : ""}
-                type="button"
-                aria-label={`Mostrar banner ${index + 1}`}
-                aria-current={index === current ? "true" : undefined}
-                onClick={() => showSlide(index)}
-              />
-            ))}
-          </div>
-          </>
-        ) : null}
-
       </section>
     </>
   );

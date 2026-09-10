@@ -94,7 +94,10 @@ export default function MetaPixel() {
 
   return (
     <>
-      <Script id="meta-pixel" strategy="afterInteractive">{`
+      {/* Os eventos continuam na fila acima até o SDK ficar pronto. Carregar
+          no tempo ocioso evita que ~200 KB da Meta concorram com o checkout,
+          imagens e hidratação durante a primeira dobra. */}
+      <Script id="meta-pixel" strategy="lazyOnload">{`
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;

@@ -615,6 +615,10 @@ export const TABELAS = [
 
 export type EstadoTabela = { nome: string; para: string; existe: boolean; colunasFaltando: string[] };
 
+type CacheInstalacao = { expiraEm: number; valor: EstadoTabela[] };
+let cacheInstalacao: CacheInstalacao | null = null;
+let consultaInstalacao: Promise<EstadoTabela[]> | null = null;
+
 /* Colunas adicionadas por migrations posteriores. Tabela existir não basta:
    o webhook do WhatsApp morria inteiro porque `saudou_em` não tinha sido
    criada, e nada na tela indicava isso. */
@@ -627,10 +631,14 @@ const COLUNAS: Record<string, string[]> = {
 
 /** Consulta cada tabela de verdade — `head:true` devolve 204 até para tabela
     inexistente, então o SELECT precisa pedir uma linha. */
-export async function estadoInstalacao(): Promise<EstadoTabela[] | null> {
+export async function estadoInstalacao(forcar = false): Promise<EstadoTabela[] | null> {
   const db = supabaseAdmin();
   if (!db) return null;
-  return Promise.all(TABELAS.map(async ({ nome, para }) => {
+  const agora = Date.now();
+  if (!forcar && cacheInstalacao && cacheInstalacao.expiraEm > agora) return cacheInstalacao.valor;
+  if (!forcar && consultaInstalacao) return consultaInstalacao;
+
+  const consultar = Promise.all(TABELAS.map(async ({ nome, para }) => {
     const colunaChave = nome === "configuracoes" ? "chave" : nome === "ips_bloqueados" ? "ip" : "id";
     const { error } = await db.from(nome).select(colunaChave).limit(1);
     // PGRST205 = tabela ausente do cache do schema. Outros erros (RLS, etc.)
@@ -652,4 +660,13 @@ export async function estadoInstalacao(): Promise<EstadoTabela[] | null> {
     }
     return { nome, para, existe, colunasFaltando };
   }));
+
+  consultaInstalacao = consultar;
+  try {
+    const valor = await consultar;
+    cacheInstalacao = { valor, expiraEm: Date.now() + 5 * 60_000 };
+    return valor;
+  } finally {
+    if (consultaInstalacao === consultar) consultaInstalacao = null;
+  }
 }

@@ -6,6 +6,21 @@
 .videoCard strong{font-family:var(--font-inter),Inter,sans-serif;font-size:15px;font-weight:600;line-height:1.25}
 @media(max-width:768px){.newsletter h2,.media h2{font-size:28px;line-height:1.15}}
 
+.videoDeferred { min-height: 564px; }
+.videoPlaceholder { min-height: 564px; padding: 72px 16px 67px; background: #fff; color: #211d1a; }
+.videoPlaceholder h2 { margin: 0 0 53px; text-align: center; font: 700 27px/1.2 var(--font-inter), Inter, sans-serif; }
+.videoPlaceholder > div { display: grid; width: min(940px, 100%); height: 430px; margin: auto; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: center; }
+.videoPlaceholder i { height: 390px; border-radius: 18px; background: #f2efec; }
+.videoPlaceholder i:nth-child(2) { height: 430px; background: #ebe7e2; }
+@media (max-width: 768px) {
+  .videoDeferred, .videoPlaceholder { min-height: 564px; }
+  .videoPlaceholder { padding: 48px 0 45px; overflow: hidden; }
+  .videoPlaceholder h2 { width: calc(100% - 32px); margin: 0 auto 34px; font-size: 21px; }
+  .videoPlaceholder > div { position: relative; left: 50%; display: flex; width: max-content; height: 412px; gap: 12px; transform: translateX(-50%); }
+  .videoPlaceholder i { width: 140px; height: 322px; flex: 0 0 140px; border-radius: 14px; }
+  .videoPlaceholder i:nth-child(2) { width: 224px; height: 398px; flex-basis: 224px; }
+}
+
 .whatsapp{right:20px;bottom:20px;width:56px;height:56px;border:0;background:#25d366;color:#fff;box-shadow:0 6px 18px rgba(37,211,102,.32),0 2px 6px rgba(0,0,0,.18);transition:transform .18s ease,box-shadow .18s ease}
 .whatsapp:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 24px rgba(37,211,102,.38),0 3px 8px rgba(0,0,0,.2)}
 .whatsapp:active{transform:scale(.97)}

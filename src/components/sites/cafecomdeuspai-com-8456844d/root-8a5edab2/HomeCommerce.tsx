@@ -76,7 +76,7 @@ function ProductRail({ title, products, subdued = false }: { title: string; prod
         </div>
         <div className={styles.rail} ref={rail}>
           {products.map((product) => (
-            <a className={styles.card} href={product.href ?? "#"} key={product.image}>
+            <Link className={styles.card} href={product.href ?? "#"} key={product.image}>
               <div className={styles.imageWrap} style={{ "--product-zoom": product.imageZoom ?? 1.06 } as CSSProperties}>
                 <Image src={product.image.startsWith("/") ? product.image : `${assets}/${product.image}`} alt={product.name} fill sizes="(max-width: 600px) 72vw, 25vw" />
               </div>
@@ -86,7 +86,7 @@ function ProductRail({ title, products, subdued = false }: { title: string; prod
                 <span>{product.installment}</span>
                 {product.reviews ? <small><b>★★★★★</b> ({product.reviews})</small> : null}
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>

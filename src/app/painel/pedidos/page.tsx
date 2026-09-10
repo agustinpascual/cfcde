@@ -50,7 +50,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
         : `${total} ${total === 1 ? "pedido" : "pedidos"}${paginas > 1 ? ` · página ${pagina} de ${paginas}` : ""} · clique para ver os detalhes`}
       aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
-      <Recarrega segundos={5} />
+      {/* Só pedidos aguardando confirmação precisam de acompanhamento curto.
+          Sem pendências, evita refazer a lista e a contagem de abandonados a
+          cada cinco segundos no celular. */}
+      <Recarrega segundos={pedidos.some((pedido) => pedido.status === "pendente") ? 5 : 20} />
       <AvisoConfig faltando={configurado() ? [] : ["SUPABASE_SERVICE_ROLE_KEY"]} />
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>

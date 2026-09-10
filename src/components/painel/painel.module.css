@@ -120,7 +120,7 @@
 .atividadeVazia i { width: 9px; height: 9px; margin-bottom: 12px; border-radius: 50%; background: var(--cdp-borda); }
 
 /* ---- tabela ---- */
-.tabelaWrap { overflow-x: auto; }
+.tabelaWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .tabela th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--cdp-tinta-2); padding: 0 14px 10px; border-bottom: 1px solid var(--cdp-borda); white-space: nowrap; }
 .tabela td { padding: 13px 14px; border-bottom: 1px solid var(--cdp-fundo); vertical-align: middle; }
@@ -308,6 +308,9 @@
   .tabela th, .tabela td { padding-left: 10px; padding-right: 10px; }
   .paginacaoBotoes { max-width: 100%; flex-wrap: wrap; justify-content: center; }
   .pagBotao, .pagNumero { min-height: 44px; min-width: 44px; }
+  .app { min-width: 0; overflow-x: clip; }
+  .conteudo { width: 100%; }
+  .cabecalho { position: relative; }
 }
 
 /* No celular, as listas operacionais viram cartões completos. A tabela continua

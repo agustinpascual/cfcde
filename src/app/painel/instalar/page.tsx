@@ -22,7 +22,9 @@ export default async function Page() {
   if (!painelConfigurado()) redirect("/painel");
   if (!(await autenticado())) redirect("/painel/entrar");
 
-  const estado = await estadoInstalacao();
+  // Esta é a única tela que precisa furar o cache: depois de aplicar o SQL,
+  // a conferência deve refletir as tabelas novas já na próxima atualização.
+  const estado = await estadoInstalacao(true);
   const faltam = estado?.filter((t) => !t.existe) ?? [];
   const incompletas = estado?.filter((t) => t.existe && t.colunasFaltando.length) ?? [];
   const pronto = Boolean(estado) && faltam.length === 0 && incompletas.length === 0;
