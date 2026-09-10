@@ -62,6 +62,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
 
     await page.goto(`${base}/checkout?produto=testes`, { waitUntil: "networkidle" });
     assert.ok((await page.getByText(/Produto de teste/).count()) > 0, "produto de homologação no checkout");
+    assert.equal(await page.getByText(/AxxonPay|Bloopi|PinPay/i).count(), 0, "checkout não revela o gateway ao cliente");
     // O Cardinal cria um about:blank, injeta um form POST para o ACS HTTPS do
     // emissor e o envia. Reproduz esse mecanismo sem cartão nem gateway: se
     // form-action voltar a 'self', o pedido é bloqueado e o modal fica branco.
@@ -119,6 +120,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     await botao.click();
     await page.waitForFunction(() => document.querySelector("h2")?.textContent?.includes("Confirmando"), null, { timeout: 20000 });
     await page.waitForTimeout(6000);
+    assert.equal(await page.getByText(/AxxonPay|Bloopi|PinPay/i).count(), 0, "confirmação não revela o gateway ao cliente");
     assert.equal(postsCartao.length, 2, "intent antigo renovado uma única vez no mesmo clique");
     const postCartao = postsCartao[1];
     assert.match(postCartao.headers["content-type"], /application\/json/);
@@ -127,7 +129,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.notEqual(postsCartao[0].body.tentativa, postCartao.body.tentativa, "nova tentativa usa outro UUID");
     assert.equal(postCartao.body.installments, 2);
     assert.match(postCartao.body.tentativa, /^[a-f0-9-]{36}$/);
-    assert.equal(postCartao.body.produto, "testes");
+    assert.equal(postCartao.body.produto, "testes:1");
     assert.ok(await page.evaluate(() => [...document.querySelectorAll("input[autocomplete^=cc-]")].every(i => i.value === "")), "campos de cartão limpos");
     assert.match(await page.locator("p[role=alert]").innerText(), /autenticação com o seu banco não foi concluída/);
     for (const host of ["app.axxonpay.com.br", "app.bloopi.io", "api.bloopi.io"]) assert.ok(externos.has(host), `contatou ${host}`);

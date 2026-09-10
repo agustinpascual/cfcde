@@ -142,7 +142,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       // com ela (checkout desatualizado ou seleção antiga) não reserva nem cobra.
       etapa = "adquirente";
       const { modo } = await configuracaoAdquirenteAxxon();
-      if ((modo === "cru") !== Boolean(cartao)) return respostaErro("O checkout está desatualizado para esta adquirente. Recarregue a página.", 409);
+      if ((modo === "cru") !== Boolean(cartao)) return respostaErro("O checkout está desatualizado. Recarregue a página.", 409);
       etapa = "reserva";
     }
     // O UUID ocupa a PK já existente; referencia passa a ser o número visível.
@@ -177,7 +177,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     if (existente) {
       referencia = existente.referencia;
       if (existente.pix_id && !existente.pix_id.startsWith("axxon_")) {
-        return respostaErro("Esta tentativa pertence a outro gateway. Confira o pedido anterior.", 409);
+        return respostaErro("Esta tentativa pertence a outro meio de pagamento. Confira o pedido anterior.", 409);
       }
       // Somente falha confirmada sem ID libera um identificador novo. Não
       // sobrescreve o comprador nem recicla uma referência já enviada à API.
@@ -254,11 +254,11 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
         .eq("referencia", referencia).eq("status", "pendente").is("pix_id", null).select("referencia").maybeSingle();
       if (!error && encerrado) {
         return tentativaEncerrada(recusa.documentoInvalido
-          ? "A AxxonPay recusou o CPF/CNPJ informado e não criou a cobrança. Corrija o documento antes de tentar novamente."
-          : "O cartão não foi aceito pela adquirente e nenhuma cobrança foi criada. Confira os dados ou use outro cartão.");
+          ? "O CPF/CNPJ informado não foi aceito e nenhuma cobrança foi criada. Corrija o documento antes de tentar novamente."
+          : "O cartão não foi aceito e nenhuma cobrança foi criada. Confira os dados ou use outro cartão.");
       }
     }
     // Nunca tenta outro gateway após timeout: a primeira cobrança pode existir.
-    return respostaErro("Não foi possível concluir agora. A tentativa foi preservada para conferência; não repita em outro gateway.", 503);
+    return respostaErro("Não foi possível concluir agora. A tentativa foi preservada para conferência; não inicie outra tentativa neste momento.", 503);
   }
 }

@@ -247,7 +247,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         : <div className={s.tresDs}>
             <span className={s.icone3ds} aria-hidden="true">{fase3ds === "conferindo" ? <ShieldCheck /> : <LoaderCircle className={fase3ds === "erro" ? "" : s.girando} />}</span>
             <div><h2>{fase3ds === "abrindo" || fase3ds === "desafio" ? "Autenticação de segurança" : "Confirmando o pagamento…"}</h2>
-              <p>Pedido <b>{cobranca.pedido}</b>. {fase3ds === "abrindo" ? "Abrindo a tela segura do seu banco…" : fase3ds === "desafio" ? "Conclua a verificação na tela do banco. Não feche nem atualize esta página." : "Aguarde enquanto confirmamos o resultado com a AxxonPay."}</p></div>
+              <p>Pedido <b>{cobranca.pedido}</b>. {fase3ds === "abrindo" ? "Abrindo a tela segura do seu banco…" : fase3ds === "desafio" ? "Conclua a verificação na tela do banco. Não feche nem atualize esta página." : "Aguarde enquanto confirmamos o resultado do pagamento."}</p></div>
           </div>}
     </div>}
     {mensagem && <p className={s.mensagem} role="alert">{mensagem}</p>}
