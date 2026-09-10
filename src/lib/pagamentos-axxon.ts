@@ -203,9 +203,11 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     }
     if (!reservou) throw new Error("Não foi possível reservar um número de seis dígitos");
     etapa = "criacao";
+    const sufixoDescricao = ` - Pedido #${referencia}`;
+    const descricao = `Café com Deus Pai - ${valores.kit.nome}`.slice(0, 200 - sufixoDescricao.length) + sufixoDescricao;
     const criado = await criarPagamentoAxxon({
       amount: valores.total, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
-      description: `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${referencia}`.slice(0, 200),
+      description: descricao,
       ...(metodo === "cartao" ? { installments: parcelas, card: cartao ?? { hash } } : {}),
       customer: { name: nome, email, phone: celular, document: { number: documento, type: documento.length === 11 ? "cpf" : "cnpj" },
         address: { street: texto(endereco.logradouro), number: texto(endereco.numero), neighborhood: texto(endereco.bairro),
@@ -217,6 +219,12 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     etapa = "persistencia_id";
     const { error } = await db.from("pedidos").update({ pix_id: idAxxon(criado.id) }).eq("referencia", referencia);
     if (error) throw new Error("Cobrança criada, registro em conferência");
+    const enviarEmailDoPix = (brcode: string) => depois(enviarPixPorEmail({
+      referencia, clienteNome: nome, clienteEmail: email,
+      itens: valores.itens.map((item) => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos })),
+      subtotalCentavos: valores.subtotal, descontoCentavos: valores.desconto, freteCentavos: valores.frete.centavos,
+      freteTipo: valores.frete.nome, totalCentavos: valores.total, brcode,
+    }));
     // Cartão com nextAction precisa chegar ao navegador o quanto antes. Não
     // bloqueia a abertura do 3DS com um GET redundante: o ID já foi validado e
     // persistido, e a aprovação continuará vindo exclusivamente do polling ou
@@ -232,16 +240,16 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     const consultado = await consultarPagamentoAxxon(criado.id);
     conferirPagamentoAxxon(consultado, { pix_id: idAxxon(criado.id), referencia, valor_centavos: valores.total, metodo_pagamento: metodo });
     const p = { ...consultado, nextAction: criado.nextAction ?? consultado.nextAction };
-    await sincronizarAxxon(consultado);
+    // O PIX pendente já foi validado contra o pedido acima. Não bloqueia a
+    // entrega do QR com uma segunda leitura + escrita no banco. O polling e o
+    // webhook seguem responsáveis por sincronizar qualquer estado final.
+    if (!(metodo === "pix" && statusAxxon(consultado.status) === "pending" && consultado.qrCode)) {
+      await sincronizarAxxon(consultado);
+    }
     etapa = "resposta";
     // Criação/3DS não são aprovação: confirma por GET autenticado ou webhook.
     const resposta = await respostaAxxon(p, referencia);
-    if (metodo === "pix" && p.qrCode) depois(enviarPixPorEmail({
-      referencia, clienteNome: nome, clienteEmail: email,
-      itens: valores.itens.map((item) => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos })),
-      subtotalCentavos: valores.subtotal, descontoCentavos: valores.desconto, freteCentavos: valores.frete.centavos,
-      freteTipo: valores.frete.nome, totalCentavos: valores.total, brcode: p.qrCode,
-    }));
+    if (metodo === "pix" && p.qrCode) enviarEmailDoPix(p.qrCode);
     return Response.json(resposta);
   } catch (erro) {
     const http = (erro as { status?: unknown } | null)?.status;

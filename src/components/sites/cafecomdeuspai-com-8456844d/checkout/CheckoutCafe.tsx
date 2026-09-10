@@ -102,6 +102,13 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const router = useRouter();
 
+  /* A resposta do gateway ainda leva alguns segundos. Deixar a rota do PIX
+     preparada em paralelo evita acrescentar o download da próxima tela ao
+     tempo percebido depois que a cobrança estiver pronta. */
+  useEffect(() => {
+    router.prefetch("/pagamento");
+  }, [router]);
+
   const [paymentError, setPaymentError] = useState("");
   const [generatingPix, setGeneratingPix] = useState(false);
   const [copied, setCopied] = useState(false);

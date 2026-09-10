@@ -6,7 +6,6 @@ import { acompanharPix } from "@/lib/acompanhar-pix";
 import { lerCobranca, type Cobranca } from "../checkout/cobranca";
 import { moeda, resumo, useCarrinho } from "../cart";
 import { IMG, produto } from "../data";
-import PurchaseNotifications from "../PurchaseNotifications";
 import SeloStone from "../SeloStone";
 import { registrar } from "../Rastreador";
 import SiteFooter from "../SiteFooter";
@@ -239,7 +238,6 @@ export default function PagamentoView({ id }: { id: string }) {
       </main>
 
       <SiteFooter />
-      <PurchaseNotifications />
     </div>
   );
 }

@@ -15,18 +15,21 @@ import s from "./pagamento.module.css";
 export type Cobranca = PagamentoNavegacao;
 
 const LOGO = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
+const WHATSAPP = "5547920057518";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function PagamentoPix() {
   const [cobranca, setCobranca] = useState<Cobranca | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [copiado, setCopiado] = useState(false);
+  const [mostrarWhatsApp, setMostrarWhatsApp] = useState(false);
   const [pago, setPago] = useState<{ rastreio: string | null; pedido: string | null } | null>(null);
   const abertoEm = useRef<number | null>(null);
   /* Marca a cópia do código e se o retorno à aba já foi registrado. Depois de
      copiar, o cliente vai ao app do banco; voltar para cá é o sinal de que
      seguiu com o pagamento. */
   const copiouEm = useRef<number | null>(null);
+  const saiuDepoisDeCopiar = useRef(false);
   const voltouRegistrado = useRef(false);
 
   /* Atualiza também assim que o cliente retorna do aplicativo do banco. */
@@ -67,6 +70,7 @@ export default function PagamentoPix() {
 
     const segundos = () => (abertoEm.current ? Math.round((Date.now() - abertoEm.current) / 1000) : 0);
     const aoSair = () => {
+      if (copiouEm.current) saiuDepoisDeCopiar.current = true;
       const t = segundos();
       if (t > 0) registrar("saida", { pedido: cobranca.pedido, etapa: "pix", segundos_na_tela: t });
     };
@@ -76,31 +80,47 @@ export default function PagamentoPix() {
        Só conta uma vez e só se já houve cópia. */
     const aoVoltar = () => {
       if (document.visibilityState !== "visible") return;
-      if (!copiouEm.current || voltouRegistrado.current) return;
+      if (!copiouEm.current || !saiuDepoisDeCopiar.current || voltouRegistrado.current) return;
       voltouRegistrado.current = true;
+      setMostrarWhatsApp(true);
       registrar("voltou", {
         pedido: cobranca.pedido,
         segundos_fora: Math.round((Date.now() - copiouEm.current) / 1000),
       });
     };
-    document.addEventListener("visibilitychange", aoVoltar);
+    const aoMudarVisibilidade = () => {
+      if (document.visibilityState === "hidden") {
+        if (copiouEm.current) saiuDepoisDeCopiar.current = true;
+        return;
+      }
+      aoVoltar();
+    };
+    document.addEventListener("visibilitychange", aoMudarVisibilidade);
     window.addEventListener("focus", aoVoltar);
+    window.addEventListener("pageshow", aoVoltar);
 
     return () => {
       window.removeEventListener("pagehide", aoSair);
-      document.removeEventListener("visibilitychange", aoVoltar);
+      document.removeEventListener("visibilitychange", aoMudarVisibilidade);
       window.removeEventListener("focus", aoVoltar);
+      window.removeEventListener("pageshow", aoVoltar);
       aoSair();
     };
   }, [cobranca]);
 
   async function copiar() {
     if (!cobranca?.qr_code) return;
+    let sucesso = false;
     try {
       await navigator.clipboard.writeText(cobranca.qr_code);
+      sucesso = true;
     } catch {
-      return; // sem permissão de área de transferência: o cliente seleciona à mão
+      const campo = document.getElementById("pix-codigo") as HTMLTextAreaElement | null;
+      campo?.focus();
+      campo?.select();
+      try { sucesso = document.execCommand("copy"); } catch { /* seleção manual continua disponível */ }
     }
+    if (!sucesso) return;
     setCopiado(true);
     copiouEm.current = Date.now();
     window.setTimeout(() => setCopiado(false), 2200);
@@ -110,6 +130,10 @@ export default function PagamentoPix() {
       segundos_na_tela: abertoEm.current ? Math.round((Date.now() - abertoEm.current) / 1000) : 0,
     });
   }
+
+  const whatsappHref = cobranca
+    ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Olá, preciso de ajuda com o pagamento PIX do pedido ${cobranca.pedido}.`)}`
+    : `https://wa.me/${WHATSAPP}`;
 
   if (carregando) return <div className={s.tela} />;
 
@@ -213,7 +237,7 @@ export default function PagamentoPix() {
 
           <label>
             <span className="sr-only" />
-            <textarea className={s.codigo} readOnly value={cobranca.qr_code}
+            <textarea id="pix-codigo" className={s.codigo} readOnly value={cobranca.qr_code}
               aria-label="Código PIX copia e cola" onFocus={(e) => e.currentTarget.select()} />
           </label>
           <button type="button" className={`${s.copiar} ${copiado ? s.copiado : ""}`} onClick={copiar}>
@@ -248,6 +272,22 @@ export default function PagamentoPix() {
           Não feche esta página antes de pagar. O código vale por tempo limitado —
           se expirar, é só refazer o pedido.
         </p>
+
+        {mostrarWhatsApp && (
+          <aside className={s.ajudaWhatsApp} role="status" aria-label="Atendimento pelo WhatsApp">
+            <div>
+              <strong>Precisa de ajuda para concluir?</strong>
+              <span>Fale com nosso atendimento pelo WhatsApp.</span>
+            </div>
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z" />
+                <path d="M8.5 7.8c.3-.3.7-.2.9.2l1 2c.1.3.1.5-.1.8l-.7.8c.8 1.6 1.9 2.7 3.5 3.5l.8-.8c.2-.2.5-.2.8-.1l2 1c.4.2.5.6.2.9-.8 1-1.8 1.4-2.9 1.1-4.4-1.1-7.1-3.8-8.2-8.2-.3-1.1.1-2.2 1.1-3Z" />
+              </svg>
+              Falar no WhatsApp
+            </a>
+          </aside>
+        )}
 
       </main>
     </div>
