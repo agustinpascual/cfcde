@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { CHAVES, salvar, type ChaveConfig } from "@/lib/config-integracoes";
 import { autenticado } from "@/lib/painel-auth";
+import { mesmaOrigem } from "@/lib/mesma-origem";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export async function POST(req: Request) {
   if (!(await autenticado())) {
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
-  if (req.headers.get("origin") !== new URL(req.url).origin) {
+  if (!mesmaOrigem(req)) {
     return NextResponse.json({ erro: "Origem inválida." }, { status: 403 });
   }
 

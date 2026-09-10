@@ -124,7 +124,7 @@ const SERVICOS: Servico[] = [
     nome: "Z-API (WhatsApp)", papel: "Atendimento e disparos pelo WhatsApp",
     icone: MessageCircle,
     chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN"],
-    passos: ["Conectar o número na Z-API", "Apontar o webhook de mensagens para /api/webhooks/zapi"],
+    passos: ["Conectar o número na Z-API", "Cadastrar o webhook Ao receber: https://cafecomdeusepai.com/api/webhooks/zapi"],
   },
 ];
 

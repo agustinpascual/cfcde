@@ -63,7 +63,7 @@ export default async function Page() {
           <p>
             Preencha as credenciais em <Link href="/painel/integracoes" style={{ textDecoration: "underline" }}>Integrações</Link>{" "}
             e aponte o webhook de mensagens recebidas para{" "}
-            <code>https://bella-gummy.vercel.app/api/webhooks/zapi</code>.
+            <code>https://cafecomdeusepai.com/api/webhooks/zapi</code>.
           </p>
         </div>
       )}

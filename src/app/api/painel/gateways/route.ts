@@ -3,10 +3,11 @@ import { configGatewaysValida } from "@/lib/gateways-config";
 import { salvar } from "@/lib/config-integracoes";
 import { validarAxxon, configuracaoAdquirenteAxxon } from "@/lib/axxonpay";
 import { verificarCredencial } from "@/lib/pinpay";
+import { mesmaOrigem } from "@/lib/mesma-origem";
 
 export async function POST(req: Request) {
   if (!(await autenticado())) return Response.json({ erro: "Não autenticado." }, { status: 401 });
-  if (req.headers.get("origin") !== new URL(req.url).origin) return Response.json({ erro: "Origem inválida." }, { status: 403 });
+  if (!mesmaOrigem(req)) return Response.json({ erro: "Origem inválida." }, { status: 403 });
   const config: unknown = await req.json().catch(() => null);
   if (!configGatewaysValida(config)) return Response.json({ erro: "Seleção inválida." }, { status: 400 });
   try {
