@@ -23,10 +23,11 @@ export default async function Page() {
   if (!(await autenticado())) redirect("/painel/entrar");
 
   const db = supabaseAdmin();
-  const [vivos, treinamento, instancia, mensagemPix, mensagemCarrinho, atrasoPix, atrasoCarrinho] = await Promise.all([
+  const [vivos, treinamento, instancia, mensagemPix, mensagemCarrinho, atrasoPix, atrasoCarrinho, botaoPix] = await Promise.all([
     lerAoVivo(), lerTreinamento(), ler("ZAPI_INSTANCIA"),
     ler("WHATSAPP_MSG_PIX_PENDENTE"), ler("WHATSAPP_MSG_CARRINHO_ABANDONADO"),
     ler("WHATSAPP_RECUPERACAO_PIX_MINUTOS"), ler("WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS"),
+    ler("WHATSAPP_PIX_BOTAO_COPIAR"),
   ]);
 
   let conversas: Conversa[] = [];
@@ -71,7 +72,8 @@ export default async function Page() {
 
       <ConexaoZap />
       <MensagensRecuperacao pix={mensagemPix ?? MENSAGEM_PIX_PADRAO} carrinho={mensagemCarrinho ?? MENSAGEM_CARRINHO_PADRAO}
-        atrasoPix={Number(atrasoPix) || 0} atrasoCarrinho={Number(atrasoCarrinho) || 0} />
+        atrasoPix={Number(atrasoPix) || 0} atrasoCarrinho={Number(atrasoCarrinho) || 0}
+        botaoPix={botaoPix !== "0"} />
       <Conversas inicial={conversas} />
 
     </Casca>

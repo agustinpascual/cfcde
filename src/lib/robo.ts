@@ -291,3 +291,36 @@ export async function enviarWhatsApp(telefone: string, texto: string) {
   if (!res.ok) throw new Error(`Z-API respondeu ${res.status}: ${await res.text()}`);
   return res.json();
 }
+
+/** Envia uma mensagem com o botão nativo de copiar do WhatsApp. O endpoint
+    OTP aceita qualquer valor textual; aqui ele recebe o Pix copia-e-cola. */
+export async function enviarWhatsAppComBotaoCopiar(
+  telefone: string,
+  texto: string,
+  codigo: string,
+  textoBotao = "Copiar código Pix"
+) {
+  const [instancia, token, clientToken] = await Promise.all([
+    ler("ZAPI_INSTANCIA"), ler("ZAPI_TOKEN"), ler("ZAPI_CLIENT_TOKEN"),
+  ]);
+  if (!instancia || !token) throw new Error("Z-API não configurada");
+
+  const res = await fetch(
+    `https://api.z-api.io/instances/${instancia}/token/${token}/send-button-otp`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(clientToken ? { "Client-Token": clientToken } : {}),
+      },
+      body: JSON.stringify({
+        phone: telefone,
+        message: texto,
+        code: codigo,
+        buttonText: textoBotao,
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`Z-API respondeu ${res.status}: ${(await res.text()).slice(0, 500)}`);
+  return res.json();
+}

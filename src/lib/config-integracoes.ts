@@ -14,6 +14,7 @@ export const CHAVES = [
   "ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN",
   "WHATSAPP_MSG_PIX_PENDENTE", "WHATSAPP_MSG_CARRINHO_ABANDONADO",
   "WHATSAPP_RECUPERACAO_PIX_MINUTOS", "WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS",
+  "WHATSAPP_PIX_BOTAO_COPIAR",
   "GEMINI_API_KEY",
   /* Marketing: META_PIXELS guarda a relação ID/token em um único pacote
      cifrado; GOOGLE_TAG_ID é público e vai para o navegador. */
@@ -41,6 +42,7 @@ const PUBLICOS: ChaveConfig[] = [
   "PAGAMENTOS_GATEWAYS",
   "GOOGLE_TAG_ID", "GOOGLE_TAGS",
   "WHATSAPP_RECUPERACAO_PIX_MINUTOS", "WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS",
+  "WHATSAPP_PIX_BOTAO_COPIAR",
 ];
 
 let cache: { em: number; valores: Map<string, string> } | null = null;

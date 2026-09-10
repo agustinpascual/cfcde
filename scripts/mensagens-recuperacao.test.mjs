@@ -38,10 +38,18 @@ test("telefone brasileiro é normalizado para o link do WhatsApp", () => {
 
 test("painel e ações de recuperação usam os modelos salvos", () => {
   const pagina = fonte("../src/app/painel/whatsapp/page.tsx");
+  const formulario = fonte("../src/components/painel/MensagensRecuperacao.tsx");
+  const envio = fonte("../src/lib/robo.ts");
+  const recuperacao = fonte("../src/lib/recuperacao-whatsapp.ts");
   const carrinho = fonte("../src/components/painel/AcoesRecuperacaoCarrinho.tsx");
   const pix = fonte("../src/components/painel/PixCobranca.tsx");
   assert.match(pagina, /WHATSAPP_MSG_PIX_PENDENTE/);
   assert.match(pagina, /WHATSAPP_MSG_CARRINHO_ABANDONADO/);
   assert.match(carrinho, /preencherMensagemRecuperacao/);
   assert.match(pix, /Enviar recuperação no WhatsApp/);
+  assert.match(formulario, /Adicionar botão “Copiar código Pix”/);
+  assert.match(envio, /send-button-otp/);
+  assert.match(envio, /buttonText/);
+  assert.match(recuperacao, /enviarWhatsAppComBotaoCopiar/);
+  assert.match(recuperacao, /await enviarWhatsApp\(telefone, mensagem\)/, "mantém fallback de texto quando o botão falha");
 });

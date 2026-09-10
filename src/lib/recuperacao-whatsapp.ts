@@ -5,7 +5,7 @@ import {
   MENSAGEM_CARRINHO_PADRAO, MENSAGEM_PIX_PADRAO, numeroWhatsapp,
   preencherMensagemRecuperacao, primeiroNome,
 } from "./mensagens-recuperacao";
-import { enviarWhatsApp } from "./robo";
+import { enviarWhatsApp, enviarWhatsAppComBotaoCopiar } from "./robo";
 import { supabaseAdmin } from "./supabase/servidor";
 
 const ATRASOS_VALIDOS = new Set([0, 5, 10, 15, 30, 60, 120, 360, 1440]);
@@ -29,7 +29,7 @@ type ResultadoTipo = { encontrados: number; enviados: number; ignorados: number;
 export type ResultadoRecuperacoes = { pix: ResultadoTipo; carrinho: ResultadoTipo };
 const vazio = (): ResultadoTipo => ({ encontrados: 0, enviados: 0, ignorados: 0, erros: 0 });
 
-async function recuperarPix(atraso: number, modelo: string): Promise<ResultadoTipo> {
+async function recuperarPix(atraso: number, modelo: string, botaoCopiar: boolean): Promise<ResultadoTipo> {
   const resultado = vazio();
   const db = supabaseAdmin();
   if (!db || atraso === 0) return resultado;
@@ -56,7 +56,18 @@ async function recuperarPix(atraso: number, modelo: string): Promise<ResultadoTi
         nome: primeiroNome(pedido.cliente_nome), pedido: pedido.referencia,
         valor: moeda(pedido.valor_centavos), codigo_pix: pedido.pix_copia_cola,
       });
-      await enviarWhatsApp(telefone, mensagem);
+      if (botaoCopiar) {
+        try {
+          await enviarWhatsAppComBotaoCopiar(telefone, mensagem, pedido.pix_copia_cola);
+        } catch (erroBotao) {
+          /* Botões dependem da versão/termos do WhatsApp. Se a Z-API recusar,
+             a recuperação continua como texto e a venda não é perdida. */
+          console.warn("[recuperacoes] botão Pix indisponível; enviando texto:", (erroBotao as Error).message);
+          await enviarWhatsApp(telefone, mensagem);
+        }
+      } else {
+        await enviarWhatsApp(telefone, mensagem);
+      }
       resultado.enviados++;
     } catch (erro) {
       resultado.erros++;
@@ -149,16 +160,17 @@ async function recuperarCarrinhos(atraso: number, modelo: string): Promise<Resul
 }
 
 export async function processarRecuperacoesWhatsApp(): Promise<ResultadoRecuperacoes> {
-  const [atrasoPixBruto, atrasoCarrinhoBruto, modeloPix, modeloCarrinho] = await Promise.all([
+  const [atrasoPixBruto, atrasoCarrinhoBruto, modeloPix, modeloCarrinho, botaoPixBruto] = await Promise.all([
     ler("WHATSAPP_RECUPERACAO_PIX_MINUTOS"), ler("WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS"),
     ler("WHATSAPP_MSG_PIX_PENDENTE"), ler("WHATSAPP_MSG_CARRINHO_ABANDONADO"),
+    ler("WHATSAPP_PIX_BOTAO_COPIAR"),
   ]);
   const atrasoPix = validarAtrasoRecuperacao(atrasoPixBruto ?? 0) ?? 0;
   const atrasoCarrinho = validarAtrasoRecuperacao(atrasoCarrinhoBruto ?? 0) ?? 0;
 
   /* Pix vem primeiro. A sessão que já gerou cobrança é excluída do carrinho
      por pedido_ref e pela conferência adicional de telefone. */
-  const pix = await recuperarPix(atrasoPix, modeloPix ?? MENSAGEM_PIX_PADRAO);
+  const pix = await recuperarPix(atrasoPix, modeloPix ?? MENSAGEM_PIX_PADRAO, botaoPixBruto !== "0");
   const carrinho = await recuperarCarrinhos(atrasoCarrinho, modeloCarrinho ?? MENSAGEM_CARRINHO_PADRAO);
   return { pix, carrinho };
 }

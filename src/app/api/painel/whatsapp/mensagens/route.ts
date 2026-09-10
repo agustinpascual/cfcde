@@ -24,6 +24,9 @@ export async function POST(req: Request) {
   if (atrasoPix === null || atrasoCarrinho === null) {
     return NextResponse.json({ erro: "Escolha um tempo válido para as recuperações." }, { status: 400 });
   }
+  if (typeof corpo?.botaoPix !== "boolean") {
+    return NextResponse.json({ erro: "Escolha se a recuperação Pix deve exibir o botão de copiar." }, { status: 400 });
+  }
 
   try {
     await Promise.all([
@@ -31,6 +34,7 @@ export async function POST(req: Request) {
       salvar("WHATSAPP_MSG_CARRINHO_ABANDONADO", carrinho.mensagem, "painel"),
       salvar("WHATSAPP_RECUPERACAO_PIX_MINUTOS", String(atrasoPix), "painel"),
       salvar("WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS", String(atrasoCarrinho), "painel"),
+      salvar("WHATSAPP_PIX_BOTAO_COPIAR", corpo.botaoPix ? "1" : "0", "painel"),
     ]);
     return NextResponse.json({ ok: true });
   } catch (erro) {
