@@ -20,7 +20,7 @@ import a from "./cartao-animacoes.module.css";
 
 type ResultadoSDK = { status?: "succeeded" | "processing" | "failed" | "requires_action" };
 type SDK = { setPublicKey(chave: string): Promise<void>; handleNextAction(acao: unknown, dados: unknown): Promise<ResultadoSDK> };
-declare global { interface Window { Axxon?: SDK } }
+declare global { interface Window { Axxon?: SDK; Bloopi?: unknown } }
 
 export type PayloadCartao = {
   produto: string; nome: string; email: string; documento: string; celular: string;
@@ -28,10 +28,46 @@ export type PayloadCartao = {
 } & Record<string, unknown>;
 
 const SDK_URL = "https://app.axxonpay.com.br/v1/js/sdk.js";
+const BLOOPI_FALLBACK_URL = "/api/pagamentos/sdk/bloopi";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const FINAIS = ["approved", "failed", "expired", "refunded"];
 const esperar = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms));
+let carregamentoBloopiLocal: Promise<void> | null = null;
+
+function carregarBloopiPeloSite() {
+  if (typeof window.Bloopi === "function") return Promise.resolve();
+  if (carregamentoBloopiLocal) return carregamentoBloopiLocal;
+
+  carregamentoBloopiLocal = new Promise<void>((resolve, reject) => {
+    const anterior = document.querySelector<HTMLScriptElement>(`script[src="${BLOOPI_FALLBACK_URL}"]`);
+    const script = anterior ?? document.createElement("script");
+    const timeout = window.setTimeout(() => reject(new Error("Tempo esgotado ao carregar o ambiente seguro.")), 15000);
+    const concluir = () => {
+      window.clearTimeout(timeout);
+      if (typeof window.Bloopi === "function") resolve();
+      else reject(new Error("O ambiente seguro carregou sem ficar disponível."));
+    };
+    const falhar = () => {
+      window.clearTimeout(timeout);
+      script.remove();
+      reject(new Error("Não foi possível carregar o ambiente seguro pelo site."));
+    };
+    script.addEventListener("load", concluir, { once: true });
+    script.addEventListener("error", falhar, { once: true });
+    if (!anterior) {
+      script.src = BLOOPI_FALLBACK_URL;
+      script.async = true;
+      script.dataset.pagamentoSeguro = "bloopi";
+      document.head.appendChild(script);
+    } else if (typeof window.Bloopi === "function") concluir();
+  }).catch(erro => {
+    carregamentoBloopiLocal = null;
+    throw erro;
+  });
+  return carregamentoBloopiLocal;
+}
+
 const classificarErroSdk = (erro: unknown) => {
   const texto = erro instanceof Error ? erro.message : String(erro ?? "");
   if (/chave pública|autenticação/i.test(texto)) return "chave_publica";
@@ -85,6 +121,14 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
           return;
         } catch (erro) {
           ultimoErro = erro;
+          // Alguns navegadores e operadoras bloqueiam o segundo domínio que o
+          // SDK da Axxon injeta (Bloopi). Quando isso ocorrer, busca o mesmo SDK
+          // por uma rota da própria loja e repete a inicialização. Nenhum dado
+          // de cartão passa por essa rota; ela entrega somente JavaScript.
+          if (classificarErroSdk(erro) === "provedor_bloopi" && typeof window.Bloopi !== "function") {
+            try { await carregarBloopiPeloSite(); }
+            catch (fallbackErro) { ultimoErro = fallbackErro; }
+          }
         }
       }
       throw ultimoErro;
