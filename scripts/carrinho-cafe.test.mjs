@@ -37,6 +37,14 @@ test("cupom de produto desconta só as linhas elegíveis da sacola", () => {
   assert.equal(valores.total, 46251);
 });
 
+test("cupom de saída do checkout aplica o desconto da Box 2027 no servidor", () => {
+  const valores = exports.calcularCarrinhoCafe([
+    { produto: "combo-plus2027", qtd: 1 },
+  ], "pac", { pagamento: "cartao", cupom: "CAFECOMDEUSPAI27" });
+  assert.equal(valores.descontoCupom, 360);
+  assert.equal(valores.total, 8630);
+});
+
 test("carrinho rejeita preço inventado, produto desconhecido e excesso", () => {
   assert.throws(() => exports.calcularCarrinhoCafe([{ produto: "inexistente", qtd: 1, preco: 1 }], "pac"));
   assert.throws(() => exports.calcularCarrinhoCafe([{ produto: "combo-plus", qtd: 21 }], "pac"));

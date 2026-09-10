@@ -16,6 +16,12 @@ export const CUPONS: Record<string, Cupom> = {
     percentual: 0.04,
     produtos: ["combo-plus2027", "combo-plus2027-2un"],
   },
+  /* Oferta de saída do checkout da Box 2027. O código antigo continua
+     válido para não invalidar links que já foram enviados. */
+  CAFECOMDEUSPAI27: {
+    percentual: 0.04,
+    produtos: ["combo-plus2027", "combo-plus2027-2un"],
+  },
 };
 
 export const normalizarCupom = (codigo: string) => codigo.trim().toUpperCase();

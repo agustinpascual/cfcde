@@ -8,28 +8,38 @@ type Props = {
   codigoDoCupom: string;
   percentual: number;
   /* Pacote que o botão do pop-up leva para o checkout. */
-  slug: string;
+  slug?: string;
+  onAplicar?: () => void;
+  descricao?: string;
+  chaveSessao?: string;
 };
 
 const CHAVE_SESSAO = "cdp-oferta-saida";
 const CHAVE_CUPOM = "cdp-cupom";
 
-export default function ExitOffer({ codigoDoCupom: cupom, percentual, slug }: Props) {
+export default function ExitOffer({
+  codigoDoCupom: cupom,
+  percentual,
+  slug,
+  onAplicar,
+  descricao,
+  chaveSessao = CHAVE_SESSAO,
+}: Props) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
   const abrir = useCallback(() => {
     try {
-      if (sessionStorage.getItem(CHAVE_SESSAO)) return false;
-      sessionStorage.setItem(CHAVE_SESSAO, "1");
+      if (sessionStorage.getItem(chaveSessao)) return false;
+      sessionStorage.setItem(chaveSessao, "1");
     } catch {}
     setAberto(true);
     return true;
-  }, []);
+  }, [chaveSessao]);
 
   useEffect(() => {
-    try { if (sessionStorage.getItem(CHAVE_SESSAO)) return; } catch {}
+    try { if (sessionStorage.getItem(chaveSessao)) return; } catch {}
 
     /* CARÊNCIA antes de armar qualquer gatilho.
 
@@ -84,7 +94,7 @@ export default function ExitOffer({ codigoDoCupom: cupom, percentual, slug }: Pr
       document.removeEventListener("mouseout", saiuPorCima);
       limpar.forEach((f) => f());
     };
-  }, [abrir]);
+  }, [abrir, chaveSessao]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -104,6 +114,12 @@ export default function ExitOffer({ codigoDoCupom: cupom, percentual, slug }: Pr
 
   function irParaOCheckout() {
     guardarCupom();
+    if (onAplicar) {
+      onAplicar();
+      setAberto(false);
+      return;
+    }
+    if (!slug) return;
     router.push(`/checkout?produto=${encodeURIComponent(slug)}&cupom=${encodeURIComponent(cupom)}`);
   }
 
@@ -116,8 +132,7 @@ export default function ExitOffer({ codigoDoCupom: cupom, percentual, slug }: Pr
         <span className={styles.selo}>Espere um instante</span>
         <h2 className={styles.titulo} id="oferta-saida-titulo">Você ganhou {percentual}% de desconto</h2>
         <p className={styles.texto}>
-          Use o cupom abaixo na finalização da compra do Lançamento Combo Plus 2027.
-          Some com os 5% do Pix.
+          {descricao ?? "Use o cupom abaixo na finalização da compra do Lançamento Combo Plus 2027. Some com os 5% do Pix."}
         </p>
         <div className={styles.cupom}>
           <span className={styles.codigo}>{cupom}</span>
@@ -126,7 +141,7 @@ export default function ExitOffer({ codigoDoCupom: cupom, percentual, slug }: Pr
           </button>
         </div>
         <button className={styles.usar} type="button" onClick={irParaOCheckout}>
-          Usar meu desconto
+          {onAplicar ? "Aplicar desconto agora" : "Usar meu desconto"}
         </button>
         <button className={styles.recusar} type="button" onClick={() => setAberto(false)}>
           Continuar navegando

@@ -13,10 +13,13 @@ import styles from "./CheckoutCafe.module.css";
 import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
 import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
+import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
 const SAVED_CONTACT_KEY = "cdp-checkout-contact";
+const CUPOM_SAIDA = "CAFECOMDEUSPAI27";
+const DESCONTO_SAIDA = 4;
 
 type CheckoutProduct = { slug: string; name: string; image: string; priceCents: number; originalPrice: string | null; quantity: number };
 type PixCharge = { id: string; pedido: string; total: number; qr_code: string; qr_code_url: string | null; expires_at?: string; status?: string };
@@ -328,6 +331,16 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     setCouponMessage(`Cupom ${codigo} aplicado: ${Math.round(valido.percentual * 100)}% de desconto.`);
   }
 
+  function aplicarCupomSaida() {
+    const valido = cupomValidoCarrinho(CUPOM_SAIDA, products.map((item) => item.slug));
+    if (!valido) return;
+    setCoupon(CUPOM_SAIDA);
+    setCupomAplicado(CUPOM_SAIDA);
+    setCouponOpen(true);
+    setCouponMessage(`Cupom ${CUPOM_SAIDA} aplicado: ${DESCONTO_SAIDA}% de desconto.`);
+    try { localStorage.setItem("cdp-cupom", CUPOM_SAIDA); } catch {}
+  }
+
   /* O cupom pode chegar pela URL (?cupom=) ou do pop-up de saída da página do
      produto, que grava no navegador. */
   useEffect(() => {
@@ -476,6 +489,15 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       </div>
       {shippingModalOpen && <div className={styles.shippingModalBackdrop} role="presentation" onMouseDown={() => setShippingModalOpen(false)}><div className={styles.shippingModal} role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title" onMouseDown={event => event.stopPropagation()}><span className={styles.modalHandle} aria-hidden="true" /><header><div><h2 id="shipping-modal-title">Entrega</h2><p>Escolha como deseja receber seu pedido</p></div><button type="button" aria-label="Fechar" onClick={() => setShippingModalOpen(false)}><X /></button></header><div className={styles.shippingModalBody}><b><Truck aria-hidden="true" /> Envio em domicílio</b><label className={draftShipping === "pac" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "pac"} onChange={() => setDraftShipping("pac")} /><span><b>Correios - PAC</b><small>Chega em {deliveryDate(25)}</small></span><strong>Grátis<small>R$ 20,32</small></strong></label><label className={draftShipping === "sedex" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "sedex"} onChange={() => setDraftShipping("sedex")} /><span><b>Correios - SEDEX</b><small>Chega em {deliveryDate(13)}</small></span><strong>R$ 20,32</strong></label></div><div className={styles.shippingModalActions}><button className={styles.shippingSave} type="button" onClick={() => { setShippingMethod(draftShipping); setShippingModalOpen(false); }}>Salvar forma de entrega</button><button className={styles.shippingCancel} type="button" onClick={() => setShippingModalOpen(false)}>Cancelar</button></div></div></div>}
       <PurchaseNotifications imagem={product.image} nome={product.name} />
+      {!cupomAplicado && cupomValidoCarrinho(CUPOM_SAIDA, products.map((item) => item.slug)) ? (
+        <ExitOffer
+          codigoDoCupom={CUPOM_SAIDA}
+          percentual={DESCONTO_SAIDA}
+          chaveSessao="cdp-oferta-saida-checkout"
+          descricao="Aplique o cupom na sua Box Café com Deus Pai 2027. No Pix, ele ainda soma com o desconto da forma de pagamento."
+          onAplicar={aplicarCupomSaida}
+        />
+      ) : null}
     </div>
   );
 }
