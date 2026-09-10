@@ -61,12 +61,12 @@ const nextConfig: NextConfig = {
       /* connect.facebook.net serve o fbevents.js do Meta Pixel. Sem esta
          liberação a CSP bloqueia o script e o rastreamento morre calado —
          nenhum erro visível, só nenhum evento chegando ao Gerenciador. */
-      "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://static.cloudflareinsights.com https://app.axxonpay.com.br https://js.stripe.com https://api.upaybrasil.com.br",
+      "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://*.doubleclick.net https://static.cloudflareinsights.com https://app.axxonpay.com.br https://js.stripe.com https://api.upaybrasil.com.br",
       "style-src": "'self' 'unsafe-inline'",
       /* O pixel também funciona por <img> quando o JS está desligado. */
-      "img-src": "'self' data: blob: https://www.facebook.com https://connect.facebook.net",
+      "img-src": "'self' data: blob: https://www.facebook.com https://connect.facebook.net https://*.google-analytics.com https://www.googletagmanager.com https://*.googleadservices.com https://*.googlesyndication.com https://*.doubleclick.net",
       "font-src": "'self' data:",
-      "connect-src": "'self' https://viacep.com.br https://*.supabase.co https://www.facebook.com https://connect.facebook.net https://cloudflareinsights.com https://app.axxonpay.com.br https://api.stripe.com https://api.upaybrasil.com.br",
+      "connect-src": "'self' https://viacep.com.br https://*.supabase.co https://www.facebook.com https://connect.facebook.net https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googleadservices.com https://*.googlesyndication.com https://*.doubleclick.net https://cloudflareinsights.com https://app.axxonpay.com.br https://api.stripe.com https://api.upaybrasil.com.br",
       "frame-src": "https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://js.stripe.com https://hooks.stripe.com https://api.upaybrasil.com.br",
       "form-action": "'self'",
       "base-uri": "'self'",
@@ -150,6 +150,10 @@ const nextConfig: NextConfig = {
       {
         source: "/api/pagamentos/sdk/bloopi",
         headers: [{ key: "Cache-Control", value: "public, max-age=300, stale-while-revalidate=86400" }],
+      },
+      {
+        source: "/api/marketing/config",
+        headers: [{ key: "Cache-Control", value: "public, max-age=30, stale-while-revalidate=300" }],
       },
     ];
   },

@@ -1,6 +1,6 @@
 import "server-only";
 import crypto from "node:crypto";
-import { ler } from "./config-integracoes";
+import { lerPixelsMeta } from "./marketing-config";
 
 /* API de Conversões da Meta (server-side).
 
@@ -44,20 +44,14 @@ export type DadosCompra = {
 
 export type ResultadoPixel = { ok: boolean; motivo?: string; recebidos?: number };
 
-/** Pares (pixel, token), casados pela POSIÇÃO nas duas listas separadas por
-    vírgula. Se as listas tiverem tamanhos diferentes, sobra pixel sem token —
-    e esse é ignorado, com aviso, em vez de mandar evento com credencial de
-    outro pixel (a Meta recusaria e o erro seria confuso). */
+/** Pares validados. A configuração nova guarda cada ID junto de seu token;
+    lerPixelsMeta também migra, sem interrupção, as listas legadas. */
 export async function paresConfigurados(): Promise<{ id: string; token: string }[]> {
-  const ids = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "").split(",").map((s) => s.trim());
-  const tokens = ((await ler("META_CAPI_TOKEN")) ?? "").split(",").map((s) => s.trim());
-  const pares: { id: string; token: string }[] = [];
-  ids.forEach((id, i) => {
-    if (!/^\d+$/.test(id) || pares.some((par) => par.id === id)) return;
-    if (tokens[i]) pares.push({ id, token: tokens[i] });
-    else console.warn(`[meta] pixel ${id} sem token na posição ${i + 1} — ignorado`);
-  });
-  return pares;
+  const pixels = await lerPixelsMeta();
+  for (const pixel of pixels) {
+    if (!pixel.token) console.warn(`[meta] pixel ${pixel.id} sem token — ignorado na API de Conversões`);
+  }
+  return pixels.filter((pixel) => Boolean(pixel.token));
 }
 
 /**
@@ -132,8 +126,7 @@ export async function enviarCompra(d: DadosCompra): Promise<ResultadoPixel> {
   }));
 
   const aceitos = envios.filter((e) => e.ok);
-  const esperados = new Set((process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "")
-    .split(",").map((id) => id.trim()).filter((id) => /^\d+$/.test(id))).size;
+  const esperados = (await lerPixelsMeta()).length;
   if (envios.length < esperados) {
     return { ok: false, motivo: "pixels_sem_token", recebidos: aceitos.reduce((a, e) => a + e.recebidos, 0) };
   }

@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import {
-  Building2, CreditCard, Mail, MessageCircle, Target, Truck,
+  BarChart3, Building2, CreditCard, Mail, MessageCircle, Target, Truck,
   type LucideIcon,
 } from "lucide-react";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import FormIntegracao from "@/components/painel/FormIntegracao";
 import GatewaysPagamento from "@/components/painel/GatewaysPagamento";
+import MetaPixelsForm from "@/components/painel/MetaPixelsForm";
 import { lerGateways } from "@/lib/gateways-config";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { estadoDasChaves, type ChaveConfig } from "@/lib/config-integracoes";
+import { pixelsMetaParaPainel } from "@/lib/marketing-config";
 import { temChaveMestra } from "@/lib/cofre";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
@@ -39,6 +41,8 @@ const NOTAS: Record<ChaveConfig, string> = {
   EMPRESA_ENDERECO: "Endereço completo em uma linha: rua, nº, bairro, cidade/UF, CEP",
   EMPRESA_TELEFONE: "Telefone de contato que aparece no recibo",
   META_CAPI_TOKEN: "Token da API de Conversões (Eventos > Configurar > API de Conversões)",
+  META_PIXELS: "IDs e tokens dos pixels da Meta, armazenados juntos e cifrados",
+  GOOGLE_TAG_ID: "ID da tag do Google, ex.: G-…, GT-…, AW-… ou GTM-…",
   CORREIOS_URL: "Endpoint que cria a encomenda, ex.: https://….supabase.co/functions/v1/pedido-pago",
   CORREIOS_SECRET: "Valor do cabeçalho x-integration-secret — nunca sai do servidor",
   EMPRESA_LOGO: "Caminho do logo, ex.: /sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png",
@@ -76,11 +80,21 @@ const SERVICOS: Servico[] = [
   {
     nome: "Meta Pixel", papel: "Rastreia visitas, início de checkout e compras",
     icone: Target,
-    chaves: ["META_CAPI_TOKEN"],
+    chaves: ["META_PIXELS"],
     passos: [
-      "O ID do pixel fica no build (NEXT_PUBLIC_META_PIXEL_ID); só o token é editável aqui",
+      "Informe o ID e o token da API de Conversões de cada pixel",
       "PageView e InitiateCheckout saem do navegador; Purchase sai do servidor quando o PIX é confirmado",
       "Purchase pelo servidor é o único jeito de contar PIX: o cliente fecha a aba antes de o pagamento cair",
+    ],
+  },
+  {
+    nome: "Google Tag", papel: "Google Analytics, Google Ads ou Google Tag Manager",
+    icone: BarChart3,
+    chaves: ["GOOGLE_TAG_ID"],
+    passos: [
+      "Cole o identificador completo fornecido pelo Google (G-, GT-, AW- ou GTM-)",
+      "PageView, produto, carrinho, checkout e pagamento são enviados automaticamente",
+      "A tag não é carregada dentro do painel administrativo",
     ],
   },
   {
@@ -119,7 +133,7 @@ const GRUPOS = [
   {
     titulo: "Comunicação e marketing",
     descricao: "Canais de relacionamento, mensagens e acompanhamento de conversões.",
-    servicos: ["Resend", "Meta Pixel", "Z-API (WhatsApp)"],
+    servicos: ["Resend", "Meta Pixel", "Google Tag", "Z-API (WhatsApp)"],
   },
   {
     titulo: "Operação da loja",
@@ -132,10 +146,15 @@ export default async function Page() {
   if (!painelConfigurado()) redirect("/painel");
   if (!(await autenticado())) redirect("/painel/entrar");
 
-  const [vivos, chaves] = await Promise.all([lerAoVivo(), estadoDasChaves()]);
+  const [vivos, chaves, pixelsMeta] = await Promise.all([lerAoVivo(), estadoDasChaves(), pixelsMetaParaPainel()]);
   const porChave = new Map(chaves.map((c) => [c.chave, c]));
 
   const estadoServico = (serv: Servico) => {
+    if (serv.nome === "Meta Pixel") {
+      const preenchidas = pixelsMeta.filter((pixel) => pixel.tokenPreenchido).length;
+      const estado = pixelsMeta.length === 0 ? "faltando" : preenchidas === pixelsMeta.length ? "ok" : "parcial";
+      return { estados: [], estado } as const;
+    }
     const estados = serv.chaves.map((c) => porChave.get(c)!).filter(Boolean);
     const preenchidas = estados.filter((e) => e.preenchida).length;
     const estado = preenchidas === 0 ? "faltando" : preenchidas === estados.length ? "ok" : "parcial";
@@ -213,11 +232,13 @@ export default async function Page() {
                       <span className={`${i.estado} ${i[estado]}`}>{rotulo}</span>
                     </header>
 
-                    <div className={i.campos}>
-                      {estados.map((e) => (
-                        <FormIntegracao key={e.chave} estado={e} nota={NOTAS[e.chave]} />
-                      ))}
-                    </div>
+                    {serv.nome === "Meta Pixel"
+                      ? <MetaPixelsForm inicial={pixelsMeta} editavel={temChaveMestra()} />
+                      : <div className={i.campos}>
+                          {estados.map((e) => (
+                            <FormIntegracao key={e.chave} estado={e} nota={NOTAS[e.chave]} />
+                          ))}
+                        </div>}
 
                     {estado !== "ok" && (
                       <div className={i.configAjuda}>

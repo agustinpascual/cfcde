@@ -84,6 +84,28 @@
 .btnRemover.btnRemover:hover:not(:disabled) { color: var(--cdp-erro); }
 .btnRemover.btnRemover:disabled { cursor: default; opacity: .5; }
 
+/* Meta: IDs e tokens precisam permanecer pareados. A tabela curta torna essa
+   relação explícita e evita o erro antigo de listas separadas por vírgula. */
+.pixelsForm { display: flex; flex-direction: column; gap: 14px; padding: 0 20px 20px; }
+.pixelsCabecalho { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 15px; border-top: 1px solid var(--cdp-borda); }
+.pixelsCabecalho > div { display: flex; flex-direction: column; gap: 3px; }
+.pixelsCabecalho b { font-size: 12.5px; }
+.pixelsCabecalho span { color: var(--cdp-tinta-3); font-size: 10.5px; }
+.pixelsCabecalho button { display: inline-flex; align-items: center; gap: 6px; }
+.pixelsLista { display: flex; flex-direction: column; gap: 9px; }
+.pixelLinha { display: grid; grid-template-columns: 28px minmax(130px,.7fr) minmax(190px,1.3fr) 36px; align-items: end; gap: 9px; padding: 11px; border: 1px solid var(--cdp-borda); border-radius: 11px; background: #fcfbf9; }
+.pixelNumero { align-self: center; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--cdp-ouro-fundo); color: var(--cdp-ouro-escuro); font-size: 10px; font-weight: 800; }
+.pixelLinha label { display: flex; min-width: 0; flex-direction: column; gap: 5px; color: var(--cdp-tinta-2); font-size: 10px; font-weight: 700; }
+.pixelLinha input { width: 100%; min-width: 0; height: 39px; padding: 8px 10px; border: 1px solid var(--cdp-borda); border-radius: 8px; background: #fff; color: var(--cdp-tinta); font-family: ui-monospace, Menlo, monospace; font-size: 11px; outline: none; }
+.pixelLinha input:focus { border-color: var(--cdp-ouro-escuro); box-shadow: 0 0 0 2px var(--cdp-ouro-fundo); }
+.pixelLinha input:disabled { opacity: .65; }
+.pixelRemover.pixelRemover { display: grid; place-items: center; width: 36px; height: 39px; border: 1px solid var(--cdp-borda); border-radius: 8px; background: #fff; color: var(--cdp-tinta-3); }
+.pixelRemover:hover:not(:disabled) { border-color: var(--cdp-erro); color: var(--cdp-erro); }
+.pixelRemover:disabled { opacity: .45; }
+.pixelsRodape { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.pixelsRodape p { max-width: 390px; color: var(--cdp-tinta-3); font-size: 10.5px; line-height: 1.45; }
+.pixelsVazio { padding: 18px; border: 1px dashed var(--cdp-borda); border-radius: 10px; color: var(--cdp-tinta-3); font-size: 11.5px; text-align: center; }
+
 @media (max-width: 1040px) {
   .grade { grid-template-columns: 1fr; }
 }
@@ -116,6 +138,14 @@
     align-self: flex-start;
     min-height: 44px;
   }
+  .pixelsForm { padding: 0 16px 16px; }
+  .pixelsCabecalho { align-items: flex-start; }
+  .pixelLinha { grid-template-columns: 28px 1fr 36px; }
+  .pixelLinha label { grid-column: 2 / 3; }
+  .pixelNumero { grid-row: 1 / 3; }
+  .pixelRemover { grid-column: 3; grid-row: 1 / 3; align-self: center; }
+  .pixelsRodape { align-items: stretch; flex-direction: column; }
+  .pixelsRodape button { width: 100%; }
 }
 
 @media (max-width: 430px) {

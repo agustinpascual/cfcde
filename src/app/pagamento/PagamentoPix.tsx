@@ -8,6 +8,7 @@ import { urlRastreio } from "@/lib/rastreio";
 import { acompanharPix } from "@/lib/acompanhar-pix";
 import { lerPagamentoDaTela, type PagamentoNavegacao } from "@/lib/pagamento-navegacao";
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
+import { eventoGoogle } from "@/components/marketing/MetaPixel";
 import s from "./pagamento.module.css";
 
 /* A cobrança viaja pelo sessionStorage: ela já está na mão do navegador
@@ -34,6 +35,7 @@ export default function PagamentoPix() {
   const copiouEm = useRef<number | null>(null);
   const saiuDepoisDeCopiar = useRef(false);
   const voltouRegistrado = useRef(false);
+  const compraGoogle = useRef("");
 
   /* Atualiza também assim que o cliente retorna do aplicativo do banco. */
   useEffect(() => {
@@ -43,6 +45,24 @@ export default function PagamentoPix() {
         setPago({ rastreio: d.codigo_rastreio ?? null, pedido: d.pedido ?? cobranca.pedido });
         registrar("compra", { pedido: cobranca.pedido, total: cobranca.total });
       }
+    });
+  }, [cobranca, pago]);
+
+  /* A Meta recebe Purchase pelo webhook, mesmo com a aba fechada. A tag do
+     Google disponível no navegador recebe a confirmação quando esta tela
+     mostra o estado aprovado, uma única vez por pedido. */
+  useEffect(() => {
+    if (!cobranca || !pago) return;
+    const pedido = pago.pedido ?? cobranca.pedido;
+    if (!pedido || compraGoogle.current === pedido) return;
+    compraGoogle.current = pedido;
+    eventoGoogle("Purchase", {
+      transaction_id: pedido,
+      currency: "BRL",
+      value: Number((cobranca.total / 100).toFixed(2)),
+      content_ids: [cobranca.id],
+      content_name: cobranca.produto_nome ?? "Pedido Café com Deus Pai",
+      num_items: 1,
     });
   }, [cobranca, pago]);
 

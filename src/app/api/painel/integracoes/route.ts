@@ -28,6 +28,10 @@ export async function POST(req: Request) {
   if (chave === "PAGAMENTOS_GATEWAYS") {
     return NextResponse.json({ erro: "Use o seletor de gateways para validar e ativar." }, { status: 400 });
   }
+  if (chave === "GOOGLE_TAG_ID" && valor.trim()
+      && !/^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/i.test(valor.trim())) {
+    return NextResponse.json({ erro: "Tag inválida. Use um ID G-, GT-, AW- ou GTM-." }, { status: 400 });
+  }
 
   try {
     await salvar(chave, valor, "painel");

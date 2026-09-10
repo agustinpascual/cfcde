@@ -2,55 +2,113 @@
 
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-/* Meta Pixel.
+type DadosEvento = Record<string, unknown> | undefined;
+type EventoPendente = [string, DadosEvento];
+type ConfigMarketing = { metaPixelIds: string[]; googleTagId: string };
 
-   Dois detalhes que o snippet oficial não cobre e que quebram o rastreamento
-   num app com navegação por cliente:
-
-   1. O snippet dispara PageView uma vez, no carregamento. No App Router a
-      troca de página não recarrega nada, então sem o efeito abaixo só a
-      primeira página da visita seria contada.
-   2. O ID vem de NEXT_PUBLIC_META_PIXEL_ID, congelado no build. Sem ele o
-      componente não monta nada — assim ambiente de teste não polui os dados.
-
-   A CSP em next.config.ts precisa liberar connect.facebook.net; sem isso o
-   script é bloqueado sem erro visível. */
-
-/* Aceita vários pixels separados por vírgula. `fbq('track', ...)` dispara
-   para TODOS os pixels inicializados, então basta um init por ID e os
-   eventos chegam nos dois sem duplicar chamada. */
-const IDS = [...new Set((process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "")
-  .split(",").map((s) => s.trim()).filter((id) => /^\d+$/.test(id)))];
+const IDS_FALLBACK = [...new Set((process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "")
+  .split(",").map((id) => id.trim()).filter((id) => /^\d{8,25}$/.test(id)))];
 const publico = (path: string) => path !== "/painel" && !path.startsWith("/painel/");
-const pendentes: [string, Record<string, unknown> | undefined][] = [];
-let aguardando = false;
+const filaConfig: EventoPendente[] = [];
+const filaMeta: EventoPendente[] = [];
+const filaGoogle: EventoPendente[] = [];
+let configResolvida = false;
+let idsMeta: string[] = [];
+let tagGoogle = "";
+let metaPronto = false;
+let googlePronto = false;
 
 declare global {
   interface Window {
     fbq?: ((...args: unknown[]) => void) & { queue?: unknown[]; loaded?: boolean; version?: string };
     _fbq?: unknown;
-    cdpMetaReady?: boolean;
+    dataLayer?: Record<string, unknown>[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
-/** Guarda eventos até o snippet inicializar os pixels, sem interromper a página. */
+const guardar = (fila: EventoPendente[], evento: EventoPendente) => {
+  fila.push(evento);
+  if (fila.length > 100) fila.shift();
+};
+
+function dadosGoogle(evento: string, dados: DadosEvento) {
+  const nomes: Record<string, string> = {
+    PageView: "page_view", Search: "search", ViewContent: "view_item",
+    AddToCart: "add_to_cart", InitiateCheckout: "begin_checkout",
+    AddPaymentInfo: "add_payment_info", Purchase: "purchase",
+  };
+  const nome = nomes[evento] ?? evento.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
+  const origem = dados ?? {};
+  const contentIds = Array.isArray(origem.content_ids) ? origem.content_ids : [];
+  const quantidade = Number(origem.num_items ?? 1);
+  const parametros: Record<string, unknown> = {
+    ...origem,
+    ...(contentIds.length ? { items: contentIds.map((id) => ({
+      item_id: String(id), item_name: String(origem.content_name ?? id), quantity: quantidade,
+    })) } : {}),
+    ...(evento === "PageView" && typeof window !== "undefined"
+      ? { page_location: window.location.href, page_path: `${window.location.pathname}${window.location.search}` }
+      : {}),
+  };
+  return { nome, parametros };
+}
+
+function enviarMeta([evento, dados]: EventoPendente) {
+  if (!idsMeta.length) return;
+  if (!metaPronto || !window.fbq) { guardar(filaMeta, [evento, dados]); return; }
+  try { window.fbq("track", evento, dados); } catch { /* marketing nunca interrompe a compra */ }
+}
+
+function enviarGoogle([evento, dados]: EventoPendente) {
+  if (!tagGoogle) return;
+  if (!googlePronto) { guardar(filaGoogle, [evento, dados]); return; }
+  const { nome, parametros } = dadosGoogle(evento, dados);
+  try {
+    if (tagGoogle.startsWith("GTM-")) window.dataLayer?.push({ event: nome, ...parametros });
+    else window.gtag?.("event", nome, parametros);
+  } catch { /* marketing nunca interrompe a compra */ }
+}
+
+function distribuir(evento: EventoPendente, somenteGoogle = false) {
+  if (!somenteGoogle) enviarMeta(evento);
+  enviarGoogle(evento);
+}
+
+/** Envia o mesmo evento comercial para Meta e Google, com filas independentes. */
 export function pixel(evento: string, dados?: Record<string, unknown>) {
-  if (typeof window === "undefined" || !IDS.length || !publico(window.location.pathname)) return;
-  if (window.cdpMetaReady && window.fbq) {
-    try { window.fbq("track", evento, dados); } catch { /* não interrompe a compra */ }
-    return;
+  if (typeof window === "undefined" || !publico(window.location.pathname)) return;
+  if (!configResolvida) { guardar(filaConfig, [evento, dados]); return; }
+  distribuir([evento, dados]);
+}
+
+/** Purchase do Google no retorno aprovado; a Meta recebe Purchase pelo webhook. */
+export function eventoGoogle(evento: string, dados?: Record<string, unknown>) {
+  if (typeof window === "undefined" || !publico(window.location.pathname)) return;
+  if (!configResolvida) { guardar(filaConfig, [`google:${evento}`, dados]); return; }
+  enviarGoogle([evento, dados]);
+}
+
+function aplicarConfig(config: ConfigMarketing) {
+  idsMeta = [...new Set(config.metaPixelIds.filter((id) => /^\d{8,25}$/.test(id)))];
+  tagGoogle = /^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/i.test(config.googleTagId) ? config.googleTagId.toUpperCase() : "";
+  configResolvida = true;
+  for (const [nome, dados] of filaConfig.splice(0)) {
+    if (nome.startsWith("google:")) enviarGoogle([nome.slice(7), dados]);
+    else distribuir([nome, dados]);
   }
-  // O carregamento lento do script não descarta eventos após cinco segundos.
-  pendentes.push([evento, dados]);
-  if (!aguardando) {
-    aguardando = true;
-    window.addEventListener("cdp:meta-ready", () => {
-      aguardando = false;
-      for (const [nome, parametros] of pendentes.splice(0)) pixel(nome, parametros);
-    }, { once: true });
-  }
+}
+
+function metaCarregada() {
+  metaPronto = true;
+  for (const evento of filaMeta.splice(0)) enviarMeta(evento);
+}
+
+function googleCarregado() {
+  googlePronto = true;
+  for (const evento of filaGoogle.splice(0)) enviarGoogle(evento);
 }
 
 export const dadosProdutoPixel = (id: string, nome: string, centavos: number, quantidade = 1) => ({
@@ -79,40 +137,92 @@ export default function MetaPixel() {
   const params = useSearchParams();
   const ultimaPagina = useRef("");
   const consulta = params.toString();
+  const [config, setConfig] = useState<ConfigMarketing | null>(null);
+
+  useEffect(() => {
+    if (!publico(pathname) || configResolvida) return;
+    const controlador = new AbortController();
+    const concluir = (segura: ConfigMarketing) => {
+      aplicarConfig(segura);
+      /* Registra a primeira URL no mesmo passo que libera as filas. Em
+         árvores com Suspense, esperar outro ciclo de efeito podia deixar o
+         PageView inicial para trás enquanto ViewContent já era enviado. */
+      const pagina = `${pathname}?${consulta}`;
+      /* Os scripts disparam o primeiro PageView em onReady. Manter a URL aqui
+         evita que o efeito de navegação o duplique quando setConfig renderizar. */
+      ultimaPagina.current = pagina;
+      setConfig(segura);
+    };
+    void fetch("/api/marketing/config", {
+      signal: AbortSignal.any([controlador.signal, AbortSignal.timeout(5000)]),
+    }).then(async (resposta) => {
+      if (!resposta.ok) throw new Error("configuração indisponível");
+      const dados = await resposta.json() as ConfigMarketing;
+      const segura = {
+        metaPixelIds: Array.isArray(dados.metaPixelIds) ? dados.metaPixelIds : [],
+        googleTagId: typeof dados.googleTagId === "string" ? dados.googleTagId : "",
+      };
+      concluir(segura);
+    }).catch(() => {
+      if (controlador.signal.aborted) return;
+      const fallback = { metaPixelIds: IDS_FALLBACK, googleTagId: "" };
+      concluir(fallback);
+    });
+    return () => controlador.abort();
+  }, [pathname, consulta]);
 
   useEffect(() => {
     const pagina = `${pathname}?${consulta}`;
-    if (!IDS.length || !publico(pathname)) { ultimaPagina.current = ""; return; }
+    /* Aguarda a configuração pública: assim PageView nunca disputa a primeira
+       montagem do Script nem se perde entre a fila pré-configuração e onReady. */
+    if (!config || !publico(pathname)) { ultimaPagina.current = ""; return; }
     if (ultimaPagina.current === pagina) return;
     ultimaPagina.current = pagina;
     pixel("PageView");
     const busca = new URLSearchParams(consulta).get("q")?.trim();
     if (pathname === "/busca" && busca) pixel("Search", { search_string: busca.slice(0, 80) });
-  }, [pathname, consulta]);
+  }, [pathname, consulta, config]);
 
-  if (!IDS.length || !publico(pathname)) return null;
+  if (!config || !publico(pathname)) return null;
+  const ids = [...new Set(config.metaPixelIds.filter((id) => /^\d{8,25}$/.test(id)))];
+  const google = /^(?:G|GT|AW|GTM)-[A-Z0-9-]{4,40}$/i.test(config.googleTagId)
+    ? config.googleTagId.toUpperCase() : "";
 
   return (
     <>
-      {/* Os eventos continuam na fila acima até o SDK ficar pronto. Carregar
-          no tempo ocioso evita que ~200 KB da Meta concorram com o checkout,
-          imagens e hidratação durante a primeira dobra. */}
-      <Script id="meta-pixel" strategy="lazyOnload">{`
+      {ids.length ? <>
+        <Script id="meta-pixel" strategy="lazyOnload" onReady={metaCarregada}>{`
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
-${IDS.map((id) => `fbq('set','autoConfig',false,'${id}');fbq('init','${id}');`).join("")}
-window.cdpMetaReady=true;window.dispatchEvent(new Event('cdp:meta-ready'));
-      `}</Script>
-      <noscript>
-        {IDS.map((id) => (
+${ids.map((id) => `fbq('set','autoConfig',false,'${id}');fbq('init','${id}');`).join("")}
+fbq('track','PageView');
+        `}</Script>
+        <noscript>{ids.map((id) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img key={id} height="1" width="1" style={{ display: "none" }} alt=""
             src={`https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1`} />
-        ))}
-      </noscript>
+        ))}</noscript>
+      </> : null}
+
+      {google ? google.startsWith("GTM-") ? (
+        <Script id="google-tag-manager" strategy="lazyOnload" onReady={googleCarregado}>{`
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${google}');
+window.dataLayer.push({event:'page_view',page_location:window.location.href,page_path:window.location.pathname+window.location.search});
+        `}</Script>
+      ) : <>
+        <Script id="google-tag-sdk" src={`https://www.googletagmanager.com/gtag/js?id=${google}`} strategy="lazyOnload" />
+        <Script id="google-tag-init" strategy="lazyOnload" onReady={googleCarregado}>{`
+window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
+window.gtag=gtag;gtag('js',new Date());gtag('config','${google}',{send_page_view:false});
+gtag('event','page_view',{page_location:window.location.href,page_path:window.location.pathname+window.location.search});
+        `}</Script>
+      </> : null}
     </>
   );
 }
