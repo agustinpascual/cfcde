@@ -131,13 +131,15 @@ export function EventoMeta({ evento, dados, umaVezPor }: {
   const chave = JSON.stringify([evento, dados]);
   const identidade = umaVezPor === undefined ? chave : `${evento}:${umaVezPor}`;
   const ultima = useRef("");
-  useEffect(() => {
-    if (ultima.current === identidade) return;
+  /* O callback de ref acompanha o commit real do produto no DOM. Em páginas
+     pré-renderizadas, o efeito passivo podia ser postergado/descartado durante
+     a hidratação e ViewContent não saía, embora cliques posteriores saíssem. */
+  return <i hidden aria-hidden="true" data-evento-marketing={evento} ref={(elemento) => {
+    if (!elemento || ultima.current === identidade) return;
     ultima.current = identidade;
     const [nome, parametros] = JSON.parse(chave);
-    pixel(nome, parametros);
-  }, [chave, identidade]);
-  return null;
+    queueMicrotask(() => pixel(nome, parametros));
+  }} />;
 }
 
 export default function MetaPixel() {
