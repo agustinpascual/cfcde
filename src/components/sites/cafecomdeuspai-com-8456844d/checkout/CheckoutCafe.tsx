@@ -466,7 +466,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
               </div>
               {!paymentExpanded ? <><h1>Forma de pagamento</h1><div className={styles.paymentOptions} role="radiogroup" aria-label="Forma de pagamento">
                 {cartaoDisponivel
-                  ? <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>Em até {gatewayConfig?.parcelas ?? 1}x sem juros</small></span><ChevronRight /></button>
+                  ? <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>Até 4x sem juros ou {gatewayConfig?.parcelas ?? 12}x com juros</small></span><ChevronRight /></button>
                   : <button type="button" className={styles.opcaoManutencao} disabled aria-disabled="true"><CreditCard /><span><b>Cartão de crédito</b><small>{gatewayConfig?.cartao === "sandbox" ? "Modo de teste — indisponível para compras" : "Indisponível no momento"}</small></span><em className={styles.selo}>Indisponível</em></button>}
                 <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("pix"); setPaymentExpanded(true); setPaymentError(""); }}><PixLogo /><span><b>Pix</b><small>Aprovação rápida</small></span><em className={styles.pixOff}>{Math.round(DESCONTO_PIX * 100)}% OFF</em><ChevronRight /></button>
               </div></> : <div className={styles.paymentDetail}>

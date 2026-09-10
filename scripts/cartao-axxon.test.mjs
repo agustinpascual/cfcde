@@ -35,6 +35,17 @@ test("validarCartao normaliza e recusa sem ecoar o valor", () => {
   assert.deepEqual(cartao.semCartao({ nome: "x", cartao: cartaoTeste, cardHash: "t", cvv: "1", card: {}, numeroCartao: "1", chaveAtivacao: "1" }), { nome: "x" });
 });
 
+test("parcelamento aplica a tabela comercial somente acima de 4x", () => {
+  const esperado = new Map([[1, 0], [2, 0], [3, 0], [4, 0], [5, 25], [6, 27], [7, 30], [8, 33], [9, 36], [10, 38], [11, 40], [12, 42]]);
+  for (const [parcelas, percentual] of esperado) {
+    const plano = cartao.calcularParcelamentoCartao(10000, parcelas);
+    assert.equal(plano.percentual, percentual);
+    assert.equal(plano.acrescimo, percentual * 100);
+    assert.equal(plano.total, 10000 + percentual * 100);
+  }
+  for (const parcelas of [0, 13, 5.5, NaN]) assert.throws(() => cartao.calcularParcelamentoCartao(10000, parcelas));
+});
+
 test("navegação pós-cartão persiste somente o resumo não sensível", () => {
   const memoria = new Map();
   const anterior = globalThis.sessionStorage;

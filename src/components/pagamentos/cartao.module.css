@@ -3,6 +3,13 @@
 .form label { display: grid; gap: 6px; color: #333; font-size: 13px; }
 .input { width: 100%; min-width: 0; height: 48px; padding: 0 13px; border: 1px solid #c9c9c9; border-radius: 4px; background: #fff; color: #202020; font-size: 16px; }
 .input:focus { outline: 2px solid #111; outline-offset: -1px; }
+.resumoJuros {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 3px 12px;
+  margin-top: 2px; padding: 9px 11px; border: 1px solid #ead9b0; border-radius: 4px;
+  background: #fbf6ea; color: #72551d; font-size: 12px; line-height: 1.4;
+}
+.resumoJuros b { color: #4f3912; }
+.resumoJuros span { flex-basis: 100%; color: #8b6b2c; font-size: 11px; }
 .linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .aviso { display: flex; align-items: flex-start; gap: 8px; margin: 0; color: #555; font-size: 12px; line-height: 1.45; }
 .aviso svg { flex: none; width: 14px; height: 14px; margin-top: 2px; }

@@ -10,8 +10,30 @@ export type CartaoBruto = {
   number: string; holderName: string; expirationMonth: number; expirationYear: number; cvv: string;
 };
 
-/** Parcelas sem juros oferecidas no checkout (a API aceita até 12). */
-export const PARCELAS_MAX = 4;
+/** Regra comercial do parcelamento. O percentual é aplicado uma única vez
+ * sobre o total da compra, não a cada parcela. */
+export const PARCELAS_SEM_JUROS = 4;
+export const PARCELAS_MAX = 12;
+export const JUROS_POR_PARCELA: Readonly<Record<number, number>> = {
+  5: 25,
+  6: 27,
+  7: 30,
+  8: 33,
+  9: 36,
+  10: 38,
+  11: 40,
+  12: 42,
+};
+
+export function calcularParcelamentoCartao(totalSemJuros: number, parcelas: number) {
+  if (!Number.isSafeInteger(totalSemJuros) || totalSemJuros <= 0) throw new Error("Total inválido.");
+  if (!Number.isInteger(parcelas) || parcelas < 1 || parcelas > PARCELAS_MAX) throw new Error("Parcelas inválidas.");
+  const percentual = parcelas <= PARCELAS_SEM_JUROS ? 0 : JUROS_POR_PARCELA[parcelas];
+  if (percentual === undefined) throw new Error("Regra de parcelamento indisponível.");
+  const acrescimo = Math.round(totalSemJuros * percentual / 100);
+  const total = totalSemJuros + acrescimo;
+  return { parcelas, percentual, acrescimo, total };
+}
 
 /** Tudo que já foi, ou é, campo de cartão em algum corpo de requisição. */
 export const CAMPOS_CARTAO = [

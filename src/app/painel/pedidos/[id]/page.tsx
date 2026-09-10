@@ -54,6 +54,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const jornada = await lerJornada(pedido.referencia);
   const ipOrigem = jornada.sessao?.ip ?? null;
   const ipJaBloqueado = await ipBloqueado(ipOrigem);
+  const acrescimoCartao = pedido.metodo_pagamento === "cartao"
+    ? Math.max(0, pedido.valor_centavos - (pedido.subtotal_centavos - pedido.desconto_centavos + pedido.frete_centavos))
+    : 0;
 
   const e = pedido.endereco;
   const linhaEndereco = e
@@ -120,12 +123,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <dl className={d.valores}>
             <div><dt>Subtotal</dt><dd>{moeda(pedido.subtotal_centavos)}</dd></div>
             {pedido.desconto_centavos > 0 && (
-              <div className={d.desconto}><dt>Desconto (PIX 5%)</dt><dd>−{moeda(pedido.desconto_centavos)}</dd></div>
+              <div className={d.desconto}><dt>Desconto</dt><dd>−{moeda(pedido.desconto_centavos)}</dd></div>
             )}
             <div>
               <dt>Frete</dt>
               <dd>{pedido.frete_centavos === 0 ? "Grátis" : moeda(pedido.frete_centavos)}</dd>
             </div>
+            {acrescimoCartao > 0 && (
+              <div><dt>Juros do parcelamento</dt><dd>+{moeda(acrescimoCartao)}</dd></div>
+            )}
             <div className={d.total}>
               <dt>{pedido.status === "aprovado" ? "Valor pago" : "Total"}</dt>
               <dd>{moeda(pedido.valor_centavos)}</dd>

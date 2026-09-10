@@ -313,6 +313,17 @@ test("Bloopi: cartão validado segue só para a criação, nunca para banco, log
   assert.equal(a.pedido().metodo_pagamento, "cartao");
   assert.equal(a.pedido().pix_id, "axxon_payment_uuid");
 });
+test("cartão acima de 4x envia e registra o total com juros", async () => {
+  let enviado;
+  const nextAction = { type: "CLIENT_CONFIRMATION", provider: "bloopi", payload: { externalPaymentId: "pi_x", clientSecret: "segredo-3ds" } };
+  const a = ambiente({ provider: "bloopi", criar: async p => { enviado = p; return { id: "payment_uuid", nextAction }; } });
+  const r = await a.processarAxxon({ ...body, cartao: cartaoTeste, installments: 5 }, "cartao");
+  assert.equal(r.status, 200);
+  assert.equal(enviado.amount, 3125, "5x acrescenta 25% aos 2500 centavos");
+  assert.equal((await r.json()).total, 3125);
+  assert.equal(a.pedido().valor_centavos, 3125);
+  assert.equal(a.pedido().subtotal_centavos, 2500);
+});
 test("Bloopi: falha do gateway registra só referência/etapa/HTTP, nunca o cartão", async () => {
   const a = ambiente({ provider: "bloopi", criar: async () => { throw Object.assign(new Error("HTTP 500"), { status: 500 }); } });
   const r = await a.processarAxxon({ ...body, cartao: cartaoTeste }, "cartao");
@@ -396,7 +407,7 @@ test("cartão inválido é recusado antes da reserva, sem chamar a adquirente", 
     assert.equal(a.pedidos.size, 0);
   }
   const a = ambiente({ provider: "bloopi" });
-  assert.equal((await a.processarAxxon({ ...body, cartao: cartaoTeste, installments: 5 }, "cartao")).status, 422, "parcelas acima do limite");
+  assert.equal((await a.processarAxxon({ ...body, cartao: cartaoTeste, installments: 13 }, "cartao")).status, 422, "parcelas acima do limite");
   assert.equal((await a.processarAxxon({ ...body, cartao: cartaoTeste, endereco: { ...body.endereco, cep: "11111111" } }, "cartao")).status, 422, "CEP repetido não passa no 3DS");
   assert.equal(a.pedidos.size, 0);
 });

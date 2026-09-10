@@ -8,7 +8,7 @@ import { confirmarPorEmail, depois, registrarCompraNoPixel, enviarPixPorEmail } 
 import { entregarAcessoApp } from "./entrega-app";
 import { urlWebhookAxxon } from "./axxonpay-webhook";
 import { sortearNumeroPedido } from "./numero-pedido";
-import { PARCELAS_MAX, semCartao, validarCartao, type CartaoBruto } from "./cartao";
+import { calcularParcelamentoCartao, PARCELAS_MAX, semCartao, validarCartao, type CartaoBruto } from "./cartao";
 
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const texto = (valor: unknown) => typeof valor === "string" ? valor.trim().slice(0, 200) : "";
@@ -129,6 +129,9 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   let valores;
   try { valores = calcularCarrinhoCafe(itensDoCorpo(body), texto(body.frete), { cupom: texto(body.cupom), pagamento: metodo }); }
   catch { return respostaErro("Produto, quantidade ou frete inválido."); }
+  const totalCobrado = metodo === "cartao"
+    ? calcularParcelamentoCartao(valores.total, parcelas).total
+    : valores.total;
   // Falha de configuração não pode deixar uma reserva pendente no banco.
   let postbackUrl: string;
   try { postbackUrl = urlWebhookAxxon(process.env.NEXT_PUBLIC_SITE_URL, process.env.AXXONPAY_WEBHOOK_URL); }
@@ -163,7 +166,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       // colisões com pedidos de qualquer gateway antes de chamar a AxxonPay.
       const { error: reserva } = await db.from("pedidos").insert({
         id: tentativa, referencia, status: "pendente", metodo_pagamento: metodo,
-        valor_centavos: valores.total, subtotal_centavos: valores.subtotal, desconto_centavos: valores.desconto,
+        valor_centavos: totalCobrado, subtotal_centavos: valores.subtotal, desconto_centavos: valores.desconto,
         frete_centavos: valores.frete.centavos, frete_tipo: valores.frete.nome, kit: valores.kit.nome, quantidade: valores.quantidadeTotal,
         cliente_nome: nome, cliente_email: email, cliente_documento: documento, cliente_telefone: celular,
         endereco: Object.fromEntries(["logradouro", "numero", "complemento", "bairro", "localidade", "uf", "cep"].map(campo => [campo, texto(endereco[campo])])),
@@ -184,7 +187,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       if (!existente.pix_id && existente.status === "falhou") {
         return tentativaEncerrada("A tentativa anterior foi encerrada sem cobrança. Confira os dados e clique novamente para iniciar uma nova tentativa.");
       }
-      if (existente.valor_centavos !== valores.total || existente.metodo_pagamento !== metodo || existente.cliente_documento !== documento || existente.cliente_email !== email) {
+      if (existente.valor_centavos !== totalCobrado || existente.metodo_pagamento !== metodo || existente.cliente_documento !== documento || existente.cliente_email !== email) {
         return respostaErro("CPF/CNPJ, e-mail, valor ou forma de pagamento foram alterados após iniciar esta tentativa. A cobrança anterior precisa ser conferida antes de gerar outra; contate o atendimento.", 409);
       }
       if (!existente.pix_id) return respostaErro("A tentativa anterior está em conferência. Não gere outra cobrança; aguarde ou contate o atendimento.", 409);
@@ -206,7 +209,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     const sufixoDescricao = ` - Pedido #${referencia}`;
     const descricao = `Café com Deus Pai - ${valores.kit.nome}`.slice(0, 200 - sufixoDescricao.length) + sufixoDescricao;
     const criado = await criarPagamentoAxxon({
-      amount: valores.total, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
+      amount: totalCobrado, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
       description: descricao,
       ...(metodo === "cartao" ? { installments: parcelas, card: cartao ?? { hash } } : {}),
       customer: { name: nome, email, phone: celular, document: { number: documento, type: documento.length === 11 ? "cpf" : "cnpj" },
@@ -231,14 +234,14 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     // webhook autenticado depois do desafio.
     if (metodo === "cartao" && criado.nextAction) {
       return Response.json({
-        id: idAxxon(criado.id), pedido: referencia, total: valores.total,
+        id: idAxxon(criado.id), pedido: referencia, total: totalCobrado,
         status: "pending", qr_code: "", qr_code_url: null,
         expires_at: null, nextAction: criado.nextAction,
       });
     }
     etapa = "consulta_criada";
     const consultado = await consultarPagamentoAxxon(criado.id);
-    conferirPagamentoAxxon(consultado, { pix_id: idAxxon(criado.id), referencia, valor_centavos: valores.total, metodo_pagamento: metodo });
+    conferirPagamentoAxxon(consultado, { pix_id: idAxxon(criado.id), referencia, valor_centavos: totalCobrado, metodo_pagamento: metodo });
     const p = { ...consultado, nextAction: criado.nextAction ?? consultado.nextAction };
     // O PIX pendente já foi validado contra o pedido acima. Não bloqueia a
     // entrega do QR com uma segunda leitura + escrita no banco. O polling e o

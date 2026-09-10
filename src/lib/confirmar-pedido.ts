@@ -75,6 +75,13 @@ export async function confirmarPorEmail(referencia: string): Promise<{ ok: boole
   }
 
   const centavos = (v: unknown) => Number(v ?? 0) || 0;
+  const subtotalCentavos = centavos(pedido.subtotal_centavos) || centavos(pedido.valor_centavos);
+  const descontoCentavos = centavos(pedido.desconto_centavos);
+  const freteCentavos = centavos(pedido.frete_centavos);
+  const totalCentavos = centavos(pedido.valor_centavos);
+  const acrescimoCartaoCentavos = pedido.metodo_pagamento === "cartao"
+    ? Math.max(0, totalCentavos - (subtotalCentavos - descontoCentavos + freteCentavos))
+    : 0;
   const dados: DadosPedido = {
     referencia,
     clienteNome: (pedido.cliente_nome as string) ?? null,
@@ -84,13 +91,14 @@ export async function confirmarPorEmail(referencia: string): Promise<{ ok: boole
     itens: [{
       descricao: (pedido.kit as string) ?? "Produto",
       quantidade: Number(pedido.quantidade ?? 1) || 1,
-      totalCentavos: centavos(pedido.subtotal_centavos) || centavos(pedido.valor_centavos),
+      totalCentavos: subtotalCentavos,
     }],
-    subtotalCentavos: centavos(pedido.subtotal_centavos) || centavos(pedido.valor_centavos),
-    descontoCentavos: centavos(pedido.desconto_centavos),
-    freteCentavos: centavos(pedido.frete_centavos),
+    subtotalCentavos,
+    descontoCentavos,
+    freteCentavos,
+    acrescimoCartaoCentavos,
     freteTipo: (pedido.frete_tipo as string) ?? null,
-    totalCentavos: centavos(pedido.valor_centavos),
+    totalCentavos,
     enderecoLinha: linhaEndereco((pedido.endereco as Endereco) ?? null),
     endereco: (pedido.endereco as Endereco) ?? null,
     codigoRastreio: rastreio,

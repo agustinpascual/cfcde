@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { LoaderCircle, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { acompanharPix } from "@/lib/acompanhar-pix";
-import { luhn } from "@/lib/cartao";
+import { calcularParcelamentoCartao, luhn } from "@/lib/cartao";
 import { concluirTentativa, liberarTentativaEncerrada, tentativaPagamento } from "@/lib/tentativa-pagamento";
 import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
@@ -77,8 +77,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         }
       }
       throw ultimoErro;
-    } catch (erro) {
-      console.error("[checkout/cartao] Falha ao inicializar o SDK:", erro instanceof Error ? erro.message : "erro desconhecido");
+    } catch {
       setSdk("erro");
       setMensagem("Não foi possível iniciar o pagamento por cartão. Tente novamente em instantes ou pague com Pix.");
     } finally {
@@ -222,6 +221,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   }
 
   const opcoes = Array.from({ length: Math.max(1, parcelasMax) }, (_, i) => i + 1);
+  const planoSelecionado = calcularParcelamentoCartao(total, parcelas);
   return <div className={s.bloco}>
     <Script src={SDK_URL} strategy="afterInteractive" onReady={() => void iniciar()}
       onError={() => { setSdk("erro"); setMensagem("O serviço de cartão está indisponível. Tente novamente em instantes ou pague com Pix."); }} />
@@ -234,10 +234,22 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         <label>CVV<input ref={cvv} className={s.input} type="password" inputMode="numeric" autoComplete="cc-csc" maxLength={4} onInput={somenteDigitos} disabled={ocupado} required /></label>
       </div>
       <label>Parcelas<select className={s.input} value={parcelas} onChange={e => setParcelas(Number(e.target.value))} disabled={ocupado}>
-        {opcoes.map(n => <option key={n} value={n}>{n}x de {money.format(Math.round(total / n) / 100)} sem juros</option>)}
-      </select></label>
+        {opcoes.map(n => {
+          const plano = calcularParcelamentoCartao(total, n);
+          return <option key={n} value={n}>
+            {n}x de {money.format(plano.total / n / 100)}{plano.percentual ? ` · ${plano.percentual}% de juros` : " sem juros"}
+          </option>;
+        })}
+      </select>
+        {planoSelecionado.acrescimo > 0 && (
+          <small className={s.resumoJuros}>
+            Total com juros: <b>{money.format(planoSelecionado.total / 100)}</b>
+            <span>Acréscimo de {planoSelecionado.percentual}% ({money.format(planoSelecionado.acrescimo / 100)})</span>
+          </small>
+        )}
+      </label>
       <button className={s.botao} type="submit" disabled={sdk !== "pronto" || ocupado}>
-        {sdk === "carregando" ? "Carregando pagamento seguro…" : sdk === "erro" ? "Cartão indisponível" : ocupado ? "Processando com segurança…" : `Pagar ${money.format(total / 100)}`}
+        {sdk === "carregando" ? "Carregando pagamento seguro…" : sdk === "erro" ? "Cartão indisponível" : ocupado ? "Processando com segurança…" : `Pagar ${money.format(planoSelecionado.total / 100)}`}
       </button>
     </form>}
     {cobranca && <div className={s.resultado} role="status" aria-live="polite">

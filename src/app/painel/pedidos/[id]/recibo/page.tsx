@@ -42,6 +42,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   const qtd = pedido.quantidade ?? 1;
   const unitario = qtd > 0 ? (pedido.subtotal_centavos || pedido.valor_centavos) / qtd : 0;
+  const acrescimoCartao = pedido.metodo_pagamento === "cartao"
+    ? Math.max(0, pedido.valor_centavos - (pedido.subtotal_centavos - pedido.desconto_centavos + pedido.frete_centavos))
+    : 0;
 
   return (
     <div className={s.tela}>
@@ -126,6 +129,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <span>Frete{pedido.frete_tipo ? ` (${pedido.frete_tipo})` : ""}</span>
               <strong>{pedido.frete_centavos > 0 ? moeda(pedido.frete_centavos) : "Grátis"}</strong>
             </div>
+            {acrescimoCartao > 0 && (
+              <div className={s.linhaTotal}>
+                <span>Juros do parcelamento</span><strong>+ {moeda(acrescimoCartao)}</strong>
+              </div>
+            )}
             <div className={s.totalFinal}>
               <span>Total pago</span><strong>{moeda(pedido.valor_centavos)}</strong>
             </div>

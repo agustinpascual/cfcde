@@ -108,6 +108,7 @@ export type DadosPedido = {
   subtotalCentavos: number;
   descontoCentavos: number;
   freteCentavos: number;
+  acrescimoCartaoCentavos?: number;
   freteTipo?: string | null;
   totalCentavos: number;
   enderecoLinha?: string | null;
@@ -135,6 +136,7 @@ function itens(d: DadosPedido) {
       ${linha("Subtotal", money(d.subtotalCentavos))}
       ${d.descontoCentavos > 0 ? linha("Desconto", "− " + money(d.descontoCentavos)) : ""}
       ${linha(`Frete${d.freteTipo ? ` (${d.freteTipo})` : ""}`, d.freteCentavos > 0 ? money(d.freteCentavos) : "Grátis")}
+      ${d.acrescimoCartaoCentavos && d.acrescimoCartaoCentavos > 0 ? linha("Juros do parcelamento", money(d.acrescimoCartaoCentavos)) : ""}
       <tr>
         <td colspan="2" style="padding:11px 0 0;border-top:2px solid ${PRETO};font-size:16px;font-weight:800;color:${PRETO}">Total</td>
         <td style="padding:11px 0 0;border-top:2px solid ${PRETO};font-size:16px;font-weight:800;color:${PRETO};text-align:right;white-space:nowrap">${money(d.totalCentavos)}</td>

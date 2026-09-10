@@ -288,6 +288,7 @@ export async function reciboPdf(
     d.codigoRastreio ? `Código de rastreio: ${d.codigoRastreio}` : "Rastreio informado após a postagem.",
     `Pedido nº ${d.referencia}`,
     d.freteTipo ? `Frete: ${d.freteTipo}` : "",
+    d.acrescimoCartaoCentavos ? `Juros do parcelamento: R$ ${money(d.acrescimoCartaoCentavos)}` : "",
   ].filter(Boolean);
   let yy = y - 14;
   for (const linha of linhasEsq) {
