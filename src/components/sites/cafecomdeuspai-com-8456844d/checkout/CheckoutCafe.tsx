@@ -75,12 +75,35 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   const cartKey = products.map((item) => `${item.slug}:${item.quantity}`).join("|");
   const productName = products.length === 1 ? product.name : `${products.length} produtos`;
   const [gatewayConfig, setGatewayConfig] = useState<{ pix: string; cartao: string; publicKey: string | null; cartaoDisponivel?: boolean; parcelas?: number } | null>(null);
+  const [gatewayConfigStatus, setGatewayConfigStatus] = useState<"loading" | "ready" | "error">("loading");
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/pagamentos/config", { signal: controller.signal, cache: "no-store" })
-      .then(async r => { if (!r.ok) throw new Error("Configuração indisponível"); return r.json(); })
-      .then(setGatewayConfig).catch(() => {});
-    return () => controller.abort();
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    async function loadGatewayConfig(attempt = 0) {
+      try {
+        const response = await fetch(`/api/pagamentos/config?ts=${Date.now()}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error("Configuração indisponível");
+        setGatewayConfig(await response.json());
+        setGatewayConfigStatus("ready");
+      } catch {
+        if (controller.signal.aborted) return;
+        if (attempt < 2) {
+          retryTimer = setTimeout(() => void loadGatewayConfig(attempt + 1), 400 * (attempt + 1));
+          return;
+        }
+        setGatewayConfigStatus("error");
+      }
+    }
+
+    void loadGatewayConfig();
+    return () => {
+      controller.abort();
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, []);
   const [step, setStep] = useState<2 | 3>(2);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -503,7 +526,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
               {!paymentExpanded ? <><h1>Forma de pagamento</h1><div className={styles.paymentOptions} role="radiogroup" aria-label="Forma de pagamento">
                 {cartaoDisponivel
                   ? <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("card"); setPaymentExpanded(true); setPaymentError(""); }}><CreditCard /><span><b>Cartão de crédito</b><small>Até 4x sem juros ou {gatewayConfig?.parcelas ?? 12}x com juros</small></span><ChevronRight /></button>
-                  : <button type="button" className={styles.opcaoManutencao} disabled aria-disabled="true"><CreditCard /><span><b>Cartão de crédito</b><small>{gatewayConfig?.cartao === "sandbox" ? "Modo de teste — indisponível para compras" : "Indisponível no momento"}</small></span><em className={styles.selo}>Indisponível</em></button>}
+                  : <button type="button" className={styles.opcaoManutencao} disabled aria-disabled="true"><CreditCard /><span><b>Cartão de crédito</b><small>{gatewayConfigStatus === "loading" ? "Verificando disponibilidade…" : gatewayConfig?.cartao === "sandbox" ? "Modo de teste — indisponível para compras" : "Indisponível no momento"}</small></span><em className={styles.selo}>{gatewayConfigStatus === "loading" ? "Aguarde" : "Indisponível"}</em></button>}
                 <button type="button" role="radio" aria-checked="false" onClick={() => { setPayment("pix"); setPaymentExpanded(true); setPaymentError(""); }}><PixLogo /><span><b>Pix</b><small>Aprovação rápida</small></span><em className={styles.pixOff}>{Math.round(DESCONTO_PIX * 100)}% OFF</em><ChevronRight /></button>
               </div></> : <div className={styles.paymentDetail}>
                 <header><button type="button" aria-label="Voltar às formas de pagamento" onClick={() => { setPaymentExpanded(false); setPaymentError(""); }}><ArrowLeft /></button><span>{payment === "pix" ? <PixLogo /> : <CreditCard />}<b>{payment === "pix" ? "Pix" : "Cartão de crédito"}</b></span></header>
