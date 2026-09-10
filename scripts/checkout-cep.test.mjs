@@ -41,7 +41,9 @@ test("checkout: CEP completo, parcial e indisponível no celular", async t => {
           await page.getByLabel("Nome", { exact: true }).fill("Teste");
           await page.getByLabel("Sobrenome", { exact: true }).fill("Local");
           await page.getByLabel("Telefone com DDD").fill("11999999999");
-          await page.getByLabel("CPF ou CNPJ").fill("00000000000");
+          // CPF fictício com dígitos verificadores válidos; a finalidade deste
+          // teste é o endereço, não exercitar a rejeição de documento.
+          await page.getByLabel("CPF ou CNPJ").fill("52998224725");
           await page.getByLabel("Número", { exact: true }).fill("123");
           const manual = caso.status || !caso.dados.street?.trim() || !caso.dados.neighborhood?.trim();
           if (manual) {

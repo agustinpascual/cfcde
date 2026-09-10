@@ -2,7 +2,10 @@ import { lerGateways } from "@/lib/gateways-config";
 import { configuracaoAdquirenteAxxon } from "@/lib/axxonpay";
 import { PARCELAS_MAX } from "@/lib/cartao";
 
-const headers = { "Cache-Control": "private, max-age=30, stale-while-revalidate=120" };
+/* O estado do cartão pode mudar no painel a qualquer momento. Não reutilizar
+   uma resposta antiga evita exibir cartão ativo como indisponível (ou o
+   inverso) durante os minutos seguintes à alteração. */
+const headers = { "Cache-Control": "no-store" };
 
 export async function GET() {
   try {
