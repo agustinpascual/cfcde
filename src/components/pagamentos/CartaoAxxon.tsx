@@ -237,7 +237,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         {opcoes.map(n => {
           const plano = calcularParcelamentoCartao(total, n);
           return <option key={n} value={n}>
-            {n}x de {money.format(plano.total / n / 100)}
+            {n}x de {money.format(plano.total / n / 100)}{plano.acrescimo === 0 ? " sem juros" : ""}
           </option>;
         })}
       </select>
