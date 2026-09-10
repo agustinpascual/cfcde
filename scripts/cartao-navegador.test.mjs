@@ -21,7 +21,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
   try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
     const violacoes = [], erros = [], externos = new Set();
-    const postsCartao = [];
+    const postsCartao = [], eventosTrack = [];
     let cobrancas = 0, postsAcs = 0, liberarAprovacao = false;
     await context.addInitScript(() => document.addEventListener("securitypolicyviolation", e => console.log(`CSPVIOLATION ${e.violatedDirective} ${e.blockedURI}`)));
     await context.route("**/*", async route => {
@@ -32,6 +32,10 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
       }
       if (url.origin !== base) { externos.add(url.host); return route.continue(); }
       if (req.method() !== "GET") {
+        if (url.pathname === "/api/track") {
+          eventosTrack.push(JSON.parse(req.postData() ?? "{}"));
+          return route.fulfill({ status: 200, json: { ok: true } });
+        }
         if (url.pathname === "/api/pix") cobrancas++;
         if (url.pathname === "/api/pagamentos/cartao") {
           postsCartao.push({ headers: req.headers(), body: JSON.parse(req.postData() ?? "{}") });
@@ -133,7 +137,8 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.match(postCartao.body.tentativa, /^[a-f0-9-]{36}$/);
     assert.equal(postCartao.body.produto, "testes:1");
     assert.ok(await page.evaluate(() => [...document.querySelectorAll("input[autocomplete^=cc-]")].every(i => i.value === "")), "campos de cartão limpos");
-    assert.match(await page.locator("p[role=alert]").innerText(), /autenticação com o seu banco não foi concluída/);
+    assert.match(await page.locator("p[role=alert]").innerText(), /autenticação|autenticação do banco/i);
+    assert.ok(eventosTrack.some(e => e.tipo === "checkout_parcial" && e.dados?.falha_cartao === "3ds" && typeof e.dados?.motivo === "string"), "falha 3DS categorizada sem conteúdo sensível");
     for (const host of ["app.axxonpay.com.br", "api.bloopi.io"]) assert.ok(externos.has(host), `contatou ${host}`);
     assert.equal(externos.has("app.bloopi.io"), false, "SDK da Bloopi veio pela origem da loja");
     assert.deepEqual(violacoes, [], "sem violações de CSP");

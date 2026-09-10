@@ -76,6 +76,53 @@ const classificarErroSdk = (erro: unknown) => {
   return "inicializacao";
 };
 
+/* O SDK contém detalhes técnicos úteis, mas eles não podem chegar crus ao
+   comprador nem carregar dados do pagamento para o rastreamento. Mantemos
+   somente uma categoria fechada para distinguir banco, rede e integração. */
+const classificarErro3ds = (erro: unknown) => {
+  const texto = erro instanceof Error ? erro.message : String(erro ?? "");
+  if (/authentication was not completed|not authenticated|auth_not_supported|change_payment_method|require_challenge|cancel|closed/i.test(texto)) {
+    return {
+      motivo: "banco_nao_concluiu",
+      mensagem: "O banco não concluiu a autenticação de segurança. Isso pode ocorrer quando a confirmação é cancelada, expira ou não é autorizada pelo emissor. Estamos conferindo o status antes de liberar outra tentativa.",
+    };
+  }
+  if (/timed?\s*out|timeout|tempo esgotado/i.test(texto)) {
+    return {
+      motivo: "tempo_esgotado",
+      mensagem: "A autenticação do banco excedeu o tempo de resposta. Estamos conferindo o status do pagamento antes de liberar outra tentativa.",
+    };
+  }
+  if (/script not loaded|3ds unavailable|sdk não inicializado|sdk not initialized/i.test(texto)) {
+    return {
+      motivo: "sdk_3ds",
+      mensagem: "O ambiente de autenticação do banco não terminou de carregar. Estamos conferindo o status do pagamento antes de liberar outra tentativa.",
+    };
+  }
+  if (/network|failed to fetch|load failed|csp|content security|blocked/i.test(texto)) {
+    return {
+      motivo: "rede_3ds",
+      mensagem: "A conexão com a autenticação do banco foi interrompida. Estamos conferindo o status do pagamento antes de liberar outra tentativa.",
+    };
+  }
+  if (/invalid.*(?:result|action|session)|ação client-side inválida|gateway desconhecido/i.test(texto)) {
+    return {
+      motivo: "retorno_invalido",
+      mensagem: "A autenticação do banco devolveu uma resposta incompleta. Estamos conferindo o status do pagamento antes de liberar outra tentativa.",
+    };
+  }
+  if (/failed to initiate 3ds|failed to resolve payment provider/i.test(texto)) {
+    return {
+      motivo: "inicializacao_3ds",
+      mensagem: "Não foi possível iniciar a autenticação do banco. Estamos conferindo o status do pagamento antes de liberar outra tentativa.",
+    };
+  }
+  return {
+    motivo: "desconhecido",
+    mensagem: "A autenticação com o seu banco não foi concluída. Estamos conferindo o status do pagamento antes de liberar outra tentativa.",
+  };
+};
+
 const mascararNumero = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 "); };
 const mascararValidade = (e: React.FormEvent<HTMLInputElement>) => { const d = digitos(e.currentTarget.value).slice(0, 4); e.currentTarget.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
 const somenteDigitos = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 4); };
@@ -273,9 +320,11 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       }
     } catch (erro) {
       if (criada) {
+        const diagnostico = classificarErro3ds(erro);
+        registrar("checkout_parcial", { etapa: "Pagamento", falha_cartao: "3ds", motivo: diagnostico.motivo });
         setFase3ds("erro");
         setAutenticacaoFalhou(true);
-        setMensagem("A autenticação com o seu banco não foi concluída. Estamos conferindo o status do pagamento.");
+        setMensagem(diagnostico.mensagem);
       } else {
         setMensagem(erro instanceof Error ? erro.message : "Não foi possível processar o cartão.");
       }
