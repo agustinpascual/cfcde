@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Save, ShoppingCart, WalletCards } from "lucide-react";
+import { MessageCircle, Plus, Save, ShoppingCart, Trash2, WalletCards } from "lucide-react";
+import { LIMITE_MODELOS_RECUPERACAO } from "@/lib/mensagens-recuperacao";
 import w from "./whatsapp.module.css";
 
-type Props = { pix: string; carrinho: string; atrasoPix: number; atrasoCarrinho: number; botaoPix: boolean };
+type Props = { pix: string[]; carrinho: string[]; atrasoPix: number; atrasoCarrinho: number; botaoPix: boolean };
 
 const tempos = [
   [0, "Desativada"], [5, "Após 5 minutos"], [10, "Após 10 minutos"],
@@ -46,16 +47,16 @@ export default function MensagensRecuperacao({ pix: inicialPix, carrinho: inicia
         <span><MessageCircle aria-hidden="true" /></span>
         <div>
           <h2 id="mensagens-recuperacao-titulo">Mensagens de recuperação</h2>
-          <p>Personalize os textos usados para retomar vendas pelo WhatsApp.</p>
+          <p>Cadastre variações e alterne automaticamente os textos enviados pelo WhatsApp.</p>
         </div>
       </div>
 
       <div className={w.modelosGrade}>
-        <Modelo titulo="Recuperação de Pix pendente" descricao="Usada no detalhe de pedidos Pix que ainda aguardam pagamento."
-          Icone={WalletCards} valor={pix} setValor={setPix} variaveis={variaveisPix}
+        <Modelo titulo="Recuperação de Pix pendente" descricao="As variações são distribuídas entre pedidos Pix que ainda aguardam pagamento."
+          Icone={WalletCards} valores={pix} setValores={setPix} variaveis={variaveisPix}
           atraso={atrasoPix} setAtraso={setAtrasoPix} botaoCopiar={botaoPix} setBotaoCopiar={setBotaoPix} />
-        <Modelo titulo="Recuperação de carrinho abandonado" descricao="Usada junto do link que restaura produtos e dados do checkout."
-          Icone={ShoppingCart} valor={carrinho} setValor={setCarrinho} variaveis={variaveisCarrinho}
+        <Modelo titulo="Recuperação de carrinho abandonado" descricao="As variações acompanham o link que restaura produtos e dados do checkout."
+          Icone={ShoppingCart} valores={carrinho} setValores={setCarrinho} variaveis={variaveisCarrinho}
           atraso={atrasoCarrinho} setAtraso={setAtrasoCarrinho} />
       </div>
 
@@ -69,11 +70,19 @@ export default function MensagensRecuperacao({ pix: inicialPix, carrinho: inicia
   );
 }
 
-function Modelo({ titulo, descricao, Icone, valor, setValor, variaveis, atraso, setAtraso, botaoCopiar, setBotaoCopiar }: {
-  titulo: string; descricao: string; Icone: typeof WalletCards; valor: string;
-  setValor: (valor: string) => void; variaveis: string[]; atraso: number; setAtraso: (valor: number) => void;
+function Modelo({ titulo, descricao, Icone, valores, setValores, variaveis, atraso, setAtraso, botaoCopiar, setBotaoCopiar }: {
+  titulo: string; descricao: string; Icone: typeof WalletCards; valores: string[];
+  setValores: (valor: string[]) => void; variaveis: string[]; atraso: number; setAtraso: (valor: number) => void;
   botaoCopiar?: boolean; setBotaoCopiar?: (valor: boolean) => void;
 }) {
+  const alterar = (indice: number, valor: string) => setValores(valores.map((atual, i) => i === indice ? valor : atual));
+  const remover = (indice: number) => {
+    if (valores.length > 1) setValores(valores.filter((_, i) => i !== indice));
+  };
+  const adicionar = () => {
+    if (valores.length < LIMITE_MODELOS_RECUPERACAO) setValores([...valores, valores[0] ?? ""]);
+  };
+
   return (
     <article className={w.modeloCard}>
       <header><Icone aria-hidden="true" /><div><h3>{titulo}</h3><p>{descricao}</p></div></header>
@@ -95,12 +104,29 @@ function Modelo({ titulo, descricao, Icone, valor, setValor, variaveis, atraso, 
           </span>
         </label>
       )}
-      <label>
-        Mensagem
-        <textarea value={valor} onChange={(evento) => setValor(evento.target.value)} maxLength={1600} rows={8} />
-      </label>
+      <div className={w.listaVariacoes}>
+        {valores.map((valor, indice) => (
+          <div className={w.variacao} key={indice}>
+            <div className={w.variacaoTopo}>
+              <strong>Mensagem {indice + 1}</strong>
+              {valores.length > 1 && (
+                <button type="button" onClick={() => remover(indice)} aria-label={`Remover mensagem ${indice + 1}`}>
+                  <Trash2 aria-hidden="true" /> Remover
+                </button>
+              )}
+            </div>
+            <textarea aria-label={`${titulo}, mensagem ${indice + 1}`} value={valor}
+              onChange={(evento) => alterar(indice, evento.target.value)} maxLength={1600} rows={8} />
+            <small>{valor.length}/1600 caracteres</small>
+          </div>
+        ))}
+      </div>
+      <button type="button" className={w.adicionarVariacao} onClick={adicionar}
+        disabled={valores.length >= LIMITE_MODELOS_RECUPERACAO}>
+        <Plus aria-hidden="true" /> Adicionar outra mensagem
+      </button>
       <div className={w.variaveis}><span>Variáveis disponíveis:</span>{variaveis.map((item) => <code key={item}>{item}</code>)}</div>
-      <small>{valor.length}/1600 caracteres</small>
+      <p className={w.rotacaoNota}>As mensagens são distribuídas automaticamente entre os clientes.</p>
     </article>
   );
 }

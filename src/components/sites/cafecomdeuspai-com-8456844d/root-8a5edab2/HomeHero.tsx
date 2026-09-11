@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/HeaderFooter";
 import styles from "./HomeHero.module.css";
@@ -25,6 +25,13 @@ type HomeHeroProps = {
 
 export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) {
   const slide = slides[0];
+  const comum = { alt: slide.alt, sizes: "100vw", fetchPriority: "high" as const };
+  const { props: { srcSet: desktopSrcSet } } = getImageProps({
+    ...comum, src: slide.desktopImage, width: 1580, height: 600, quality: 75,
+  });
+  const { props: { srcSet: mobileSrcSet, ...imagem } } = getImageProps({
+    ...comum, src: slide.mobileImage, width: 375, height: 611, quality: 70,
+  });
 
   return (
     <>
@@ -33,17 +40,9 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
         <div className={styles.track}>
             <article className={styles.slide}>
               <picture>
-                {slide.mobileImage ? <source media="(max-width: 640px)" srcSet={slide.mobileImage} /> : null}
-                <Image
-                  className={styles.image}
-                  src={slide.desktopImage}
-                  alt={slide.alt}
-                  width={1580}
-                  height={600}
-                  fetchPriority="high"
-                  loading="eager"
-                  sizes="100vw"
-                />
+                <source media="(min-width: 641px)" srcSet={desktopSrcSet} />
+                <source media="(max-width: 640px)" srcSet={mobileSrcSet} />
+                <img {...imagem} alt={slide.alt} className={styles.image} />
               </picture>
               {/* Camada escura + texto. O véu não é enfeite: sem ele o texto
                   branco fica ilegível sobre as áreas claras da foto, e a

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { salvar } from "@/lib/config-integracoes";
-import { validarMensagemRecuperacao, VARIAVEIS_CARRINHO, VARIAVEIS_PIX } from "@/lib/mensagens-recuperacao";
+import {
+  serializarModelosRecuperacao, validarModelosRecuperacao,
+  VARIAVEIS_CARRINHO, VARIAVEIS_PIX,
+} from "@/lib/mensagens-recuperacao";
 import { autenticado } from "@/lib/painel-auth";
 import { mesmaOrigem } from "@/lib/mesma-origem";
 import { validarAtrasoRecuperacao } from "@/lib/recuperacao-whatsapp";
@@ -15,9 +18,9 @@ export async function POST(req: Request) {
   }
 
   const corpo = await req.json().catch(() => null);
-  const pix = validarMensagemRecuperacao(corpo?.pix, VARIAVEIS_PIX);
+  const pix = validarModelosRecuperacao(corpo?.pix, VARIAVEIS_PIX);
   if (!pix.ok) return NextResponse.json({ erro: `Pix pendente: ${pix.erro}` }, { status: 400 });
-  const carrinho = validarMensagemRecuperacao(corpo?.carrinho, VARIAVEIS_CARRINHO);
+  const carrinho = validarModelosRecuperacao(corpo?.carrinho, VARIAVEIS_CARRINHO);
   if (!carrinho.ok) return NextResponse.json({ erro: `Carrinho abandonado: ${carrinho.erro}` }, { status: 400 });
   const atrasoPix = validarAtrasoRecuperacao(corpo?.atrasoPix);
   const atrasoCarrinho = validarAtrasoRecuperacao(corpo?.atrasoCarrinho);
@@ -30,8 +33,8 @@ export async function POST(req: Request) {
 
   try {
     await Promise.all([
-      salvar("WHATSAPP_MSG_PIX_PENDENTE", pix.mensagem, "painel"),
-      salvar("WHATSAPP_MSG_CARRINHO_ABANDONADO", carrinho.mensagem, "painel"),
+      salvar("WHATSAPP_MSG_PIX_PENDENTE", serializarModelosRecuperacao(pix.mensagens), "painel"),
+      salvar("WHATSAPP_MSG_CARRINHO_ABANDONADO", serializarModelosRecuperacao(carrinho.mensagens), "painel"),
       salvar("WHATSAPP_RECUPERACAO_PIX_MINUTOS", String(atrasoPix), "painel"),
       salvar("WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS", String(atrasoCarrinho), "painel"),
       salvar("WHATSAPP_PIX_BOTAO_COPIAR", corpo.botaoPix ? "1" : "0", "painel"),

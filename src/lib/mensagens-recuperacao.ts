@@ -17,6 +17,7 @@ export const VARIAVEIS_PIX = ["nome", "pedido", "valor", "codigo_pix"] as const;
 export const VARIAVEIS_CARRINHO = ["nome", "produto", "valor", "link"] as const;
 
 const LIMITE_MENSAGEM = 1600;
+export const LIMITE_MODELOS_RECUPERACAO = 10;
 
 export function validarMensagemRecuperacao(valor: unknown, variaveis: readonly string[]) {
   if (typeof valor !== "string") return { ok: false as const, erro: "A mensagem é inválida." };
@@ -29,6 +30,54 @@ export function validarMensagemRecuperacao(valor: unknown, variaveis: readonly s
   const desconhecida = usadas.find((variavel) => !permitidas.has(variavel));
   if (desconhecida) return { ok: false as const, erro: `A variável {${desconhecida}} não é permitida neste modelo.` };
   return { ok: true as const, mensagem };
+}
+
+export function validarModelosRecuperacao(valor: unknown, variaveis: readonly string[]) {
+  const valores = Array.isArray(valor) ? valor : [valor];
+  if (!valores.length) return { ok: false as const, erro: "Adicione pelo menos uma mensagem." };
+  if (valores.length > LIMITE_MODELOS_RECUPERACAO) {
+    return { ok: false as const, erro: `Use no máximo ${LIMITE_MODELOS_RECUPERACAO} mensagens.` };
+  }
+
+  const mensagens: string[] = [];
+  for (let indice = 0; indice < valores.length; indice++) {
+    const validacao = validarMensagemRecuperacao(valores[indice], variaveis);
+    if (!validacao.ok) {
+      return { ok: false as const, erro: `Mensagem ${indice + 1}: ${validacao.erro}` };
+    }
+    mensagens.push(validacao.mensagem);
+  }
+  return { ok: true as const, mensagens };
+}
+
+/* Configurações antigas guardam texto puro; as novas guardam um array JSON.
+   Aceitar os dois formatos permite publicar a rotação sem migração no banco. */
+export function modelosRecuperacao(valor: string | null | undefined, padrao: string): string[] {
+  const atual = valor?.trim();
+  if (!atual) return [padrao];
+  try {
+    const lista = JSON.parse(atual);
+    if (Array.isArray(lista)) {
+      const mensagens = lista.filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim()).filter(Boolean).slice(0, LIMITE_MODELOS_RECUPERACAO);
+      if (mensagens.length) return mensagens;
+    }
+  } catch { /* formato antigo: a própria string é o único modelo */ }
+  return [atual];
+}
+
+export const serializarModelosRecuperacao = (modelos: readonly string[]) => JSON.stringify(modelos);
+
+/* Distribui as variações por pedido/sessão. A escolha estável evita trocar o
+   texto ao reabrir o detalhe ou ao repetir uma tentativa após falha de rede. */
+export function escolherModeloRecuperacao(modelos: readonly string[], chave: string): string {
+  if (modelos.length <= 1) return modelos[0] ?? "";
+  let hash = 2166136261;
+  for (let indice = 0; indice < chave.length; indice++) {
+    hash ^= chave.charCodeAt(indice);
+    hash = Math.imul(hash, 16777619);
+  }
+  return modelos[(hash >>> 0) % modelos.length];
 }
 
 export function preencherMensagemRecuperacao(modelo: string, dados: Record<string, string | null | undefined>) {

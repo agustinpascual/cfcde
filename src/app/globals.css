@@ -63,6 +63,10 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
+  /* Inter e Lato eram baixadas globalmente para poucos trechos. As aliases
+     mantêm a hierarquia tipográfica usando as duas famílias já carregadas. */
+  --font-inter: var(--font-work-sans);
+  --font-lato: var(--font-instrument-sans);
   margin: 0;
   font-family: var(--bb-font);
   font-size: 13px;
@@ -181,4 +185,50 @@ img { max-width: 100%; }
   --cdp-aviso:       #8a6420;
   --cdp-aviso-fundo: #fbf2df;
   --cdp-aviso-borda: #ead9b0;
+}
+
+/* O desafio 3DS é injetado no <body> pelos SDKs da Safe2Pay/Cardinal e da
+   Pagar.me, fora da árvore do componente de cartão. No celular, o estilo
+   padrão desses SDKs limita o iframe a uma caixa quase quadrada. Fazemos o
+   desafio ocupar a viewport dinâmica sem tocar no conteúdo seguro do banco. */
+@media (max-width: 640px) {
+  #Cardinal-Modal,
+  #bloopi-challenge {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    padding: 0 !important;
+  }
+
+  #Cardinal-ModalContent {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+
+  #Cardinal-CCA-IFrame,
+  #Cardinal-Modal iframe,
+  #bloopi-challenge iframe {
+    display: block !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+  }
 }

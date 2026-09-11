@@ -10,7 +10,7 @@ import Recarrega from "@/components/painel/Recarrega";
 import { ipBloqueado, lerAoVivo, lerJornada, lerPedido, moeda, rotuloDispositivo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import { ler } from "@/lib/config-integracoes";
-import { MENSAGEM_PIX_PADRAO } from "@/lib/mensagens-recuperacao";
+import { escolherModeloRecuperacao, MENSAGEM_PIX_PADRAO, modelosRecuperacao } from "@/lib/mensagens-recuperacao";
 import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 import s from "@/components/painel/painel.module.css";
 import d from "@/components/painel/pedido.module.css";
@@ -158,7 +158,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <PixCobranca copiaCola={pedido.pix_copia_cola} qrUrl={pedido.pix_qr_url}
                 telefone={pedido.status === "pendente" ? pedido.cliente_telefone : null}
                 nome={pedido.cliente_nome} pedido={pedido.referencia} valor={moeda(pedido.valor_centavos)}
-                modelo={modeloPix ?? MENSAGEM_PIX_PADRAO} />
+                modelo={escolherModeloRecuperacao(modelosRecuperacao(modeloPix, MENSAGEM_PIX_PADRAO), pedido.referencia)} />
             ) : (
               <p className={d.pixIndisponivel}>
                 O QR Code não foi armazenado neste pedido antigo.

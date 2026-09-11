@@ -38,6 +38,19 @@
 .modeloCard textarea { width: 100%; min-height: 176px; resize: vertical; padding: 12px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: #fff; color: var(--cdp-tinta); font: 13px/1.5 inherit; }
 .modeloCard select { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: #fff; color: var(--cdp-tinta); font: 13px inherit; }
 .modeloCard textarea:focus, .modeloCard select:focus { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: -1px; }
+.listaVariacoes { display: grid; gap: 10px; }
+.variacao { padding: 11px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: #fff; }
+.variacaoTopo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.variacaoTopo strong { color: var(--cdp-tinta); font-size: 12px; }
+.variacaoTopo button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 0; border: 0; background: transparent; color: var(--cdp-erro); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.variacaoTopo button svg { width: 13px; height: 13px; }
+.variacao textarea { min-height: 150px; }
+.variacao > small { display: block; margin-top: 6px; color: var(--cdp-tinta-3); font-size: 10.5px; text-align: right; }
+.adicionarVariacao { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 39px; margin-top: 10px; border: 1px dashed var(--cdp-tinta-3); border-radius: 8px; background: transparent; color: var(--cdp-tinta-2); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.adicionarVariacao:hover:not(:disabled) { border-color: var(--cdp-ouro-escuro); color: var(--cdp-ouro-escuro); background: var(--cdp-ouro-fundo); }
+.adicionarVariacao:disabled { opacity: .5; cursor: default; }
+.adicionarVariacao svg { width: 15px; height: 15px; }
+.rotacaoNota { margin-top: 9px; color: var(--cdp-tinta-3); font-size: 11px; line-height: 1.45; }
 .regraExclusiva { margin: 7px 0 13px; font-size: 11.5px; line-height: 1.45; color: var(--cdp-tinta-3); }
 .modeloCard .opcaoBotao { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; margin: 0 0 14px; padding: 11px; border: 1px solid var(--cdp-borda); border-radius: 9px; background: #fff; cursor: pointer; }
 .opcaoBotao input { flex: 0 0 auto; width: 17px; height: 17px; margin-top: 1px; accent-color: var(--cdp-menu); }

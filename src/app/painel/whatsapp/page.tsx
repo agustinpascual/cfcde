@@ -9,7 +9,7 @@ import MensagensRecuperacao from "@/components/painel/MensagensRecuperacao";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { lerTreinamento } from "@/lib/robo";
 import { ler } from "@/lib/config-integracoes";
-import { MENSAGEM_CARRINHO_PADRAO, MENSAGEM_PIX_PADRAO } from "@/lib/mensagens-recuperacao";
+import { MENSAGEM_CARRINHO_PADRAO, MENSAGEM_PIX_PADRAO, modelosRecuperacao } from "@/lib/mensagens-recuperacao";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
@@ -71,7 +71,8 @@ export default async function Page() {
       )}
 
       <ConexaoZap />
-      <MensagensRecuperacao pix={mensagemPix ?? MENSAGEM_PIX_PADRAO} carrinho={mensagemCarrinho ?? MENSAGEM_CARRINHO_PADRAO}
+      <MensagensRecuperacao pix={modelosRecuperacao(mensagemPix, MENSAGEM_PIX_PADRAO)}
+        carrinho={modelosRecuperacao(mensagemCarrinho, MENSAGEM_CARRINHO_PADRAO)}
         atrasoPix={Number(atrasoPix) || 0} atrasoCarrinho={Number(atrasoCarrinho) || 0}
         botaoPix={botaoPix !== "0"} />
       <Conversas inicial={conversas} />

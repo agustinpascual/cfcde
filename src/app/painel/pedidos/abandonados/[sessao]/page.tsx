@@ -8,7 +8,7 @@ import { lerAoVivo, lerCarrinhoAbandonado, moeda, rotuloDispositivo } from "@/co
 import { criarTokenRecuperacaoCarrinho } from "@/lib/carrinho-recuperacao";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import { ler } from "@/lib/config-integracoes";
-import { MENSAGEM_CARRINHO_PADRAO } from "@/lib/mensagens-recuperacao";
+import { escolherModeloRecuperacao, MENSAGEM_CARRINHO_PADRAO, modelosRecuperacao } from "@/lib/mensagens-recuperacao";
 import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 import s from "@/components/painel/painel.module.css";
 import d from "@/components/painel/pedido.module.css";
@@ -78,7 +78,7 @@ export default async function Page({ params }: { params: Promise<{ sessao: strin
         <AcoesRecuperacaoCarrinho link={link} telefone={carrinho.telefone} nome={carrinho.nome}
           produto={carrinho.produto_nome ?? carrinho.produto ?? "Produto selecionado"}
           valor={carrinho.valor !== null ? moeda(carrinho.valor) : "a confirmar"}
-          modelo={modeloCarrinho ?? MENSAGEM_CARRINHO_PADRAO} />
+          modelo={escolherModeloRecuperacao(modelosRecuperacao(modeloCarrinho, MENSAGEM_CARRINHO_PADRAO), carrinho.sessao)} />
       </section>
 
       <div className={d.grade}>

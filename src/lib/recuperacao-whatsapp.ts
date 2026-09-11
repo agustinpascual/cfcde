@@ -2,8 +2,8 @@ import "server-only";
 import { criarTokenRecuperacaoCarrinho } from "./carrinho-recuperacao";
 import { ler } from "./config-integracoes";
 import {
-  MENSAGEM_CARRINHO_PADRAO, MENSAGEM_PIX_PADRAO, numeroWhatsapp,
-  preencherMensagemRecuperacao, primeiroNome,
+  escolherModeloRecuperacao, MENSAGEM_CARRINHO_PADRAO, MENSAGEM_PIX_PADRAO,
+  modelosRecuperacao, numeroWhatsapp, preencherMensagemRecuperacao, primeiroNome,
 } from "./mensagens-recuperacao";
 import { enviarWhatsApp, enviarWhatsAppComBotaoCopiar } from "./robo";
 import { supabaseAdmin } from "./supabase/servidor";
@@ -29,7 +29,7 @@ type ResultadoTipo = { encontrados: number; enviados: number; ignorados: number;
 export type ResultadoRecuperacoes = { pix: ResultadoTipo; carrinho: ResultadoTipo };
 const vazio = (): ResultadoTipo => ({ encontrados: 0, enviados: 0, ignorados: 0, erros: 0 });
 
-async function recuperarPix(atraso: number, modelo: string, botaoCopiar: boolean): Promise<ResultadoTipo> {
+async function recuperarPix(atraso: number, modelos: readonly string[], botaoCopiar: boolean): Promise<ResultadoTipo> {
   const resultado = vazio();
   const db = supabaseAdmin();
   if (!db || atraso === 0) return resultado;
@@ -72,6 +72,7 @@ async function recuperarPix(atraso: number, modelo: string, botaoCopiar: boolean
       .select("id").maybeSingle();
     if (!reservado) { resultado.ignorados++; continue; }
     try {
+      const modelo = escolherModeloRecuperacao(modelos, pedido.referencia);
       const mensagem = preencherMensagemRecuperacao(modelo, {
         nome: primeiroNome(pedido.cliente_nome), pedido: pedido.referencia,
         valor: moeda(pedido.valor_centavos), codigo_pix: pedido.pix_copia_cola,
@@ -104,7 +105,7 @@ async function recuperarPix(atraso: number, modelo: string, botaoCopiar: boolean
 type EventoCarrinho = { sessao: string; dados: Record<string, unknown> | null; criado_em: string };
 const texto = (valor: unknown) => typeof valor === "string" && valor.trim() ? valor.trim() : null;
 
-async function recuperarCarrinhos(atraso: number, modelo: string): Promise<ResultadoTipo> {
+async function recuperarCarrinhos(atraso: number, modelos: readonly string[]): Promise<ResultadoTipo> {
   const resultado = vazio();
   const db = supabaseAdmin();
   if (!db || atraso === 0) return resultado;
@@ -161,6 +162,7 @@ async function recuperarCarrinhos(atraso: number, modelo: string): Promise<Resul
       const origem = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeusepai.com").replace(/\/$/, "");
       const link = `${origem}/checkout/recuperar/${encodeURIComponent(token)}`;
       const valor = typeof dados.valor === "number" ? moeda(dados.valor) : "a confirmar";
+      const modelo = escolherModeloRecuperacao(modelos, sessao.sessao);
       const mensagem = preencherMensagemRecuperacao(modelo, {
         nome: primeiroNome(texto(dados.nome)), produto: texto(dados.produto_nome) ?? "Produto selecionado",
         valor, link,
@@ -190,7 +192,9 @@ export async function processarRecuperacoesWhatsApp(): Promise<ResultadoRecupera
 
   /* Pix vem primeiro. A sessão que já gerou cobrança é excluída do carrinho
      por pedido_ref e pela conferência adicional de telefone. */
-  const pix = await recuperarPix(atrasoPix, modeloPix ?? MENSAGEM_PIX_PADRAO, botaoPixBruto !== "0");
-  const carrinho = await recuperarCarrinhos(atrasoCarrinho, modeloCarrinho ?? MENSAGEM_CARRINHO_PADRAO);
+  const modelosPix = modelosRecuperacao(modeloPix, MENSAGEM_PIX_PADRAO);
+  const modelosCarrinho = modelosRecuperacao(modeloCarrinho, MENSAGEM_CARRINHO_PADRAO);
+  const pix = await recuperarPix(atrasoPix, modelosPix, botaoPixBruto !== "0");
+  const carrinho = await recuperarCarrinhos(atrasoCarrinho, modelosCarrinho);
   return { pix, carrinho };
 }

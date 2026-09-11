@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   images: {
     // AVIF primeiro (menor), WebP como fallback
     formats: ["image/avif", "image/webp"],
+    qualities: [70, 75],
     // larguras usadas pela página (evita gerar variantes inúteis)
     deviceSizes: [390, 640, 768, 1024, 1280, 1440, 1920],
     imageSizes: [16, 18, 26, 32, 50, 55, 60, 72, 98, 114, 130, 133, 341, 712],

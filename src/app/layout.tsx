@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Sans, Inter, Lato, Work_Sans } from "next/font/google";
+import { Instrument_Sans, Work_Sans } from "next/font/google";
 import { Suspense } from "react";
 import MetaPixel from "@/components/marketing/MetaPixel";
 import Rastreador from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
@@ -11,19 +11,11 @@ import "./globals.css";
 const instrumentSans = Instrument_Sans({
   variable: "--font-instrument-sans",
   subsets: ["latin"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const lato = Lato({
-  variable: "--font-lato",
-  subsets: ["latin"],
-  weight: ["400", "700"],
+  style: "normal",
   display: "swap",
 });
 
 const workSans = Work_Sans({ variable: "--font-work-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
 
 
 /* Preencha com os dados da marca antes de publicar.
@@ -63,7 +55,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className={`${instrumentSans.variable} ${lato.variable} ${workSans.variable} ${inter.variable}`}>
+      <body className={`${instrumentSans.variable} ${workSans.variable}`}>
         {children}
         <AntiClone />
         <Suspense fallback={null}><Rastreador /></Suspense>
