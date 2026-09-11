@@ -227,8 +227,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     }
     if (!reservou) throw new Error("Não foi possível reservar um número de seis dígitos");
     etapa = "criacao";
-    const sufixoDescricao = ` - Pedido #${referencia}`;
-    const descricao = `Café com Deus Pai - ${valores.kit.nome}`.slice(0, 200 - sufixoDescricao.length) + sufixoDescricao;
+    const descricao = `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${referencia}`.slice(0, 200);
     const criado = await criarPagamentoAxxon({
       amount: totalCobrado, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
       description: descricao,

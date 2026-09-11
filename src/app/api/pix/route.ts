@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   try {
     const cobranca = await criarPix({
       amount: valores.total,
-      description: `${body.loja === "cafecomdeuspai" ? "Café com Deus Pai" : valores.kit.nome} - Pedido ${pedido}`,
+      description: `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${pedido}`.slice(0, 200),
       customer: { name: nome, email, document: { number: documento } },
       metadata: { external_reference: pedido, checkout_url: `${origem}/checkout` },
     });

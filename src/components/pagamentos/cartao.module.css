@@ -15,7 +15,8 @@
 .aviso svg { flex: none; width: 14px; height: 14px; margin-top: 2px; }
 /* globals.css zera background, borda, padding e fonte de todo <button> fora de
    .sf-root com especificidade (0,1,1); a classe dobrada (0,2,0) vence sem
-   !important — mesmo idioma de .input.input.input no CSS do checkout. */
+   !important — mesmo recurso de .opcaoManutencao.opcaoManutencao no CSS do
+   checkout e de .copiar.copiar em pagamento.module.css. */
 .botao.botao { width: 100%; min-height: 54px; padding: 0 16px; border: 0; border-radius: 4px; background: #111; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; }
 .botao.botao:disabled { opacity: .65; cursor: wait; }
 .resultado h2 { margin: 0 0 6px; font-size: 16px; }
