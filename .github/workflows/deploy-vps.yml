@@ -1,0 +1,37 @@
+name: Deploy VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - ".github/workflows/deploy-vps.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vps-production
+  cancel-in-progress: true
+
+jobs:
+  trigger-deploy:
+    name: Acionar Dokploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Solicitar novo deploy
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          test -n "$DEPLOY_WEBHOOK_URL"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 10 \
+            --max-time 60 \
+            "$DEPLOY_WEBHOOK_URL"
