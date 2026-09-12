@@ -26,12 +26,27 @@ jobs:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
         run: |
           test -n "$DEPLOY_WEBHOOK_URL"
-          curl \
-            --fail \
+          payload="$(
+            jq -nc \
+              --arg ref "$GITHUB_REF" \
+              --arg repository "$GITHUB_REPOSITORY" \
+              '{ref: $ref, repository: {full_name: $repository}}'
+          )"
+          response="$(curl \
+            --fail-with-body \
             --silent \
             --show-error \
             --retry 3 \
             --retry-all-errors \
             --connect-timeout 10 \
             --max-time 60 \
-            "$DEPLOY_WEBHOOK_URL"
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "X-GitHub-Event: push" \
+            --data "$payload" \
+            "$DEPLOY_WEBHOOK_URL")"
+
+          printf '%s\n' "$response"
+          if [[ "$response" == *'"Branch Not Match"'* ]] || [[ "$response" == *'"error"'* ]]; then
+            exit 1
+          fi
