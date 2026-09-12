@@ -51,7 +51,9 @@ export type PayloadCartao = {
 } & Record<string, unknown>;
 
 const SDK_URL = "https://app.axxonpay.com.br/v1/js/sdk.js";
-const BLOOPI_FALLBACK_URL = "/api/pagamentos/sdk/bloopi";
+/* Versão explícita evita que uma tentativa após deploy reutilize por até cinco
+   minutos o SDK anterior guardado pelo navegador/CDN. */
+const BLOOPI_FALLBACK_URL = "/api/pagamentos/sdk/bloopi?v=3ds-contexto-20260912";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const FINAIS = ["approved", "failed", "expired", "refunded"];
