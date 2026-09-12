@@ -15,10 +15,10 @@ import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-p
 import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 import { documentoBrasileiroValido } from "@/lib/documento-br";
+import { SAVED_CONTACT_KEY, normalizeContactEmail, readCheckoutContact, saveCheckoutContact } from "@/lib/checkout-contato";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
-const SAVED_CONTACT_KEY = "cdp-checkout-contact";
 const CUPOM_SAIDA = "CAFECOMDEUSPAI27";
 const DESCONTO_SAIDA = 4;
 
@@ -146,6 +146,10 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   const [draftShipping, setDraftShipping] = useState<"pac" | "sedex">("pac");
   const [paymentExpanded, setPaymentExpanded] = useState(false);
   const [savePaymentData, setSavePaymentData] = useState(false);
+  const consentEmail = useRef("");
+  const restoredEmail = useRef("");
+  const restoredCep = useRef("");
+  const [contactNotice, setContactNotice] = useState("");
   const firstNameInput = useRef<HTMLInputElement>(null);
   const addressNumberInput = useRef<HTMLInputElement>(null);
   const documentInput = useRef<HTMLInputElement>(null);
@@ -168,22 +172,64 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       // Preferências client-only são hidratadas após a montagem de propósito.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (savedCep?.length === 8) setCep(savedCep);
-      const savedContact = JSON.parse(localStorage.getItem(SAVED_CONTACT_KEY) ?? "null") as { email?: unknown; phone?: unknown } | null;
-      if (savedContact && typeof savedContact.email === "string" && typeof savedContact.phone === "string") {
-        setEmail(savedContact.email);
-        setPhone(formatPhone(savedContact.phone));
-        setSavePaymentData(true);
-      }
     } catch {}
   }, [prefill]);
 
   useEffect(() => {
-    if (step !== 3) return;
+    if (step !== 3 || !savePaymentData || consentEmail.current !== normalizeContactEmail(email)) return;
     try {
-      if (savePaymentData) localStorage.setItem(SAVED_CONTACT_KEY, JSON.stringify({ email: email.trim(), phone: phone.replace(/\D/g, "") }));
-      else localStorage.removeItem(SAVED_CONTACT_KEY);
+      if (shippingMethod) saveCheckoutContact(localStorage, { email, firstName, lastName, documentNumber, phone, cep, address, withoutNumber, shippingMethod, sameInvoiceData });
     } catch {}
-  }, [step, savePaymentData, email, phone]);
+  }, [step, savePaymentData, email, firstName, lastName, documentNumber, phone, cep, address, withoutNumber, shippingMethod, sameInvoiceData]);
+
+  function changeContactEmail(value: string) {
+    setEmail(value);
+    setError("");
+    const normalized = normalizeContactEmail(value);
+    if (normalized && normalized === consentEmail.current) return;
+    consentEmail.current = "";
+    setSavePaymentData(false);
+    setContactNotice("");
+    if (restoredEmail.current && restoredEmail.current !== normalized) {
+      restoredEmail.current = "";
+      restoredCep.current = "";
+      setFirstName(""); setLastName(""); setDocumentNumber(""); setPhone("");
+      setCep(""); setAddress(emptyAddress); setWithoutNumber(false); setShippingMethod(null);
+    }
+    try {
+      const saved = readCheckoutContact(localStorage, normalized);
+      if (!saved) return;
+      restoredEmail.current = consentEmail.current = normalized;
+      restoredCep.current = saved.cep;
+      setFirstName(saved.firstName); setLastName(saved.lastName);
+      setDocumentNumber(formatDocument(saved.documentNumber)); setPhone(formatPhone(saved.phone));
+      setCep(saved.cep); setAddress(saved.address); setWithoutNumber(saved.withoutNumber);
+      setShippingMethod(saved.shippingMethod); setDraftShipping(saved.shippingMethod);
+      setSameInvoiceData(saved.sameInvoiceData);
+      setCepStatus("ready"); setSavePaymentData(true);
+      setContactNotice("Todos os dados de contato e entrega foram preenchidos. Confira antes de continuar.");
+    } catch {}
+  }
+
+  function changeSaveContact(checked: boolean) {
+    try {
+      if (checked) {
+        if (!shippingMethod || !saveCheckoutContact(localStorage, { email, firstName, lastName, documentNumber, phone, cep, address, withoutNumber, shippingMethod, sameInvoiceData })) {
+          setContactNotice("Não foi possível salvar os dados neste navegador. Você pode continuar a compra normalmente.");
+          return;
+        }
+        consentEmail.current = normalizeContactEmail(email);
+        setContactNotice("Nome, sobrenome, contato, CPF/CNPJ, endereço e entrega salvos neste navegador por 90 dias. Dados de cartão não são salvos.");
+      } else {
+        localStorage.removeItem(SAVED_CONTACT_KEY);
+        consentEmail.current = "";
+        setContactNotice("Dados salvos removidos deste navegador.");
+      }
+      setSavePaymentData(checked);
+    } catch {
+      setContactNotice("O navegador não permitiu alterar os dados salvos. Verifique suas configurações de armazenamento.");
+    }
+  }
 
   /* Carrinho abandonado: salva o que a pessoa já preencheu e em que etapa
      parou, para o painel poder recuperar a venda. Só grava com e-mail ou
@@ -257,6 +303,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   }, []);
 
   useEffect(() => {
+    if (restoredCep.current !== cep) restoredCep.current = "";
     if (cep.length !== 8) {
       // CEP incompleto redefine imediatamente o estado derivado da consulta.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -266,12 +313,17 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     }
     try { localStorage.setItem(LAST_CEP_KEY, cep); } catch {}
 
+    if (restoredCep.current === cep) {
+      setCepStatus("ready");
+      return;
+    }
+
     const controller = new AbortController();
     setCepStatus("loading");
     fetch(`/api/cep?cep=${cep}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(6500)]) })
       .then(async response => {
         const data = await response.json();
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || restoredCep.current === cep) return;
         if (!response.ok) throw new Error(data.error || "CEP não encontrado.");
         const campo = (valor: unknown) => typeof valor === "string" ? valor.trim() : "";
         const encontrado = {
@@ -287,7 +339,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
         setCepStatus(Object.values(encontrado).every(Boolean) ? "ready" : "partial");
       })
       .catch(() => {
-        if (!controller.signal.aborted) setCepStatus("error");
+        if (!controller.signal.aborted && restoredCep.current !== cep) setCepStatus("error");
       });
     return () => controller.abort();
   }, [cep]);
@@ -505,7 +557,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
           <Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} />
           {step === 2 ? (
             <form onSubmit={continueToPayment} noValidate>
-              <section><h1>Dados de contato</h1><input className={styles.input} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="E-mail" autoComplete="email" aria-label="E-mail" />
+              <section><h1>Dados de contato</h1><input className={styles.input} type="email" value={email} onChange={e => changeContactEmail(e.target.value)} placeholder="E-mail" autoComplete="email" aria-label="E-mail" />
+                {contactNotice && <p className={styles.saveTerms} role="status">{contactNotice}</p>}
                 <label className={styles.checkbox}><input type="checkbox" checked={offers} onChange={e => setOffers(e.target.checked)} /> <span>Receber ofertas e novidades por e-mail</span></label>
               </section>
               <section><div className={styles.deliveryHeading}><h2>Entrega</h2>{cep.length === 8 && <button type="button" onClick={changeCep}>Alterar: {cep}</button>}</div>{cep.length !== 8 && <div className={styles.cepWrap}><input className={styles.input} inputMode="numeric" value={cep} onChange={e => setCep(e.target.value.replace(/\D/g, "").slice(0,8))} placeholder="CEP" autoComplete="postal-code" aria-label="CEP" /><a href="https://buscacepinter.correios.com.br/" target="_blank" rel="noreferrer">Não sei meu CEP</a></div>}
@@ -569,7 +622,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
                   : <p>Cartão indisponível no momento. Nenhum dado de cartão foi solicitado.</p>}
                 <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
               </div>}
-              <SavedPaymentData checked={savePaymentData} onChecked={setSavePaymentData} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />
+              <SavedPaymentData checked={savePaymentData} onChecked={changeSaveContact} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />
+              {contactNotice && <p className={styles.saveTerms} role="status">{contactNotice}</p>}
               {!paymentExpanded ? <button className={`${styles.payButton} ${styles.payButtonInactive}`} type="button" disabled>Fazer pedido</button> : payment === "pix" ? !pixCharge && <button className={styles.payButton} type="button" disabled={generatingPix} onClick={generatePix}>{generatingPix ? "Gerando PIX..." : "Fazer pedido"}</button> : null}
               {paymentError && <p className={styles.paymentError} role="alert">{paymentError}</p>}
             </section>
@@ -626,7 +680,7 @@ function OrderSummary({ products, shippingMethod, shippingFeeCents, descontos }:
 function PixLogo() { return <svg className={styles.pixLogo} viewBox="0 0 50 50" aria-hidden="true"><path d="M25 .039c-2.16 0-4.2.841-5.73 2.371L9.68 12h3.25c1.6 0 3.11.62 4.24 1.76l6.77 6.769a1.505 1.505 0 0 0 2.12-.01l6.77-6.759A5.96 5.96 0 0 1 37.07 12h3.25l-9.59-9.59A8.06 8.06 0 0 0 25 .039ZM7.68 14l-5.27 5.27a8.113 8.113 0 0 0 0 11.46L7.68 36h5.25c1.07 0 2.07-.42 2.83-1.17l6.769-6.769a3.506 3.506 0 0 1 4.942 0l6.769 6.769A4.04 4.04 0 0 0 37.07 36h5.25l5.27-5.27a8.113 8.113 0 0 0 0-11.46L42.32 14h-5.25c-1.07 0-2.07.42-2.83 1.17l-6.769 6.769a3.47 3.47 0 0 1-4.942 0L15.76 15.17A4.04 4.04 0 0 0 12.93 14H7.68ZM25 29.037c-.385.001-.771.148-1.061.443l-6.769 6.76A5.96 5.96 0 0 1 12.93 38H9.68l9.59 9.59a8.113 8.113 0 0 0 11.46 0L40.32 38h-3.25a5.96 5.96 0 0 1-4.24-1.76l-6.769-6.769A1.494 1.494 0 0 0 25 29.037Z" /></svg> }
 
 function SavedPaymentData({ checked, onChecked, onAlter }: { checked: boolean; onChecked: (value: boolean) => void; onAlter: () => void }) {
-  return <><div className={styles.savePayment}><label><input type="checkbox" checked={checked} onChange={e => onChecked(e.target.checked)} /> Salvar contato para <b>comprar mais rápido</b></label><p>O e-mail e o telefone serão preenchidos automaticamente neste navegador. Dados do cartão, CPF e endereço não são salvos aqui. <button type="button" onClick={onAlter}>Alterar contato</button></p><span><LockKeyhole /> Compra segura <small>☁ nuvem</small></span></div><p className={styles.saveTerms}>Ao salvar, você aceita os <Link href="/termos-de-uso">Termos de uso</Link> e a <Link href="/politica-de-privacidade">Política de Privacidade</Link></p></>;
+  return <><div className={styles.savePayment}><label><input type="checkbox" checked={checked} onChange={e => onChecked(e.target.checked)} /> Salvar dados para <b>comprar mais rápido</b></label><p>Ao informar o mesmo e-mail, serão preenchidos nome, sobrenome, telefone, CPF/CNPJ, CEP, endereço completo e forma de entrega neste navegador. Os dados ficam salvos por 90 dias; desmarque para apagá-los. Não use em dispositivos compartilhados. Dados de cartão nunca são salvos. <button type="button" onClick={onAlter}>Alterar dados</button></p><span><LockKeyhole /> Compra segura <small>Neste navegador</small></span></div><p className={styles.saveTerms}>Ao salvar, você aceita os <Link href="/termos-de-uso">Termos de uso</Link> e a <Link href="/politica-de-privacidade">Política de Privacidade</Link></p></>;
 }
 
 type CouponProps={couponOpen:boolean;setCouponOpen:(v:boolean)=>void;coupon:string;setCoupon:(v:string)=>void;applyCoupon:()=>void;message:string};

@@ -41,25 +41,21 @@ export default function ExitOffer({
   useEffect(() => {
     try { if (sessionStorage.getItem(chaveSessao)) return; } catch {}
 
-    /* CARÊNCIA antes de armar qualquer gatilho.
-
-       Sem ela a oferta aparecia na CHEGADA, não na saída: quem entra no
-       produto clicando num link do menu já está com o ponteiro no topo da
-       tela, e o primeiro movimento em direção à barra do navegador dispara
-       `mouseout` com clientY <= 0. O visitante era recebido por um popup de
-       "espere um instante" sem nunca ter tentado sair.
-
-       Três segundos bastam para o ponteiro descer para o conteúdo, e ninguém
-       decide abandonar a página em menos que isso. */
-    const CARENCIA_MS = 3000;
-
-    let armado = false;
+    /* Não existe relógio: tempo na página nunca é intenção de saída.
+       No desktop, só arma depois que um mouse real entrou no conteúdo e só
+       abre quando esse mouse cruza a borda superior para fora da janela. */
+    const ponteiroPreciso = window.matchMedia("(pointer: fine)").matches;
+    const ponteiroGrosso = window.matchMedia("(pointer: coarse)").matches;
+    let mouseDentroDoConteudo = false;
     let segurando = false;
-    const limpar: (() => void)[] = [];
+
+    const registrarMovimento = (evento: PointerEvent) => {
+      if (evento.pointerType === "mouse" && evento.clientY > 80) mouseDentroDoConteudo = true;
+    };
 
     /* Desktop: o ponteiro sair pela borda de cima é a intenção de fechar a aba. */
     const saiuPorCima = (evento: MouseEvent) => {
-      if (!armado) return;
+      if (!ponteiroPreciso || !mouseDentroDoConteudo || document.visibilityState !== "visible") return;
       if (evento.clientY <= 0 && !evento.relatedTarget) abrir();
     };
 
@@ -74,25 +70,24 @@ export default function ExitOffer({
       }
     };
 
-    const armar = () => {
-      armado = true;
-      /* O pushState também espera: empilhar no mesmo instante da navegação de
-         entrada embaralha o histórico e pode disparar popstate na chegada. */
+    /* No celular não há cursor nem evento confiável antes de fechar a aba.
+       A única intenção observável é o botão/gesto Voltar. A entrada extra é
+       criada sem temporizador e o pop-up só abre quando o popstate realmente
+       acontece — rolagem, permanência e toque no conteúdo não abrem nada. */
+    if (ponteiroGrosso) {
       try {
         history.pushState({ cdpOferta: true }, "", window.location.href);
         segurando = true;
       } catch {}
       window.addEventListener("popstate", aoVoltar);
-      limpar.push(() => window.removeEventListener("popstate", aoVoltar));
-    };
-
-    const relogio = window.setTimeout(armar, CARENCIA_MS);
+    }
+    document.addEventListener("pointermove", registrarMovimento, { passive: true });
     document.addEventListener("mouseout", saiuPorCima);
 
     return () => {
-      window.clearTimeout(relogio);
+      window.removeEventListener("popstate", aoVoltar);
+      document.removeEventListener("pointermove", registrarMovimento);
       document.removeEventListener("mouseout", saiuPorCima);
-      limpar.forEach((f) => f());
     };
   }, [abrir, chaveSessao]);
 

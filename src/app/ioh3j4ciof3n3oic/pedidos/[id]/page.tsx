@@ -7,6 +7,7 @@ import JornadaCliente from "@/components/painel/JornadaCliente";
 import OrigemPedido from "@/components/painel/OrigemPedido";
 import PixCobranca from "@/components/painel/PixCobranca";
 import Recarrega from "@/components/painel/Recarrega";
+import ComprovantePedido from "@/components/painel/ComprovantePedido";
 import { ipBloqueado, lerAoVivo, lerJornada, lerPedido, moeda, rotuloDispositivo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import { ler } from "@/lib/config-integracoes";
@@ -182,6 +183,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         )}
 
         <JornadaCliente jornada={jornada} />
+        {pedido.metodo_pagamento === "pix" && <ComprovantePedido pedidoId={id} status={pedido.status} />}
       </div>
     </Casca>
   );

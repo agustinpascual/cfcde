@@ -20,6 +20,22 @@ function modulo(caminho, deps) {
 const fonte = caminho => readFileSync(new URL(caminho, import.meta.url), "utf8");
 const cartaoTeste = { numero: "4111 1111 1111 1111", titular: "Cliente Ficticio", mes: 12, ano: 2035, cvv: "123" };
 
+test("navegação Pix preserva autorização de comprovante sem guardar dados do cliente", () => {
+  const anterior = globalThis.sessionStorage;
+  const memoria = new Map();
+  Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: {
+    getItem: chave => memoria.get(chave) ?? null,
+    setItem: (chave, valor) => memoria.set(chave, valor),
+  } });
+  try {
+    salvarPagamentoParaTela({ id: "pix-teste", pedido: "123456", total: 1234, metodo: "pix", comprovante_token: "token-ficticio",
+      cliente_documento: "NAO-ARMAZENAR", cartao: cartaoTeste });
+    assert.equal(lerPagamentoDaTela().comprovante_token, "token-ficticio");
+    assert.ok(!memoria.get(CHAVE_PAGAMENTO).includes("NAO-ARMAZENAR"));
+    assert.ok(!memoria.get(CHAVE_PAGAMENTO).includes("4111"));
+  } finally { Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: anterior }); }
+});
+
 test("validarCartao normaliza e recusa sem ecoar o valor", () => {
   const agora = new Date(2026, 8, 9);
   assert.deepEqual(cartao.validarCartao(cartaoTeste, agora), { number: "4111111111111111", holderName: "Cliente Ficticio", expirationMonth: 12, expirationYear: 2035, cvv: "123" });
@@ -193,6 +209,10 @@ test("checkout: cartão em componente próprio, sem campos de cartão no formul�
   assert.doesNotMatch(checkout, /cc-number|cc-csc|cvv|numeroCartao|\/api\/pagamentos\/cartao|cartao-sandbox|chaveAtivacao/);
   assert.match(checkout, /fetch\("\/api\/pix"/);
   const componente = fonte("../src/components/pagamentos/CartaoAxxon.tsx");
+  assert.match(componente, /identificarBandeiraCartao/);
+  assert.match(componente, /Processando seu cartão/);
+  assert.match(componente, /Abrindo a segurança do banco/);
+  assert.doesNotMatch(componente, /binlist|lookup\.binlist|api\.card/);
   for (const exigido of [/useRef<HTMLInputElement>/, /autoComplete="cc-number"/, /autoComplete="cc-csc"/, /type="password"/, /fetch\("\/api\/pagamentos\/cartao"/, /handleNextAction\(/, /form\.current\?\.reset\(\)/, /acompanharPix\(/, /salvarPagamentoParaTela\(/, /router\.replace\("\/pagamento"\)/, /https:\/\/app\.axxonpay\.com\.br\/v1\/js\/sdk\.js/]) {
     assert.match(componente, exigido);
   }

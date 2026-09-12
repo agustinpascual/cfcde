@@ -30,7 +30,7 @@ export const produto = {
   disponibilidade: "Disponível em 5 dias úteis",
   estoque: 13,
   galeria: [
-    { thumb: `${IMG}/imag1.png`, full: `${IMG}/imag1.png`, ratio: 1 },
+    { thumb: `${IMG}/imag1.webp`, full: `${IMG}/imag1.webp`, ratio: 1 },
     { thumb: `${IMG}/imag2.webp`, full: `${IMG}/imag2.webp`, ratio: 1 },
     { thumb: `${IMG}/imag3.webp`, full: `${IMG}/imag3.webp`, ratio: 1 },
     { thumb: `${IMG}/imag4.webp`, full: `${IMG}/imag4.webp`, ratio: 1 },
@@ -43,17 +43,17 @@ export const kits: Kit[] = [
   {
     nome: "1 POTE", duracao: "DURAÇÃO DE 2 MESES", descricao: " ", de: null,
     total: "R$ 89,90", unidade: "R$ 89,90", economia: null,
-    desconto: null, imagem: `${IMG}/imag1.png`, ativo: true,
+    desconto: null, imagem: `${IMG}/imag1.webp`, ativo: true,
   },
   {
     nome: "2 POTES", duracao: "DURAÇÃO DE 4 MESES", descricao: "1 fita métrica", de: "R$ 179,80",
     total: "R$ 119,90", unidade: "R$ 59,95", economia: "Economia de R$ 59,90",
-    desconto: "33% OFF", imagem: `${IMG}/image2prod.png`, ativo: false, recomendado: true,
+    desconto: "33% OFF", imagem: `${IMG}/image2prod.webp`, ativo: false, recomendado: true,
   },
   {
     nome: "3 POTES", duracao: "DURAÇÃO DE 6 MESES", descricao: "1 fita métrica 1 ebook com protocolo alimentar",
     de: "R$ 269,70", total: "R$ 149,90", unidade: "R$ 49,97", economia: "Economia de R$ 119,80",
-    desconto: "44% OFF", imagem: `${IMG}/imag3prod.png`, ativo: false,
+    desconto: "44% OFF", imagem: `${IMG}/imag3prod.webp`, ativo: false,
   },
 ];
 
@@ -301,7 +301,7 @@ export const criadores: Criador[] = [
   //   seguidores: "128 mil",
   //   legenda: "Uso todo dia depois do café — nem parece suplemento.",
   //   src: `${IMG.replace("/images", "")}/videos/criadora-1.mp4`,
-  //   poster: `${IMG}/imag1.png`,
+  //   poster: `${IMG}/imag1.webp`,
   // },
 ];
 

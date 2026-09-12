@@ -11,7 +11,7 @@ const root = "/sites/cafecomdeuspai-com-8456844d/root-8a5edab2/videos";
    é o primeiro frame: os cards laterais não ficam preto enquanto carregam. */
 const videos = [1, 2, 3, 4, 5, 6, 7].map((number) => ({
   src: `${root}/video-${number}.mp4`,
-  poster: `${root}/video-${number}.jpg`,
+  poster: `${root}/video-${number}.webp`,
 }));
 
 const wrap = (index: number) => (index + videos.length) % videos.length;

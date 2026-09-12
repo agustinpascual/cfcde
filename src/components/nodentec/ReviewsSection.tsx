@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { BadgeCheck, Star } from "lucide-react";
-import model15 from "@/lib/1-frontal.jpg";
-import model25 from "@/lib/1-frontal (1).jpg";
-import model50 from "@/lib/1-frontal (2).jpg";
+import model15 from "@/lib/1-frontal.webp";
+import model25 from "@/lib/1-frontal (1).webp";
+import model50 from "@/lib/1-frontal (2).webp";
 import { RATING, RATING_BREAKDOWN, TOTAL_REVIEWS } from "./reviewsData";
 
 const examples = [

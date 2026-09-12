@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, LockKeyhole, ShieldCheck } from "lucide-react";
@@ -9,6 +10,7 @@ import { concluirTentativa, liberarTentativaEncerrada, tentativaPagamento } from
 import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
+import { identificarBandeiraCartao, LOGOS_BANDEIRA, NOMES_BANDEIRA, type BandeiraCartao } from "@/lib/bandeira-cartao";
 import s from "./cartao.module.css";
 import a from "./cartao-animacoes.module.css";
 
@@ -123,7 +125,6 @@ const classificarErro3ds = (erro: unknown) => {
   };
 };
 
-const mascararNumero = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 "); };
 const mascararValidade = (e: React.FormEvent<HTMLInputElement>) => { const d = digitos(e.currentTarget.value).slice(0, 4); e.currentTarget.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
 const somenteDigitos = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 4); };
 
@@ -133,6 +134,8 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
 }) {
   const [sdk, setSdk] = useState<"carregando" | "pronto" | "erro">("carregando");
   const [ocupado, setOcupado] = useState(false);
+  const [popupProcessamento, setPopupProcessamento] = useState<"idle" | "validando" | "banco">("idle");
+  const [bandeira, setBandeira] = useState<BandeiraCartao | null>(null);
   const [parcelas, setParcelas] = useState(1);
   const [mensagem, setMensagem] = useState("");
   const [cobranca, setCobranca] = useState<{ id: string; pedido: string; total: number } | null>(null);
@@ -146,6 +149,12 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   const form = useRef<HTMLFormElement>(null);
   const numero = useRef<HTMLInputElement>(null), titular = useRef<HTMLInputElement>(null);
   const validade = useRef<HTMLInputElement>(null), cvv = useRef<HTMLInputElement>(null);
+
+  function atualizarNumero(evento: React.FormEvent<HTMLInputElement>) {
+    const valor = digitos(evento.currentTarget.value).slice(0, 19);
+    evento.currentTarget.value = valor.replace(/(\d{4})(?=\d)/g, "$1 ");
+    setBandeira(identificarBandeiraCartao(valor));
+  }
 
   async function iniciar() {
     if (inicializandoSdk.current) return;
@@ -255,7 +264,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     if (nome.length < 2) return setMensagem("Informe o nome impresso no cartão.");
     if (!(mes >= 1 && mes <= 12) || !ano || ano < hoje.getFullYear() || (ano === hoje.getFullYear() && mes < hoje.getMonth() + 1)) return setMensagem("Confira a validade do cartão.");
     if (codigo.length < 3 || codigo.length > 4) return setMensagem("Confira o código de segurança.");
-    setOcupado(true); setMensagem(""); setAutenticacaoFalhou(false); setPodeRepetir(false);
+    setOcupado(true); setPopupProcessamento("validando"); setMensagem(""); setAutenticacaoFalhou(false); setPodeRepetir(false);
     let tentativa = tentativaPagamento(payload.produto, "cartao");
     let criada = false;
     try {
@@ -296,8 +305,10 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         // A Bloopi confirma no navegador (3DS) com o mesmo cartão; o objeto
         // nextAction é opaco e segue sem alterações, como pede o SDK.
         setFase3ds("abrindo");
+        setPopupProcessamento("banco");
         await new Promise<void>(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
         setFase3ds("desafio");
+        setPopupProcessamento("idle");
         const e = payload.endereco;
         const resultado = await window.Axxon.handleNextAction(dados.nextAction, {
           amount: dados.total, installments: parcelas,
@@ -330,6 +341,8 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       }
     } finally {
       form.current?.reset();   // o cartão sai do DOM assim que deixa de ser necessário
+      setBandeira(null);
+      setPopupProcessamento("idle");
       setOcupado(false);
     }
   }
@@ -346,7 +359,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       onError={() => { setSdk("erro"); setMensagem("O serviço de cartão está indisponível. Tente novamente em instantes ou pague com Pix."); }} />
     {!cobranca && <form ref={form} className={s.form} onSubmit={pagar} noValidate>
       <p className={s.aviso}><LockKeyhole aria-hidden="true" /><span>Os dados do cartão são transmitidos com criptografia e não ficam armazenados na loja.</span></p>
-      <label>Número do cartão<input ref={numero} className={s.input} inputMode="numeric" autoComplete="cc-number" placeholder="0000 0000 0000 0000" maxLength={23} onInput={mascararNumero} disabled={ocupado} required /></label>
+      <label>Número do cartão<div className={s.numeroCampo}><input ref={numero} className={s.input} inputMode="numeric" autoComplete="cc-number" placeholder="0000 0000 0000 0000" maxLength={23} onInput={atualizarNumero} disabled={ocupado} aria-describedby="bandeira-cartao" required />{bandeira && <span className={s.bandeiraLogo} title={NOMES_BANDEIRA[bandeira]} aria-hidden="true">{LOGOS_BANDEIRA[bandeira] ? <Image src={LOGOS_BANDEIRA[bandeira]} alt="" width={46} height={29} unoptimized /> : <b>{NOMES_BANDEIRA[bandeira]}</b>}</span>}</div><small id="bandeira-cartao" className={s.bandeiraNome} aria-live="polite">{bandeira ? `Bandeira identificada: ${NOMES_BANDEIRA[bandeira]}` : "A bandeira aparecerá automaticamente"}</small></label>
       <label>Nome impresso no cartão<input ref={titular} className={s.input} autoComplete="cc-name" maxLength={60} disabled={ocupado} required /></label>
       <div className={s.linha}>
         <label>Validade (MM/AA)<input ref={validade} className={s.input} inputMode="numeric" autoComplete="cc-exp" placeholder="MM/AA" maxLength={5} onInput={mascararValidade} disabled={ocupado} required /></label>
@@ -385,5 +398,19 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     {mensagem && <p className={s.mensagem} role="alert">{mensagem}</p>}
     {!cobranca && sdk === "erro" && <button type="button" className={s.repetir} onClick={tentarIniciarNovamente}>Tentar carregar o cartão novamente</button>}
     {cobranca && (status === "failed" || status === "expired" || podeRepetir) && <button type="button" className={s.repetir} onClick={novaTentativa}>Tentar com outro cartão</button>}
+    {popupProcessamento !== "idle" && <div className={a.overlay} role="status" aria-live="polite" aria-label="Processando pagamento com cartão">
+      <div className={a.popup}>
+        <div className={a.marca}><Image src="/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png" alt="Café com Deus Pai" width={42} height={48} /><span>FINALIZANDO SEU PEDIDO</span></div>
+        <span className={a.popupIcone} aria-hidden="true">{popupProcessamento === "banco" ? <ShieldCheck /> : <CreditCardIcon />}</span>
+        <strong>{popupProcessamento === "banco" ? "Abrindo a segurança do banco" : "Processando seu cartão"}</strong>
+        <p>{popupProcessamento === "banco" ? "Só um instante. Você poderá concluir a autenticação na tela segura do seu banco." : "Estamos validando os dados e preparando sua compra em ambiente seguro."}</p>
+        <span className={a.popupProgresso} aria-hidden="true"><i /></span>
+        <small><LockKeyhole aria-hidden="true" /> Aguarde nesta página para continuar</small>
+      </div>
+    </div>}
   </div>;
+}
+
+function CreditCardIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h3"/></svg>;
 }

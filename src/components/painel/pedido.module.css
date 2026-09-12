@@ -86,4 +86,9 @@
 
 /* Bloco do código PIX no detalhe do pedido pendente. */
 .pixCobranca { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--cdp-fundo); }
+.comprovanteAviso { padding: 14px; border-radius: 9px; background: #fff4d6; color: #69501c; font-size: 13px; line-height: 1.6; margin: 0 0 20px; }
+.comprovanteGrade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.comprovanteImagem { display: block; width: 100%; max-height: 460px; object-fit: contain; background: #f4f4ef; border-radius: 10px; margin-bottom: 12px; }
+.comprovanteNota { font-size: 12px; line-height: 1.6; color: var(--cdp-tinta-2); margin-top: 18px; }
+@media (max-width: 700px) { .comprovanteGrade { grid-template-columns: minmax(0, 1fr); } }
 .subtitulo { margin: 0 0 4px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--cdp-tinta-2); }

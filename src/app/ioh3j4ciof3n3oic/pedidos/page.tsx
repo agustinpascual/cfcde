@@ -9,6 +9,7 @@ import FiltroPedidos from "@/components/painel/FiltroPedidos";
 import Paginacao from "@/components/painel/Paginacao";
 import Recarrega from "@/components/painel/Recarrega";
 import SubAbasPedidos from "@/components/painel/SubAbasPedidos";
+import { pedidosComComprovante } from "@/components/painel/ComprovantePedido";
 import { estadoInstalacao, configurado, lerAoVivo, lerCarrinhos, lerPaginaPedidos, moeda, POR_PAGINA } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
@@ -42,6 +43,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   ]);
   const _faltam = _inst?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const comprovantes = await pedidosComComprovante(pedidos.filter(p => p.metodo_pagamento === "pix").map(p => p.id));
 
   return (
     <Casca atual="/ioh3j4ciof3n3oic/pedidos" titulo="Pedidos"
@@ -98,6 +100,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
                         {ROTULO[p.status] ?? p.status}
                       </span>
                       <span className={s.formaPgto}>{formaPagamento(p.metodo_pagamento)}</span>
+                      {comprovantes.has(p.id) && <span className={`${s.selo} ${s.seloPendente}`}>{["aprovado", "estornado"].includes(p.status) ? "Comprovante anexado" : "⚠ Comprovante aguardando confirmação"}</span>}
                     </td>
                     <td className={s.dir} data-label="Valor"><strong>{moeda(p.valor_centavos)}</strong></td>
                     <td className={`${s.mono} ${s.pedidoData}`} data-label="Data">

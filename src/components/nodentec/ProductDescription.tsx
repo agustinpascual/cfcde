@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ChevronDown, Radio, ShieldCheck, SlidersHorizontal } from "lucide-react";
-import productImage from "@/lib/1-frontal (1).jpg";
+import productImage from "@/lib/1-frontal (1).webp";
 
 const FEATURES = [
   {

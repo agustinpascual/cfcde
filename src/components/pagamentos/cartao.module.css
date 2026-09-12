@@ -3,6 +3,12 @@
 .form label { display: grid; gap: 6px; color: #333; font-size: 13px; }
 .input { width: 100%; min-width: 0; height: 48px; padding: 0 13px; border: 1px solid #c9c9c9; border-radius: 4px; background: #fff; color: #202020; font-size: 16px; }
 .input:focus { outline: 2px solid #111; outline-offset: -1px; }
+.numeroCampo { position: relative; }
+.numeroCampo .input { padding-right: 68px; }
+.bandeiraLogo { position: absolute; top: 50%; right: 10px; display: grid; width: 48px; height: 30px; place-items: center; overflow: hidden; border: 1px solid #e2e2e2; border-radius: 4px; background: #fff; transform: translateY(-50%); }
+.bandeiraLogo img { width: 42px; height: 26px; object-fit: contain; }
+.bandeiraLogo b { padding: 2px; color: #333; font-size: 9px; line-height: 1; text-align: center; }
+.bandeiraNome { min-height: 14px; color: #777; font-size: 10px; font-weight: 400; }
 .resumoJuros {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 3px 12px;
   margin-top: 2px; padding: 9px 11px; border: 1px solid #ead9b0; border-radius: 4px;

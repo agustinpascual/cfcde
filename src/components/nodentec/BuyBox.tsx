@@ -5,9 +5,9 @@ import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import { useRouter } from "next/navigation";
 import { Star, Minus, Plus, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
-import frontal15m from "@/lib/1-frontal.jpg";
-import frontal25m from "@/lib/1-frontal (1).jpg";
-import frontal50m from "@/lib/1-frontal (2).jpg";
+import frontal15m from "@/lib/1-frontal.webp";
+import frontal25m from "@/lib/1-frontal (1).webp";
+import frontal50m from "@/lib/1-frontal (2).webp";
 import { FacebookIcon, WhatsAppIcon, XIcon } from "./icons";
 import { RATING, TOTAL_REVIEWS } from "./reviewsData";
 

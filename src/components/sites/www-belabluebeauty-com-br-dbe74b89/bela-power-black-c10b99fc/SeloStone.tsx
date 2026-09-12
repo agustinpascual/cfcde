@@ -9,7 +9,7 @@ export default function SeloStone({ compacto = false }: { compacto?: boolean }) 
     <div className={`${s.selo} ${compacto ? s.compacto : ""}`}>
       <span className={s.acima}>Pix processado por</span>
       <Image
-        src={`${IMG}/stone.png`}
+        src={`${IMG}/stone.webp`}
         alt="Stone"
         width={440}
         height={117}

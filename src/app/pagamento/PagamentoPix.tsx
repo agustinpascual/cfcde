@@ -10,6 +10,7 @@ import { lerPagamentoDaTela, type PagamentoNavegacao } from "@/lib/pagamento-nav
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import { eventoGoogle } from "@/components/marketing/MetaPixel";
 import s from "./pagamento.module.css";
+import ComprovantePix from "./ComprovantePix";
 
 /* A cobrança viaja pelo sessionStorage: ela já está na mão do navegador
    quando o checkout termina, e assim a página abre sem uma segunda ida ao
@@ -25,6 +26,7 @@ export default function PagamentoPix() {
   const [cobranca, setCobranca] = useState<Cobranca | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [copiado, setCopiado] = useState(false);
+  const [codigoCopiadoEm, setCodigoCopiadoEm] = useState<number | null>(null);
   const [mostrarWhatsApp, setMostrarWhatsApp] = useState(false);
   const [segundosRestantes, setSegundosRestantes] = useState(600);
   const [pago, setPago] = useState<{ rastreio: string | null; pedido: string | null } | null>(null);
@@ -156,8 +158,15 @@ export default function PagamentoPix() {
       try { sucesso = document.execCommand("copy"); } catch { /* seleção manual continua disponível */ }
     }
     if (!sucesso) return;
+    registrarCopia();
+  }
+
+  function registrarCopia() {
+    if (!cobranca) return;
+    if (copiouEm.current && Date.now() - copiouEm.current < 500) return;
     setCopiado(true);
     copiouEm.current = Date.now();
+    setCodigoCopiadoEm(copiouEm.current);
     window.setTimeout(() => setCopiado(false), 2200);
     registrar("pix_copiado", {
       pedido: cobranca.pedido,
@@ -295,7 +304,7 @@ export default function PagamentoPix() {
 
             <label className={s.codigoLabel} htmlFor="pix-codigo">Código Pix</label>
             <textarea id="pix-codigo" className={s.codigo} readOnly value={cobranca.qr_code}
-              aria-label="Código PIX copia e cola" onFocus={(e) => e.currentTarget.select()} />
+              aria-label="Código PIX copia e cola" onFocus={(e) => e.currentTarget.select()} onCopy={registrarCopia} />
             <button type="button" className={`${s.copiar} ${copiado ? s.copiado : ""}`} onClick={copiar}>
               <span className={s.copiarConteudo}>
                 {copiado ? <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg> : <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>}
@@ -304,8 +313,9 @@ export default function PagamentoPix() {
             </button>
             <p className={s.confirmacaoAutomatica}>
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-              A confirmação é automática. Você não precisa enviar comprovante.
+              A confirmação acontece quando o pagamento é confirmado pela adquirente.
             </p>
+            <ComprovantePix key={cobranca.id} id={cobranca.id} token={cobranca.comprovante_token} copiadoEm={codigoCopiadoEm} />
           </section>
 
           <aside className={s.colunaResumo}>

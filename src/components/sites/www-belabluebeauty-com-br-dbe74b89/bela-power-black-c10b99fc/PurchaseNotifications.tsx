@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import produtoThumb from "@/lib/1-frontal (1).jpg";
+import produtoThumb from "@/lib/1-frontal (1).webp";
 import { cidades, kitsCompra, nomesFemininos, nomesMasculinos, produto, sobrenomes } from "./data";
 import { useStock } from "./StockContext";
 import s from "./styles.module.css";

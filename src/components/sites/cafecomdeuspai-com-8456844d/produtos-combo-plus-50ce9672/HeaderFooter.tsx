@@ -204,8 +204,8 @@ function FooterColumn({ column }: { column: (typeof footerColumns)[number] }) {
 
 export function SiteFooter() {
   const paymentLogos = [
-    ["visa", "Visa"], ["mastercard", "Mastercard"], ["amex", "American Express"],
-    ["elo", "Elo"], ["hipercard", "Hipercard"], ["pix", "PIX"],
+    ["visa.png", "Visa"], ["mastercard.png", "Mastercard"], ["amex.webp", "American Express"],
+    ["elo.png", "Elo"], ["hipercard.png", "Hipercard"], ["pix.png", "PIX"],
   ] as const;
   return (
     <footer className={styles.footer}>
@@ -235,7 +235,7 @@ export function SiteFooter() {
         <div className={styles.paymentBlock}>
           <strong>Formas de pagamento</strong>
           <div className={styles.payments} aria-label="Formas de pagamento aceitas">
-            {paymentLogos.map(([file, label]) => <span key={file}><Image src={`/sites/cafecomdeuspai-com-8456844d/checkout/payment-logos/${file}.png`} alt={label} width={150} height={93} /></span>)}
+            {paymentLogos.map(([file, label]) => <span key={file}><Image src={`/sites/cafecomdeuspai-com-8456844d/checkout/payment-logos/${file}`} alt={label} width={150} height={93} /></span>)}
           </div>
         </div>
         <div className={styles.secureBlock}>

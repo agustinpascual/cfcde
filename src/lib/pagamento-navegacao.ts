@@ -14,6 +14,7 @@ export type PagamentoNavegacao = {
   codigo_rastreio?: string | null;
   produto_nome?: string;
   produto_imagem?: string;
+  comprovante_token?: string;
 };
 
 type DadosPagamento = Partial<PagamentoNavegacao> & Pick<PagamentoNavegacao, "id" | "pedido" | "total">;
@@ -35,6 +36,7 @@ export function salvarPagamentoParaTela(dados: DadosPagamento) {
     ...(typeof dados.codigo_rastreio === "string" ? { codigo_rastreio: dados.codigo_rastreio } : {}),
     ...(typeof dados.produto_nome === "string" ? { produto_nome: dados.produto_nome } : {}),
     ...(typeof dados.produto_imagem === "string" ? { produto_imagem: dados.produto_imagem } : {}),
+    ...(typeof dados.comprovante_token === "string" ? { comprovante_token: dados.comprovante_token } : {}),
   };
   sessionStorage.setItem(CHAVE_PAGAMENTO, JSON.stringify(seguro));
 }
@@ -57,6 +59,7 @@ function normalizar(bruto: string, legado = false): PagamentoNavegacao | null {
       ...(typeof dados.codigo_rastreio === "string" ? { codigo_rastreio: dados.codigo_rastreio } : {}),
       ...(typeof dados.produto_nome === "string" ? { produto_nome: dados.produto_nome } : {}),
       ...(typeof dados.produto_imagem === "string" ? { produto_imagem: dados.produto_imagem } : {}),
+      ...(typeof dados.comprovante_token === "string" ? { comprovante_token: dados.comprovante_token } : {}),
     };
   } catch { return null; }
 }

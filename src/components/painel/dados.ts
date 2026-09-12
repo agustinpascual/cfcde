@@ -598,6 +598,7 @@ export const moeda = (centavos: number) =>
 /* ---------- diagnóstico de instalação ---------- */
 export const TABELAS = [
   { nome: "pedidos", para: "Pedidos e receita" },
+  { nome: "pix_comprovantes", para: "Comprovantes Pix privados (migration 0027)" },
   { nome: "eventos", para: "Funil e rastreamento" },
   { nome: "sessoes", para: "Visitantes ao vivo e mapa" },
   { nome: "ips_bloqueados", para: "Bloqueio de acessos suspeitos" },

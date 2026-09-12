@@ -12,6 +12,7 @@ import { origemOficial } from "@/lib/origem";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { documentoBrasileiroValido } from "@/lib/documento-br";
 import { ErroCorpo, lerJsonObjeto } from "@/lib/corpo-json";
+import { criarTokenComprovante } from "@/lib/pix-comprovante-token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,7 +51,14 @@ export async function POST(req: Request) {
 
   const nome = String(body.nome ?? "").trim();
   try {
-    if ((await lerGateways()).pix === "axxonpay") return processarAxxon(body, "pix");
+    if ((await lerGateways()).pix === "axxonpay") {
+      const resposta = await processarAxxon(body, "pix");
+      if (!resposta.ok) return resposta;
+      const dados = await resposta.json();
+      return NextResponse.json({ ...dados,
+        ...(dados.id && dados.qr_code ? { comprovante_token: criarTokenComprovante(dados.id, ipDe(req)) } : {}),
+      }, { headers: { "Cache-Control": "no-store" } });
+    }
   } catch { return NextResponse.json({ erro: "Configuração de pagamentos indisponível." }, { status: 503 }); }
   const email = String(body.email ?? "").trim();
   const documento = soDigitos(body.documento);
@@ -182,6 +190,7 @@ export async function POST(req: Request) {
       qr_code_url: imagemQr,
       expires_at: cobranca.pix?.expires_at,
       status: cobranca.status,
+      comprovante_token: criarTokenComprovante(cobranca.id, ipDe(req)),
     });
   } catch (e) {
     const err = e as Error & { status?: number; codigo?: string };

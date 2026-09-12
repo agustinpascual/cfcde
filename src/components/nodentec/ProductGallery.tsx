@@ -3,18 +3,18 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import frontalImage from "@/lib/1-frontal.jpg";
-import frontal25mImage from "@/lib/1-frontal (1).jpg";
-import frontal50mImage from "@/lib/1-frontal (2).jpg";
-import lateralImage from "@/lib/2-lateral.jpg";
-import lateral25mImage from "@/lib/2-lateral (1).jpg";
-import lateral50mImage from "@/lib/2-lateral (2).jpg";
-import dimensionsImage from "@/lib/3-medida.jpg";
-import dimensions25mImage from "@/lib/3-medida (1).jpg";
-import dimensions50mImage from "@/lib/3-medida (2).jpg";
-import baseImage from "@/lib/4-base.jpg";
-import base25mImage from "@/lib/4-base (1).jpg";
-import base50mImage from "@/lib/4-base (2).jpg";
+import frontalImage from "@/lib/1-frontal.webp";
+import frontal25mImage from "@/lib/1-frontal (1).webp";
+import frontal50mImage from "@/lib/1-frontal (2).webp";
+import lateralImage from "@/lib/2-lateral.webp";
+import lateral25mImage from "@/lib/2-lateral (1).webp";
+import lateral50mImage from "@/lib/2-lateral (2).webp";
+import dimensionsImage from "@/lib/3-medida.webp";
+import dimensions25mImage from "@/lib/3-medida (1).webp";
+import dimensions50mImage from "@/lib/3-medida (2).webp";
+import baseImage from "@/lib/4-base.webp";
+import base25mImage from "@/lib/4-base (1).webp";
+import base50mImage from "@/lib/4-base (2).webp";
 
 const MODEL_IMAGES = {
   1: [frontalImage, lateralImage, dimensionsImage, baseImage],
