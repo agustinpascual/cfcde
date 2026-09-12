@@ -206,7 +206,7 @@ test("painel: ativa cartão só após validar credenciais e adquirente", async (
 
 test("checkout: cartão em componente próprio, sem campos de cartão no formulário principal nem no rastreio", () => {
   const checkout = fonte("../src/components/sites/cafecomdeuspai-com-8456844d/checkout/CheckoutCafe.tsx");
-  assert.match(checkout, /import CartaoAxxon from "@\/components\/pagamentos\/CartaoAxxon"/);
+  assert.match(checkout, /const CartaoAxxon = dynamic\(\(\) => import\("@\/components\/pagamentos\/CartaoAxxon"\)/);
   assert.match(checkout, /cartaoDisponivel && gatewayConfig\?\.publicKey/);
   assert.match(checkout, /onFalha=\{mostrarOfertaPix\}/, "falha do cartão oferece recuperação por Pix");
   assert.match(checkout, /Continue sua compra pelo Pix com desconto aplicado automaticamente/);

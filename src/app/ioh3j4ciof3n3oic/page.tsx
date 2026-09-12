@@ -36,8 +36,8 @@ export default async function Page({ searchParams }: {
   if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const periodo = resolverPeriodo(await searchParams);
-  const [resumo, dias, funil, vivos] = await Promise.all([
-    lerResumo(periodo), lerVendasPorDia(periodo), lerFunil(periodo), lerAoVivo(),
+  const [resumo, dias, funil, vivos, _inst] = await Promise.all([
+    lerResumo(periodo), lerVendasPorDia(periodo), lerFunil(periodo), lerAoVivo(), estadoInstalacao(),
   ]);
 
   const faltando: string[] = [];
@@ -66,8 +66,6 @@ export default async function Page({ searchParams }: {
   const computadores = contarDispositivos(vivos).computador;
   const outrosDispositivos = Math.max(0, vivos.length - apple - android - computadores);
   const conversao = funil.visitantes ? (funil.compras / funil.visitantes) * 100 : 0;
-
-  const _inst = await estadoInstalacao();
 
   const _faltam = _inst?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
 

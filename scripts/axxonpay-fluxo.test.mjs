@@ -190,7 +190,7 @@ for (const metodo of ["pix", "cartao"]) {
     assert.equal(resposta.status, 200);
     const dados = await resposta.json();
     assert.match(dados.pedido, /^[1-9]\d{5}$/);
-    assert.equal(enviado.description, `Café com Deus Pai - 1x Produto teste - Pedido #${dados.pedido}`);
+    assert.equal(enviado.description, `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${dados.pedido}`);
     assert.deepEqual(JSON.parse(JSON.stringify(enviado.customer)), {
       name: body.nome, email: body.email, phone: body.celular,
       document: { number: body.documento, type: "cpf" },
@@ -527,12 +527,18 @@ test("aprovação repetida é idempotente e evento antigo não desfaz aprovaçã
   await a.processarAxxon(body, "pix");
   const p = { id: "payment_uuid", amount: 2500, status: "PAID", method: "pix" };
   await a.sincronizarAxxon(p);
+  const gravacoesAposAprovacao = a.contadores().atualizacoes;
   await a.sincronizarAxxon(p);
+  assert.equal(a.contadores().atualizacoes, gravacoesAposAprovacao, "aprovação repetida não regrava o pedido");
   await a.sincronizarAxxon({ ...p, status: "PENDING" });
   assert.equal([...a.pedidos.values()][0].status, "aprovado");
   assert.equal(a.contadores().confirmacoes, 1);
   await a.sincronizarAxxon({ ...p, status: "REFUNDED" });
+  const gravacoesAposEstorno = a.contadores().atualizacoes;
+  assert.equal(gravacoesAposEstorno, gravacoesAposAprovacao + 1, "estorno ainda é persistido");
   await a.sincronizarAxxon(p);
+  await a.sincronizarAxxon({ ...p, status: "REFUNDED" });
+  assert.equal(a.contadores().atualizacoes, gravacoesAposEstorno, "eventos repetidos não regravam o estorno");
   assert.equal([...a.pedidos.values()][0].status, "estornado");
   assert.equal(a.contadores().confirmacoes, 1);
 });

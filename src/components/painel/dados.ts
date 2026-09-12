@@ -646,18 +646,18 @@ export async function estadoInstalacao(forcar = false): Promise<EstadoTabela[] |
 
   const consultar = Promise.all(TABELAS.map(async ({ nome, para }) => {
     const colunaChave = nome === "configuracoes" ? "chave" : nome === "ips_bloqueados" ? "ip" : "id";
-    const { error } = await db.from(nome).select(colunaChave).limit(1);
+    const colunas = COLUNAS[nome] ?? [];
+    // Uma leitura valida todas as colunas quando as migrations estão em dia.
+    const { error } = await db.from(nome).select([colunaChave, ...colunas].join(",")).limit(1);
     // PGRST205 = tabela ausente do cache do schema. Outros erros (RLS, etc.)
     // significam que a tabela existe.
     const existe = !error || (error as { code?: string }).code !== "PGRST205";
 
-    /* Em paralelo, não em série. O laço sequencial anterior fazia 9 idas ao
-       banco só em `pedidos`, uma esperando a outra — ~1,8s somados, pagos em
-       TODA tela do painel (a faixa de instalação está em todas). Como as
-       sondagens são independentes, o custo passa a ser o da mais lenta. */
+    // Só uma instalação incompleta precisa das sondas individuais para
+    // identificar exatamente quais migrations faltam.
     let colunasFaltando: string[] = [];
-    if (existe) {
-      const sondas = await Promise.all((COLUNAS[nome] ?? []).map(async (coluna) => {
+    if (existe && (error as { code?: string } | null)?.code === "42703") {
+      const sondas = await Promise.all(colunas.map(async (coluna) => {
         const r = await db.from(nome).select(coluna).limit(1);
         // 42703 = coluna não existe
         return (r.error as { code?: string } | null)?.code === "42703" ? coluna : null;

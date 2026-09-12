@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { EventoMeta, dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import type { EstoqueLote } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/StockUrgency";
 import { useCart } from "@/components/sites/cafecomdeuspai-com-8456844d/useCart";
-import CartDrawer from "./CartDrawer";
 import { SiteFooter, SiteHeader } from "./HeaderFooter";
 import ProductPage from "./ProductPage";
 import { comboPlus, type Produto } from "./produto";
+
+const CartDrawer = dynamic(() => import("./CartDrawer"), { ssr: false });
 
 type Props = {
   /* Sem nada, é a tela do Combo Plus original. */
@@ -23,7 +25,8 @@ type Props = {
 };
 
 export default function ComboPlusStore({ produto = comboPlus, notificacoes = false, estoque, cupomSaida }: Props) {
-  const [cartOpen, setCartOpen] = useState(false);
+  // Após a primeira abertura, conserva o estado do cupom e a animação de saída.
+  const [cartOpen, setCartOpen] = useState<boolean | null>(null);
   const cart = useCart();
   /* A oferta escolhida sobe até aqui porque a sacola também precisa dela. */
   const [ofertaIndice, setOfertaIndice] = useState(0);
@@ -56,11 +59,11 @@ export default function ComboPlusStore({ produto = comboPlus, notificacoes = fal
         estoque={estoque}
       />
       <SiteFooter />
-      <CartDrawer
+      {cartOpen !== null && <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         cart={cart}
-      />
+      />}
       {notificacoes ? <PurchaseNotifications imagem={produto.imagem} nome={produto.nome} /> : null}
       {cupomSaida ? (
         <ExitOffer codigoDoCupom={cupomSaida.codigo} percentual={cupomSaida.percentual} slug={oferta.slug} />

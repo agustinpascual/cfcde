@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, Gift, LockKeyhole, Mail, MapPin, PenLine, Truck, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -12,10 +13,13 @@ import { registrar, registrarConfirmado } from "@/components/sites/www-belablueb
 import { calcularDescontosCarrinho, cupomValidoCarrinho, DESCONTO_PIX, type Descontos } from "@/lib/promocoes";
 import styles from "./CheckoutCafe.module.css";
 import { tentativaPagamento, liberarTentativaEncerrada } from "@/lib/tentativa-pagamento";
-import CartaoAxxon from "@/components/pagamentos/CartaoAxxon";
 import ExitOffer from "@/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer";
 import { documentoBrasileiroValido } from "@/lib/documento-br";
 import { SAVED_CONTACT_KEY, normalizeContactEmail, readCheckoutContact, saveCheckoutContact } from "@/lib/checkout-contato";
+
+const CartaoAxxon = dynamic(() => import("@/components/pagamentos/CartaoAxxon"), {
+  loading: () => <p role="status">Carregando pagamento com cartão…</p>,
+});
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
 const stoneLogo = "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images/stone.webp";

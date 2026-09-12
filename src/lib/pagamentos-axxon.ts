@@ -96,8 +96,15 @@ export async function sincronizarAxxon(p: PagamentoAxxon) {
     return { pedido: pedido.referencia, codigo_rastreio: pedido.codigo_rastreio, status };
   }
   const novo = { approved: "aprovado", failed: "falhou", expired: "expirado", refunded: "estornado" }[status];
+  const estados: Record<string, string> = { aprovado: "approved", estornado: "refunded", falhou: "failed", expirado: "expired" };
   // Eventos fora de ordem não rebaixam uma aprovação ou desfazem um estorno.
   const podeMudar = novo && pedido.status !== "estornado" && (pedido.status !== "aprovado" || novo === "estornado");
+  // Webhooks repetidos e consultas de estados já gravados dispensam UPDATE.
+  // A validação com o gateway acima continua obrigatória; IDs ausentes ainda
+  // precisam ser persistidos mesmo quando o status não muda.
+  if (pedido.pix_id === idAxxon(p.id) && (!podeMudar || pedido.status === novo)) {
+    return { pedido: pedido.referencia, codigo_rastreio: pedido.codigo_rastreio, status: estados[pedido.status] ?? status };
+  }
   const { data: atualizado, error: erroUpdate } = await db.from("pedidos").update({
     pix_id: idAxxon(p.id), ...(podeMudar ? { status: novo } : {}),
     ...(podeMudar && novo === "aprovado" ? { pago_em: p.confirmedAt ?? new Date().toISOString() } : {}),
@@ -109,7 +116,6 @@ export async function sincronizarAxxon(p: PagamentoAxxon) {
     depois(entregarAcessoApp(pedido.referencia));
   }
   const estadoEfetivo = String(atualizado && podeMudar ? novo : pedido.status);
-  const estados: Record<string, string> = { aprovado: "approved", estornado: "refunded", falhou: "failed", expirado: "expired" };
   const statusEfetivo = estados[estadoEfetivo] ?? status;
   return { pedido: pedido.referencia, codigo_rastreio: pedido.codigo_rastreio, status: statusEfetivo };
 }
@@ -253,7 +259,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     }
     if (!reservou) throw new Error("Não foi possível reservar um número de seis dígitos");
     etapa = "criacao";
-    const descricao = `Café com Deus Pai - ${valores.kit.nome} - Pedido #${referencia}`.slice(0, 200);
+    const descricao = `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${referencia}`.slice(0, 200);
     const criado = await criarPagamentoAxxon({
       amount: totalCobrado, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
       description: descricao,
