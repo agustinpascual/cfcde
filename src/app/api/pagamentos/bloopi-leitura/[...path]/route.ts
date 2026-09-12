@@ -24,8 +24,8 @@ const jsonErro = (status: number) => Response.json(
 /**
  * Safari/iOS encerrou repetidamente as duas leituras CORS da Bloopi com
  * `Load failed` depois que a Axxon já havia criado o intent. Somente GETs
- * idempotentes passam por esta rota; initiate-3ds e confirm-payment continuam
- * direto no navegador, preservando o fluxo oficial, o IP e a não repetição.
+ * idempotentes passam por esta rota e podem ser repetidos. As etapas mutáveis
+ * usam a rota one-shot separada `bloopi-envio`, que nunca faz retry.
  */
 export async function GET(req: Request, contexto: { params: Promise<{ path: string[] }> }) {
   if (!origemOficial(req)) return jsonErro(403);

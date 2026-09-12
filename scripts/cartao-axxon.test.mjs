@@ -256,9 +256,14 @@ test("proxy do SDK Bloopi usa somente a origem pública ativa", () => {
   assert.doesNotMatch(rota, /https:\/\/js\.bloopi\.io/, "não espera oito segundos por um host sem DNS");
   assert.match(rota, /bloopi-leitura\/checkout-config/);
   assert.match(rota, /bloopi-leitura\/get-checkout-info/);
+  assert.match(rota, /bloopi-envio\/initiate-3ds/);
+  assert.match(rota, /bloopi-envio\/confirm-payment/);
   const leitura = fonte("../src/app/api/pagamentos/bloopi-leitura/[...path]/route.ts");
   assert.match(leitura, /export async function GET/);
-  assert.doesNotMatch(leitura, /export async function POST/, "operações mutáveis continuam diretas no navegador");
+  assert.doesNotMatch(leitura, /export async function POST/, "a rota idempotente continua exclusiva para leitura");
+  const envio = fonte("../src/app/api/pagamentos/bloopi-envio/[path]/route.ts");
+  assert.match(envio, /export async function POST/);
+  assert.doesNotMatch(envio, /for \(let tentativa|await esperar|while \(/, "POST mutável nunca é repetido automaticamente");
 });
 
 test("leituras Bloopi: somente GET permitido, com repetição segura e sem cache", async () => {
@@ -288,4 +293,48 @@ test("leituras Bloopi: somente GET permitido, com repetição segura e sem cache
   const invalida = await GET(req, { params: Promise.resolve({ path: ["confirm-payment"] }) });
   assert.equal(invalida.status, 404);
   assert.equal(chamadas.length, antes, "rota mutável não chega à Bloopi");
+});
+
+test("envio Bloopi: repassa a mutação uma única vez e nunca registra o corpo", async () => {
+  const chamadas = [];
+  const { POST } = modulo("../src/app/api/pagamentos/bloopi-envio/[path]/route.ts", {
+    "@/lib/origem": { origemOficial: () => true },
+    "@/lib/limite": { excedeu: () => false, ipDe: () => "127.0.0.1" },
+    $fetch: async (url, init) => {
+      chamadas.push({ url, init });
+      return Response.json({ data: { session_id: "sessao_teste" } });
+    },
+  });
+  const corpo = JSON.stringify({ payment_intent_id: "pi_teste", checkout_secret: "segredo-ficticio" });
+  const req = new Request("https://loja.example/api/pagamentos/bloopi-envio/initiate-3ds", {
+    method: "POST",
+    headers: { origin: "https://loja.example", "content-type": "application/json", "x-public-key": "pk_teste", "x-checkout-secret": "segredo-ficticio" },
+    body: corpo,
+  });
+  const resposta = await POST(req, { params: Promise.resolve({ path: "initiate-3ds" }) });
+  assert.equal(resposta.status, 200);
+  assert.equal(chamadas.length, 1);
+  assert.equal(chamadas[0].url, "https://api.bloopi.io/functions/v1/initiate-3ds");
+  assert.equal(chamadas[0].init.body, corpo);
+  assert.equal(chamadas[0].init.headers["x-checkout-secret"], "segredo-ficticio");
+
+  const fonteEnvio = fonte("../src/app/api/pagamentos/bloopi-envio/[path]/route.ts");
+  assert.doesNotMatch(fonteEnvio, /console\.|JSON\.stringify\(json\)|JSON\.stringify\(corpo\)/, "dados do envio não entram em log nem são serializados de novo");
+});
+
+test("envio Bloopi: falha de rede não repete uma confirmação", async () => {
+  let chamadas = 0;
+  const { POST } = modulo("../src/app/api/pagamentos/bloopi-envio/[path]/route.ts", {
+    "@/lib/origem": { origemOficial: () => true },
+    "@/lib/limite": { excedeu: () => false, ipDe: () => "127.0.0.1" },
+    $fetch: async () => { chamadas++; throw new Error("rede simulada"); },
+  });
+  const req = new Request("https://loja.example/api/pagamentos/bloopi-envio/confirm-payment", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-public-key": "pk_teste", "x-checkout-secret": "segredo-ficticio" },
+    body: JSON.stringify({ session_id: "sessao_teste", checkout_secret: "segredo-ficticio" }),
+  });
+  const resposta = await POST(req, { params: Promise.resolve({ path: "confirm-payment" }) });
+  assert.equal(resposta.status, 502);
+  assert.equal(chamadas, 1, "confirmação incerta não é reenviada");
 });

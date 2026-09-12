@@ -22,9 +22,21 @@ async function baixar() {
       const original = await resposta.text();
       const codigo = original
         .replace('API_BASE + "/checkout-config"', '"/api/pagamentos/bloopi-leitura/checkout-config"')
-        .replace('API_BASE + "/get-checkout-info/"', '"/api/pagamentos/bloopi-leitura/get-checkout-info/"');
+        .replace('API_BASE + "/get-checkout-info/"', '"/api/pagamentos/bloopi-leitura/get-checkout-info/"')
+        /* O intent já existe quando estas chamadas acontecem. Em produção,
+           navegadores diferentes encerraram o POST cross-origin antes mesmo
+           do challenge. A rota da loja faz um único repasse, sem retry: assim
+           preserva a semântica do SDK e nunca confirma duas vezes. */
+        .replaceAll('API_BASE + "/initiate-3ds"', '"/api/pagamentos/bloopi-envio/initiate-3ds"')
+        .replaceAll('API_BASE + "/confirm-payment"', '"/api/pagamentos/bloopi-envio/confirm-payment"')
+        .replaceAll('API_BASE + "/submit-card-payment"', '"/api/pagamentos/bloopi-envio/submit-card-payment"');
       if (codigo.length < 1000 || !codigo.includes("Bloopi")) throw new Error("SDK inválido");
-      if (codigo === original || codigo.includes('API_BASE + "/checkout-config"') || codigo.includes('API_BASE + "/get-checkout-info/"')) {
+      if (codigo === original
+          || codigo.includes('API_BASE + "/checkout-config"')
+          || codigo.includes('API_BASE + "/get-checkout-info/"')
+          || codigo.includes('API_BASE + "/initiate-3ds"')
+          || codigo.includes('API_BASE + "/confirm-payment"')
+          || codigo.includes('API_BASE + "/submit-card-payment"')) {
         throw new Error("Contrato do SDK incompatível");
       }
       cache = { codigo, atualizadoEm: Date.now() };
