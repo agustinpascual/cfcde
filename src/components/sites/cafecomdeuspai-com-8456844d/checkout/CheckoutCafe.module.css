@@ -128,16 +128,18 @@
 .shell,.shell input,.shell select,.shell button,.shell textarea{font-family:var(--font-work-sans),"Work Sans",Arial,sans-serif}
 
 /* Confirma visualmente a geração antes da troca para a página do código. */
-.pixGeneratingOverlay{position:fixed;z-index:1800;inset:0;display:grid;place-items:center;padding:20px;background:rgba(12,22,22,.62);backdrop-filter:blur(5px);animation:pixOverlayIn .18s ease-out both}
-.pixGeneratingCard{width:min(100%,390px);padding:34px 28px 27px;border:1px solid #dfd5c5;border-radius:18px;background:#fbf8f3;color:#151515;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.28);animation:pixCardIn .35s cubic-bezier(.2,.8,.2,1) both}
-.pixGeneratingIcon{position:relative;display:grid;width:72px;height:72px;margin:0 auto 18px;place-items:center;border-radius:50%;background:#f0e6d6;color:#8a6f42}
-.pixGeneratingIcon::before,.pixGeneratingIcon::after{content:"";position:absolute;inset:-8px;border:2px solid rgba(184,153,103,.24);border-radius:50%;animation:pixPulse 1.5s ease-out infinite}
-.pixGeneratingIcon::after{animation-delay:.55s}.pixGeneratingIcon svg{width:31px;height:31px}.pixGeneratingIcon .pixLogo{fill:currentColor}
-.pixGeneratingCard>strong{display:block;font-size:21px;line-height:1.25}.pixGeneratingCard>p{margin:8px 0 20px;color:#6f675e;font-size:14px;line-height:1.5}.pixGeneratingCard>small{display:block;margin-top:11px;color:#8b8279;font-size:11px}
-.pixGeneratingTrack{display:block;height:5px;overflow:hidden;border-radius:999px;background:#e7dfd3}.pixGeneratingTrack i{display:block;width:42%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#b89967,#151515);animation:pixTrack 1.15s ease-in-out infinite}
-.pixGeneratingReady .pixGeneratingIcon{background:#151515;color:#fff;animation:pixReady .38s cubic-bezier(.2,.9,.3,1.35) both}.pixGeneratingReady .pixGeneratingIcon::before,.pixGeneratingReady .pixGeneratingIcon::after{animation:none;opacity:0}.pixGeneratingReady .pixGeneratingTrack i{width:100%;background:#b89967;animation:none}
+.pixGeneratingOverlay{position:fixed;z-index:1800;inset:0;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.48);backdrop-filter:blur(4px);animation:pixOverlayIn .18s ease-out both}
+.pixGeneratingCard{width:min(100%,400px);max-height:calc(100dvh - 40px);overflow-y:auto;padding:28px 32px 24px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#222;font-family:var(--font-inter),Inter,Arial,sans-serif;text-align:center;box-shadow:0 20px 65px rgba(0,0,0,.18);animation:pixCardIn .28s ease-out both}
+.pixGeneratingBrand{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:32px;padding-bottom:22px;border-bottom:1px solid #eee}.pixGeneratingBrand img{width:42px;height:48px;object-fit:contain}.pixGeneratingBrand span{color:#666;font-size:10px;font-weight:500;letter-spacing:.12em;text-align:left}
+.pixGeneratingIcon{position:relative;display:grid;width:64px;height:64px;margin:0 auto 24px;place-items:center;border:1px solid #e5e5e5;border-radius:50%;background:#f7f7f7;color:#183638}
+.pixGeneratingIcon::before{content:"";position:absolute;inset:-6px;border:1.5px solid transparent;border-top-color:#183638;border-right-color:#e2e8e7;border-radius:50%;animation:pixSpin 1.4s linear infinite}
+.pixGeneratingIcon svg{width:28px;height:28px}.pixGeneratingIcon .pixLogo{fill:currentColor}
+.pixGeneratingCard>strong{display:block;font-size:23px;font-weight:500;letter-spacing:-.035em;line-height:1.25}.pixGeneratingCard>p{max-width:290px;margin:12px auto 26px;color:#666;font-size:13px;line-height:1.65}.pixGeneratingCard>small{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px;color:#777;font-size:10px;line-height:1.5}.pixGeneratingCard>small svg{width:12px;height:12px;flex-shrink:0}
+.pixGeneratingTrack{display:block;height:3px;overflow:hidden;border-radius:2px;background:#eee}.pixGeneratingTrack i{display:block;width:42%;height:100%;border-radius:inherit;background:#183638;animation:pixTrack 1.5s ease-in-out infinite}
+.pixGeneratingReady .pixGeneratingIcon{border-color:#183638;background:#183638;color:#fff;animation:pixReady .3s ease-out both}.pixGeneratingReady .pixGeneratingIcon::before{animation:none;opacity:0}.pixGeneratingReady .pixGeneratingTrack i{width:100%;background:#183638;animation:none}
+@keyframes pixSpin{to{transform:rotate(360deg)}}
 @keyframes pixOverlayIn{from{opacity:0}to{opacity:1}}@keyframes pixCardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}@keyframes pixPulse{0%{opacity:.85;transform:scale(.76)}80%,100%{opacity:0;transform:scale(1.18)}}@keyframes pixTrack{from{transform:translateX(-110%)}to{transform:translateX(350%)}}@keyframes pixReady{from{transform:scale(.72)}to{transform:scale(1)}}
-@media(max-width:520px){.pixGeneratingCard{padding:29px 21px 24px}.pixGeneratingIcon{width:66px;height:66px}.pixGeneratingCard>strong{font-size:19px}}
+@media(max-width:520px){.pixGeneratingCard{padding:24px 22px 22px}.pixGeneratingBrand{gap:12px;margin-bottom:28px}.pixGeneratingCard>strong{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.pixGeneratingOverlay,.pixGeneratingCard,.pixGeneratingIcon,.pixGeneratingIcon::before,.pixGeneratingIcon::after,.pixGeneratingTrack i{animation:none!important}}
 
 /* Selo de 5% na opção Pix e as linhas de desconto no resumo. */

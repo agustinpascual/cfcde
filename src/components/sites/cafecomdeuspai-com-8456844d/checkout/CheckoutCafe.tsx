@@ -590,13 +590,17 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       {generatingPix && (
         <div className={styles.pixGeneratingOverlay} role="status" aria-live="polite" aria-label={pixStage === "pronto" ? "PIX gerado" : "Gerando PIX"}>
           <div className={`${styles.pixGeneratingCard} ${pixStage === "pronto" ? styles.pixGeneratingReady : ""}`}>
+            <div className={styles.pixGeneratingBrand}>
+              <Image src={logo} alt="Café com Deus Pai" width={42} height={48} />
+              <span>FINALIZANDO SEU PEDIDO</span>
+            </div>
             <span className={styles.pixGeneratingIcon} aria-hidden="true">
               {pixStage === "pronto" ? <Check /> : <PixLogo />}
             </span>
-            <strong>{pixStage === "pronto" ? "PIX gerado com sucesso!" : "Preparando seu PIX…"}</strong>
-            <p>{pixStage === "pronto" ? "Abrindo a tela para copiar o código." : "Estamos criando o código seguro do seu pedido."}</p>
+            <strong>{pixStage === "pronto" ? "Seu Pix está pronto" : "Preparando seu Pix"}</strong>
+            <p>{pixStage === "pronto" ? "Você já vai receber o QR Code e o código para copiar." : "Só um instante. Estamos gerando o QR Code para você concluir sua compra."}</p>
             <span className={styles.pixGeneratingTrack} aria-hidden="true"><i /></span>
-            <small>Não feche esta página</small>
+            <small><LockKeyhole aria-hidden="true" /> Aguarde nesta página para continuar</small>
           </div>
         </div>
       )}
