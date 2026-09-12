@@ -54,5 +54,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     return product ? [{ ...product, quantity }] : [];
   });
   if (!products.length) products.push({ ...(resolverProduto(slug) ?? comboPlus), quantity: 1 });
-  return <CheckoutCafe products={products} prefill={recuperado?.prefill ?? null} />;
+  return <>
+    <link rel="preload" href="/api/pagamentos/config" as="fetch" crossOrigin="anonymous" />
+    <CheckoutCafe products={products} prefill={recuperado?.prefill ?? null} />
+  </>;
 }

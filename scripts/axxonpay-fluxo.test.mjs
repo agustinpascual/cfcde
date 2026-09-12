@@ -156,7 +156,12 @@ for (const metodo of ["pix", "cartao"]) {
     assert.equal(resposta.status, 200);
     const dados = await resposta.json();
     assert.match(dados.pedido, /^[1-9]\d{5}$/);
-    assert.equal(enviado.description, `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${dados.pedido}`);
+    assert.equal(enviado.description, `Café com Deus Pai - 1x Produto teste - Pedido #${dados.pedido}`);
+    assert.deepEqual(JSON.parse(JSON.stringify(enviado.customer.address)), {
+      street: body.endereco.logradouro, number: body.endereco.numero,
+      neighborhood: body.endereco.bairro, city: body.endereco.localidade,
+      state: body.endereco.uf.toUpperCase(), zipCode: body.endereco.cep.replace(/\D/g, ""),
+    });
     assert.equal(enviado.metadata.external_reference, dados.pedido);
     assert.equal(enviado.metadata.payment_attempt, body.tentativa);
     assert.equal(a.pedidos.get(dados.pedido).id, body.tentativa);

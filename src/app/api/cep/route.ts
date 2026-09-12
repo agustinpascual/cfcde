@@ -17,7 +17,9 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
-      cache: "no-store",
+      // O endereço público de um CEP pode ser reutilizado entre checkouts.
+      // Evita uma nova viagem VPS → Brasil a cada consulta do mesmo CEP.
+      next: { revalidate: 86400 },
       signal: AbortSignal.timeout(5000),
     });
 

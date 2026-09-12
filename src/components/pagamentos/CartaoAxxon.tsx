@@ -303,7 +303,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
           amount: dados.total, installments: parcelas,
           card: { number: num, expMonth: String(mes).padStart(2, "0"), expYear: String(ano), cvv: codigo, holderName: nome },
           customer: { name: payload.nome, email: payload.email, phone: digitos(payload.celular), document: digitos(payload.documento),
-            address: { street: e.logradouro, number: e.numero, neighborhood: e.bairro, city: e.localidade, state: e.uf, zip: digitos(e.cep) } },
+            address: { street: e.logradouro.trim(), number: e.numero.trim(), neighborhood: e.bairro.trim(), city: e.localidade.trim(), state: e.uf.trim().toUpperCase(), zip: digitos(e.cep) } },
         });
         setFase3ds("conferindo");
         if (resultado?.status === "failed") {

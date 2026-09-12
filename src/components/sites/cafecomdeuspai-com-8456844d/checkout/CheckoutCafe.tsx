@@ -268,7 +268,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
 
     const controller = new AbortController();
     setCepStatus("loading");
-    fetch(`/api/cep?cep=${cep}`, { signal: controller.signal })
+    fetch(`/api/cep?cep=${cep}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(6500)]) })
       .then(async response => {
         const data = await response.json();
         if (controller.signal.aborted) return;
@@ -286,8 +286,8 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
         // campos enquanto o cliente está completando o endereço.
         setCepStatus(Object.values(encontrado).every(Boolean) ? "ready" : "partial");
       })
-      .catch(error => {
-        if (error.name !== "AbortError") setCepStatus("error");
+      .catch(() => {
+        if (!controller.signal.aborted) setCepStatus("error");
       });
     return () => controller.abort();
   }, [cep]);
