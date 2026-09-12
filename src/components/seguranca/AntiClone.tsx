@@ -12,8 +12,6 @@ import { useEffect } from "react";
    o site seja embutido num iframe de terceiro. */
 
 const DESTINO = "https://www.google.com";
-const LIMIAR_DEVTOOLS = 180;
-const executarPausaDeDepuracao = Function("debugger") as () => void;
 
 function atalhoDeInspecao(evento: KeyboardEvent) {
   const tecla = evento.key.toLowerCase();
@@ -30,25 +28,9 @@ function campoEditavel(alvo: EventTarget | null) {
     && (alvo.matches("input, textarea, select") || alvo.isContentEditable);
 }
 
-function devtoolsAcoplado() {
-  const diferencaHorizontal = window.outerWidth - window.innerWidth;
-  const diferencaVertical = window.outerHeight - window.innerHeight;
-
-  return diferencaHorizontal > LIMIAR_DEVTOOLS
-    || diferencaVertical > LIMIAR_DEVTOOLS;
-}
-
-function depuradorAtivo() {
-  const inicio = performance.now();
-  executarPausaDeDepuracao();
-  return performance.now() - inicio > 120;
-}
-
-/* Em navegadores móveis, outerHeight inclui partes das barras do Safari e do
-   Chrome que não entram em innerHeight. Essa diferença pode passar do limiar
-   usado no desktop e parecia DevTools aberto, expulsando um visitante normal
-   em até 750 ms. Em telas de toque mantemos a trava de domínio, mas não usamos
-   heurísticas de dimensões/depuração que os navegadores móveis não garantem. */
+/* Dimensões da janela e pausas de execução não identificam DevTools com
+   segurança. Não redirecionamos visitantes com base nessas heurísticas nem
+   avaliamos código dinâmico, proibido pela CSP de produção. */
 function navegadorDeToque() {
   return navigator.maxTouchPoints > 0
     || window.matchMedia("(hover: none) and (pointer: coarse)").matches;
@@ -93,26 +75,12 @@ export default function AntiClone() {
       evento.preventDefault();
       redirecionar();
     };
-    const verificarDevtools = () => {
-      if (navegadorDeToque()) return;
-      if (devtoolsAcoplado() || depuradorAtivo()) redirecionar();
-    };
-
     window.addEventListener("keydown", aoPressionarTecla, true);
     window.addEventListener("contextmenu", aoAbrirMenu, true);
-    window.addEventListener("resize", verificarDevtools, true);
-    window.addEventListener("focus", verificarDevtools, true);
-    document.addEventListener("visibilitychange", verificarDevtools, true);
-    const intervalo = window.setInterval(verificarDevtools, 750);
-    verificarDevtools();
 
     return () => {
       window.removeEventListener("keydown", aoPressionarTecla, true);
       window.removeEventListener("contextmenu", aoAbrirMenu, true);
-      window.removeEventListener("resize", verificarDevtools, true);
-      window.removeEventListener("focus", verificarDevtools, true);
-      document.removeEventListener("visibilitychange", verificarDevtools, true);
-      window.clearInterval(intervalo);
     };
   }, []);
 
