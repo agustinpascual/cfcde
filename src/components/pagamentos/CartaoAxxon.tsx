@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { acompanharPix } from "@/lib/acompanhar-pix";
 import { calcularParcelamentoCartao, luhn } from "@/lib/cartao";
 import { cliente3dsAxxon, normalizarCompradorAxxon } from "@/lib/axxonpay-comprador";
+import { acompanharViewport3ds } from "@/lib/viewport-3ds";
 import { concluirTentativa, liberarTentativaEncerrada, tentativaPagamento } from "@/lib/tentativa-pagamento";
 import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
@@ -223,6 +224,8 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   const form = useRef<HTMLFormElement>(null);
   const numero = useRef<HTMLInputElement>(null), titular = useRef<HTMLInputElement>(null);
   const validade = useRef<HTMLInputElement>(null), cvv = useRef<HTMLInputElement>(null);
+
+  useEffect(() => acompanharViewport3ds(), []);
 
   function atualizarNumero(evento: React.FormEvent<HTMLInputElement>) {
     const valor = digitos(evento.currentTarget.value).slice(0, 19);

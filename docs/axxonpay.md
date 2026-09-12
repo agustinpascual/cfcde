@@ -14,6 +14,30 @@ A seleção só é salva após validar as credenciais. O cache de configuração
 - `sandbox`: simulador local, identificado como teste, somente no painel; não recebe cartão, não cria cobranças, não conta como venda. Não é o sandbox do provedor.
 - `axxonpay`: cartão no checkout da loja via AxxonPay, com a adquirente vinculada à Public Key. Salvar essa seleção no painel valida as credenciais **e** a adquirente; se a adquirente não for homologada aqui, nada é salvo.
 
+### Centralização móvel do 3DS — 12/09/2026
+
+O CSS anterior colocava `#Cardinal-Modal` em `inset: 0`, mas mantinha o
+`translate(-50%, -50%)` do Cardinal (o reset de transform estava somente no
+filho `#Cardinal-ModalContent`). Isso deslocava a janela para fora da tela.
+O modal agora fica em 50% da área visível, com margens, largura limitada e
+altura máxima. O iframe mantém a altura solicitada pelo provedor, limitada ao
+espaço disponível; conteúdo longo continua rolável. A Bloopi também centraliza
+seu iframe sem forçá-lo à altura total da tela.
+
+`viewport-3ds.ts`, ativo somente enquanto o componente de cartão está montado,
+acompanha `VisualViewport.resize/scroll` para teclado, zoom e barras móveis,
+com fallback para `innerWidth/innerHeight` e limpeza no unmount. Referência:
+[VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport).
+As regras são restritas aos IDs visuais do SDK em telas até 768 px ou baixas
+(paisagem). Não alteram mensagens, `nextAction`, requisições, fechamento do SDK
+nem iframes ocultos de coleta.
+
+`node --test scripts/3ds-layout.test.mjs` reproduz a estrutura/CSS externo do
+Cardinal e da Bloopi, com toda rede bloqueada. Chromium e WebKit verificam
+320×568, 390×844, 844×390, 768×1024, desktop 1280×800, scroll da página, teclado simulado,
+centralização, acesso ao botão, fechamento e limpeza. Não simula aprovação
+bancária nem substitui uma conferência em aparelho físico.
+
 ### Auditoria de 12/09/2026
 
 Conferência adicional após o cadastro de domínio: `axxonpay-comprador.ts` prepara
