@@ -11,7 +11,7 @@ const TETO_MS = 4000;
 /* Rotas onde a splash atrapalha: quem está pagando não pode esperar uma
    animação de marca para ver o código PIX. A splash é boas-vindas da loja,
    não interlúdio no meio de uma compra. */
-const SEM_SPLASH = ["/pagamento", "/checkout", "/painel"];
+const SEM_SPLASH = ["/pagamento", "/checkout", "/ioh3j4ciof3n3oic"];
 
 export default function SplashScreen() {
   const pathname = usePathname();

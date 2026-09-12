@@ -9,7 +9,7 @@ export default function FiltroPedidos({
   busca = "", status = "", metodo = "", de = "", ate = "",
 }: { busca?: string; status?: string; metodo?: string; de?: string; ate?: string }) {
   return (
-    <form className={s.filtro} method="get" action="/painel/pedidos">
+    <form className={s.filtro} method="get" action="/ioh3j4ciof3n3oic/pedidos">
       <div className={s.campoBusca}>
         <Search size={16} aria-hidden="true" />
         <input
@@ -44,7 +44,7 @@ export default function FiltroPedidos({
 
       <button type="submit" className={s.aplicar}>Filtrar</button>
       {(busca || status || metodo || de || ate) && (
-        <Link href="/painel/pedidos" className={s.limpar}>Limpar</Link>
+        <Link href="/ioh3j4ciof3n3oic/pedidos" className={s.limpar}>Limpar</Link>
       )}
     </form>
   );

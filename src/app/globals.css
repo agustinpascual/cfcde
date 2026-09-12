@@ -83,7 +83,7 @@ p:not(.sf-root *), ul:not(.sf-root *), ol:not(.sf-root *),
 figure:not(.sf-root *) { margin: 0; }
 ul:not(.sf-root *), ol:not(.sf-root *) { padding: 0; list-style: none; }
 a:not(.sf-root *) { color: inherit; text-decoration: none; }
-button:not(.sf-root *) { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:where(button:not(.sf-root *)) { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 input { font: inherit; }
 img { max-width: 100%; }
 

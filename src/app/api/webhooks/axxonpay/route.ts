@@ -4,8 +4,13 @@ import { excedeu, ipDe } from "@/lib/limite";
 
 export async function POST(req: Request) {
   if (excedeu(`axxon-webhook:${ipDe(req)}`, 120, 60000)) return new Response(null, { status: 429 });
+  if (!(req.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+    return new Response(null, { status: 415 });
+  }
+  const declarado = Number(req.headers.get("content-length"));
+  if (Number.isFinite(declarado) && declarado > 32768) return new Response(null, { status: 413 });
   const bruto = await req.text();
-  if (bruto.length > 32768) return new Response(null, { status: 413 });
+  if (new TextEncoder().encode(bruto).byteLength > 32768) return new Response(null, { status: 413 });
   let id: unknown;
   try { id = JSON.parse(bruto)?.data?.id; } catch { return new Response(null, { status: 400 }); }
   if (typeof id !== "string" || !/^[a-zA-Z0-9_-]{4,58}$/.test(id)) return new Response(null, { status: 400 });

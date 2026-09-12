@@ -1,8 +1,12 @@
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { enviarWhatsApp, lerTreinamento, responder, type Historico } from "@/lib/robo";
 import { registrarDuvida } from "@/lib/aprendizado";
 import { responderLocal } from "@/lib/robo-interno";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { ler } from "@/lib/config-integracoes";
+import { ErroCorpo, lerJsonObjeto } from "@/lib/corpo-json";
+import { excedeu, ipDe } from "@/lib/limite";
 
 /* "oi", "bom dia" e afins: a saudação de boas-vindas já cobre. */
 const SO_SAUDACAO = /^(oi+|ol[aá]+|opa+|e a[ií]|eae|salve|hey|oii+|bom dia|boa tarde|boa noite|tudo bem|tudo bom|blz|beleza)[\s!,.?]*$/i;
@@ -18,6 +22,21 @@ export const maxDuration = 60;
    mensagens seguidas quer UMA resposta que entenda as três, não três
    respostas soltas. */
 const ESPERA_MS = 9000;
+
+function igualSeguro(a: string, b: string) {
+  const x = crypto.createHash("sha256").update(a).digest();
+  const y = crypto.createHash("sha256").update(b).digest();
+  return crypto.timingSafeEqual(x, y);
+}
+
+function segredoRecebido(req: Request) {
+  const auth = req.headers.get("authorization") ?? "";
+  const bearer = auth.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+  return req.headers.get("x-webhook-secret")?.trim()
+    || bearer
+    || new URL(req.url).searchParams.get("chave")?.trim()
+    || "";
+}
 
 /* Webhook de mensagens recebidas da Z-API.
    Grava a mensagem, decide se o robô responde e devolve 200 rápido —
@@ -50,17 +69,43 @@ async function saudar(
 }
 
 export async function POST(req: Request) {
+  if (excedeu(`zapi-webhook:${ipDe(req)}`, 600, 60_000)) {
+    return new NextResponse(null, { status: 429, headers: { "Retry-After": "60" } });
+  }
+
+  let segredoEsperado: string;
+  try { segredoEsperado = (await ler("ZAPI_WEBHOOK_SECRET"))?.trim() ?? ""; }
+  catch { return NextResponse.json({ erro: "Webhook indisponível." }, { status: 503 }); }
+  if (segredoEsperado.length < 32) {
+    return NextResponse.json({ erro: "Webhook indisponível." }, { status: 503 });
+  }
+  if (!igualSeguro(segredoRecebido(req), segredoEsperado)) {
+    return new NextResponse(null, { status: 401, headers: { "Cache-Control": "no-store" } });
+  }
+
   const db = supabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, motivo: "sem_supabase" }, { status: 202 });
 
-  const corpo = await req.json().catch(() => null);
-  if (!corpo) return NextResponse.json({ erro: "JSON inválido" }, { status: 400 });
+  let corpo: Record<string, unknown>;
+  try { corpo = await lerJsonObjeto(req, 64 * 1024); }
+  catch (e) {
+    if (e instanceof ErroCorpo) return NextResponse.json({ erro: e.message }, { status: e.status });
+    return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
+  }
+
+  const instanciaEsperada = (await ler("ZAPI_INSTANCIA"))?.trim();
+  if (instanciaEsperada && corpo.instanceId !== instanciaEsperada) {
+    return new NextResponse(null, { status: 401 });
+  }
 
   // mensagens que nós mesmos enviamos voltam no webhook — ignorar
   if (corpo.fromMe) return NextResponse.json({ ok: true, ignorado: "propria" });
 
   const telefone = String(corpo.phone ?? "").replace(/\D/g, "");
-  const texto = String(corpo.text?.message ?? corpo.message ?? "").trim();
+  const objetoTexto = corpo.text && typeof corpo.text === "object" && !Array.isArray(corpo.text)
+    ? corpo.text as Record<string, unknown>
+    : null;
+  const texto = String(objetoTexto?.message ?? corpo.message ?? "").trim();
   const zapId = corpo.messageId ? String(corpo.messageId) : null;
 
   /* Grupo, lista de transmissão, status e canal ficam de fora: o robô é
@@ -185,6 +230,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, respondeu: true, escalou: resposta.escalar });
   } catch (e) {
     console.error("[zapi] falha ao processar:", (e as Error).message);
-    return NextResponse.json({ ok: false, motivo: (e as Error).message.slice(0, 120) }, { status: 202 });
+    return NextResponse.json({ ok: false, motivo: "falha_temporaria" }, { status: 202 });
   }
 }

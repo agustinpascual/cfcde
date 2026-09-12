@@ -42,8 +42,8 @@ async function origemAtual() {
 }
 
 export default async function Page({ params }: { params: Promise<{ sessao: string }> }) {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const { sessao } = await params;
   const [carrinho, vivos, origem, modeloCarrinho] = await Promise.all([
@@ -62,9 +62,9 @@ export default async function Page({ params }: { params: Promise<{ sessao: strin
   ].filter(Boolean);
 
   return (
-    <Casca atual="/painel/pedidos" titulo={carrinho.nome ?? "Carrinho abandonado"}
+    <Casca atual="/ioh3j4ciof3n3oic/pedidos" titulo={carrinho.nome ?? "Carrinho abandonado"}
       subtitulo={`Última atividade em ${quando(carrinho.atualizado_em)}`} aoVivo={vivos.length}>
-      <p className={d.voltar}><Link href="/painel/pedidos/abandonados">← Voltar para carrinhos abandonados</Link></p>
+      <p className={d.voltar}><Link href="/ioh3j4ciof3n3oic/pedidos/abandonados">← Voltar para carrinhos abandonados</Link></p>
 
       <section className={`${s.cartao} ${c.recuperacao}`}>
         <div className={c.recuperacaoCabecalho}>

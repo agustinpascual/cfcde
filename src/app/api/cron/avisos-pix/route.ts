@@ -7,12 +7,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
-  /* Na VPS o agendador roda dentro do próprio container. Instalações antigas
-     já têm PAINEL_SENHA, então ela funciona como fallback até um segredo
-     exclusivo ser definido, sem deixar a rota pública. */
-  const segredo = process.env.CRON_SECRET || process.env.PAINEL_SENHA;
+  /* Segredo exclusivo: a senha administrativa nunca trafega em chamadas de
+     cron nem aparece na configuração de outro serviço. */
+  const segredo = process.env.CRON_SECRET;
   if (!segredo || req.headers.get("authorization") !== `Bearer ${segredo}`) {
-    return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
+    return NextResponse.json({ erro: "não autorizado" }, {
+      status: 401, headers: { "Cache-Control": "no-store" },
+    });
   }
 
   try {
@@ -20,7 +21,9 @@ export async function GET(req: Request) {
        antes do ciclo nunca recebe mensagem de cobrança pendente. */
     const pagamentos = await reconciliarPendentes(30);
     const recuperacoes = await processarRecuperacoesWhatsApp();
-    return NextResponse.json({ ok: true, pagamentos, recuperacoes });
+    return NextResponse.json({ ok: true, pagamentos, recuperacoes }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (e) {
     console.error("[recuperacoes] falha:", (e as Error).message);
     return NextResponse.json({ erro: "Falha ao processar recuperações." }, { status: 500 });

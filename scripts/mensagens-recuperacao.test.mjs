@@ -37,7 +37,7 @@ test("telefone brasileiro é normalizado para o link do WhatsApp", () => {
 });
 
 test("painel e ações de recuperação usam os modelos salvos", () => {
-  const pagina = fonte("../src/app/painel/whatsapp/page.tsx");
+  const pagina = fonte("../src/app/ioh3j4ciof3n3oic/whatsapp/page.tsx");
   const formulario = fonte("../src/components/painel/MensagensRecuperacao.tsx");
   const envio = fonte("../src/lib/robo.ts");
   const recuperacao = fonte("../src/lib/recuperacao-whatsapp.ts");

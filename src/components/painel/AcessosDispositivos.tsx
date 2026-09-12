@@ -10,7 +10,7 @@ async function lerContagens(periodo: Periodo) {
   const consulta = () => db.from("sessoes").select("sessao", { count: "exact", head: true })
     .gte("criado_em", `${periodo.de}T00:00:00-03:00`)
     .lte("criado_em", `${periodo.ate}T23:59:59.999-03:00`)
-    .or("pagina.is.null,pagina.not.like./painel%");
+    .or("pagina.is.null,pagina.not.like./ioh3j4ciof3n3oic%");
 
   try {
     // COUNT no banco evita o limite de 1.000 linhas das consultas de dados.

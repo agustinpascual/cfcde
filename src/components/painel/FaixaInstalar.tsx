@@ -11,7 +11,7 @@ export default function FaixaInstalar({ faltam }: { faltam: number }) {
         <strong>O banco precisa ser atualizado</strong>
         {`Há ${faltam} ${faltam === 1 ? "item pendente" : "itens pendentes"} (tabela ou coluna). As telas relacionadas podem ficar incompletas.`}
       </p>
-      <Link href="/painel/instalar">Instalar agora</Link>
+      <Link href="/ioh3j4ciof3n3oic/instalar">Instalar agora</Link>
     </div>
   );
 }

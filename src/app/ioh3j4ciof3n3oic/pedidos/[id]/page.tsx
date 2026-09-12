@@ -44,8 +44,8 @@ const tel = (v: string | null) => {
 };
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const { id } = await params;
   const [pedido, vivos, modeloPix] = await Promise.all([
@@ -72,12 +72,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : [];
 
   return (
-    <Casca atual="/painel/pedidos" titulo={pedido.referencia}
+    <Casca atual="/ioh3j4ciof3n3oic/pedidos" titulo={pedido.referencia}
       subtitulo={`Criado em ${quando(pedido.criado_em)}`} aoVivo={vivos.length}>
       {pedido.metodo_pagamento === "pix" && <Recarrega segundos={5} />}
       <p className={d.voltar}>
-        <Link href="/painel/pedidos">← Voltar para os pedidos</Link>
-        <Link href={`/painel/pedidos/${id}/recibo`} className={d.linkRecibo}>Recibo de compra</Link>
+        <Link href="/ioh3j4ciof3n3oic/pedidos">← Voltar para os pedidos</Link>
+        <Link href={`/ioh3j4ciof3n3oic/pedidos/${id}/recibo`} className={d.linkRecibo}>Recibo de compra</Link>
       </p>
 
       <div className={d.topo}>

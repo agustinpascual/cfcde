@@ -8,7 +8,9 @@ export const DURACAO_COOKIE_RECUPERACAO = 30 * 60;
 
 function segredo() {
   return process.env.RECUPERACAO_CARRINHO_SECRET?.trim()
-    || process.env.PAINEL_SENHA?.trim()
+    || process.env.CHAVE_MESTRA?.trim()
+    || process.env.PAINEL_SESSION_SECRET?.trim()
+    || (process.env.NODE_ENV !== "production" ? process.env.PAINEL_SENHA?.trim() : "")
     || "";
 }
 

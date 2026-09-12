@@ -23,7 +23,7 @@ export default function FormEntrar() {
          na requisição do servidor. Com router.push/replace a requisição RSC
          saía antes do cookie valer e caía de volta na tela de login. */
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/painel");
+      window.location.assign("/ioh3j4ciof3n3oic");
     } catch {
       setErro("Falha de conexão.");
     } finally {

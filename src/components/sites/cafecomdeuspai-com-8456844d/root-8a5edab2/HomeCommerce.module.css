@@ -8,7 +8,7 @@
 .arrows button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid #dedbd8; border-radius: 50%; background: #fff; cursor: pointer; color: #6c6661; transition: border-color .2s, color .2s; }
 .arrows button:hover { border-color: #956738; color: #956738; }
 .arrows span { font: 300 29px/28px Georgia, serif; transform: translateY(-1px); }
-.rail { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 66px) / 4); gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
+.rail { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 66px) / 4); gap: 22px; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-inline: none; touch-action: pan-y; }
 .rail::-webkit-scrollbar { display: none; }
 .card { min-width: 0; color: inherit; text-decoration: none; scroll-snap-align: start; }
 .imageWrap { position: relative; aspect-ratio: 1; overflow: hidden; background: #fafafa; }
@@ -80,5 +80,5 @@
 
 @media (max-width: 760px) {
   .commerce > section:not(:first-child) { contain-intrinsic-size: auto 520px; }
-  .rail { touch-action: pan-x pan-y; }
+  .rail { touch-action: pan-y; }
 }

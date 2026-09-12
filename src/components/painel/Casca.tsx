@@ -1,20 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import MenuMobile from "./MenuMobile";
-import { IconeBanco, IconeChat, IconeEmail, IconePedidos, IconePlug, IconeVendas } from "./Icones";
+import { IconeBanco, IconeChat, IconePedidos, IconePlug, IconeVendas } from "./Icones";
 import { marca } from "@/components/storefront/brand";
 import s from "./painel.module.css";
 
 const ITENS = [
   { grupo: "Operação", links: [
-    { href: "/painel", rotulo: "Dashboard", Icone: IconeVendas, vivo: true },
-    { href: "/painel/pedidos", rotulo: "Pedidos", Icone: IconePedidos },
+    { href: "/ioh3j4ciof3n3oic", rotulo: "Dashboard", Icone: IconeVendas, vivo: true },
+    { href: "/ioh3j4ciof3n3oic/pedidos", rotulo: "Pedidos", Icone: IconePedidos },
   ]},
   { grupo: "Configuração", links: [
-    { href: "/painel/integracoes", rotulo: "Integrações", Icone: IconePlug },
-    { href: "/painel/whatsapp", rotulo: "WhatsApp", Icone: IconeChat },
-    { href: "/painel/emails", rotulo: "E-mails", Icone: IconeEmail },
-    { href: "/painel/instalar", rotulo: "Instalação", Icone: IconeBanco },
+    { href: "/ioh3j4ciof3n3oic/integracoes", rotulo: "Integrações", Icone: IconePlug },
+    { href: "/ioh3j4ciof3n3oic/whatsapp", rotulo: "WhatsApp", Icone: IconeChat },
+    { href: "/ioh3j4ciof3n3oic/instalar", rotulo: "Instalação", Icone: IconeBanco },
   ]},
 ];
 
@@ -25,7 +24,7 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
     <div className={s.app}>
       <MenuMobile>
       <nav className={s.lateral} aria-label="Navegação do painel">
-        <Link href="/painel" className={s.marca}>
+        <Link href="/ioh3j4ciof3n3oic" className={s.marca}>
           {/* O logo é preto com o "fé" em cobre: sobre a barra escura sumiria,
               e inverter as cores mataria o cobre. Vai numa placa creme — que é
               a combinação da própria marca. Proporção real 665×748. */}
@@ -55,7 +54,9 @@ export default function Casca({ atual, titulo, subtitulo, aoVivo = 0, children }
         </div>
 
         <div className={s.rodapeLateral}>
-          <a href="/painel/sair" className={s.sair}>Sair</a>
+          <form action="/ioh3j4ciof3n3oic/sair" method="post">
+            <button type="submit" className={s.sair}>Sair</button>
+          </form>
           <p>Dados em tempo real do Supabase</p>
         </div>
       </nav>

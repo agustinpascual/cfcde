@@ -11,6 +11,7 @@ import { novoNumeroPedido } from "@/lib/numero-pedido";
 import { origemOficial } from "@/lib/origem";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { documentoBrasileiroValido } from "@/lib/documento-br";
+import { ErroCorpo, lerJsonObjeto } from "@/lib/corpo-json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,10 +42,10 @@ export async function POST(req: Request) {
   }
 
   let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ erro: "JSON inválido" }, { status: 400 });
+  try { body = await lerJsonObjeto(req, 32 * 1024); }
+  catch (e) {
+    if (e instanceof ErroCorpo) return NextResponse.json({ erro: e.message }, { status: e.status });
+    return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
   }
 
   const nome = String(body.nome ?? "").trim();

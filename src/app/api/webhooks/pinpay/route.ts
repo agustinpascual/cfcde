@@ -47,10 +47,20 @@ export async function POST(req: Request) {
 
      Recusar o webhook por falta de secret (o que este código fazia) era pior:
      nenhum pagamento era confirmado. */
+  if (!(req.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+    return NextResponse.json({ erro: "Conteúdo inválido." }, { status: 415 });
+  }
+  const declarado = Number(req.headers.get("content-length"));
+  if (Number.isFinite(declarado) && declarado > 64 * 1024) {
+    return new NextResponse(null, { status: 413 });
+  }
   const segredo = await ler("PINPAY_WEBHOOK_SECRET");
 
   // req.text() preserva os bytes exatos — necessário para o HMAC bater
   const bruto = await req.text();
+  if (new TextEncoder().encode(bruto).byteLength > 64 * 1024) {
+    return new NextResponse(null, { status: 413 });
+  }
 
   let confiavel = false;
   if (segredo) {

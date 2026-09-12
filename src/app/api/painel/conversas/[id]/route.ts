@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { autenticado } from "@/lib/painel-auth";
 import { enviarMidiaWhatsApp, enviarWhatsApp } from "@/lib/robo";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { formatarRespostaManual } from "@/lib/whatsapp-manual";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,9 +70,16 @@ export async function POST(req: Request, { params }: Ctx) {
     return NextResponse.json({ erro: "mídia inválida" }, { status: 400 });
   }
 
+  const { data: configuracaoAtendente } = await db
+    .from("treinamento")
+    .select("atendente_nome")
+    .eq("id", 1)
+    .maybeSingle();
+  const textoAssinado = texto ? formatarRespostaManual(configuracaoAtendente?.atendente_nome, texto) : "";
+
   /* Grava antes de enviar: se a Z-API falhar, a mensagem fica registrada com
      o erro em vez de sumir da tela do atendente. */
-  const rotulo = texto || (midiaTipo === "audio" ? "🎤 Áudio" : midiaTipo === "imagem" ? "📷 Imagem" : `📎 ${midiaNome ?? "Arquivo"}`);
+  const rotulo = textoAssinado || (midiaTipo === "audio" ? "🎤 Áudio" : midiaTipo === "imagem" ? "📷 Imagem" : `📎 ${midiaNome ?? "Arquivo"}`);
 
   const { data: linha } = await db.from("mensagens")
     .insert({
@@ -81,8 +89,8 @@ export async function POST(req: Request, { params }: Ctx) {
     .select("id").single();
 
   try {
-    if (midia) await enviarMidiaWhatsApp(conversa.telefone, midia, midiaTipo, midiaNome, texto || undefined);
-    else await enviarWhatsApp(conversa.telefone, texto);
+    if (midia) await enviarMidiaWhatsApp(conversa.telefone, midia, midiaTipo, midiaNome, textoAssinado || undefined);
+    else await enviarWhatsApp(conversa.telefone, textoAssinado);
     await db.from("mensagens").update({ enviada: true }).eq("id", linha?.id ?? 0);
   } catch (e) {
     const erro = (e as Error).message.slice(0, 300);

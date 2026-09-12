@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { autenticado } from "@/lib/painel-auth";
 import { reconciliarPendentes } from "@/lib/reconciliar";
+import { mesmaOrigem } from "@/lib/mesma-origem";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ async function autorizado(req: Request): Promise<boolean> {
   const segredo = process.env.CRON_SECRET;
   if (segredo && (req.headers.get("x-cron-secret") === segredo ||
       req.headers.get("authorization") === `Bearer ${segredo}`)) return true;
-  return autenticado();
+  return mesmaOrigem(req) && autenticado();
 }
 
 export async function POST(req: Request) {
@@ -32,5 +33,13 @@ export async function POST(req: Request) {
 
 // GET com o mesmo secret facilita o agendamento por cron
 export async function GET(req: Request) {
+  const segredo = process.env.CRON_SECRET;
+  const recebido = req.headers.get("x-cron-secret")
+    || req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!segredo || recebido !== segredo) {
+    return NextResponse.json({ erro: "não autorizado" }, {
+      status: 401, headers: { "Cache-Control": "no-store" },
+    });
+  }
   return POST(req);
 }

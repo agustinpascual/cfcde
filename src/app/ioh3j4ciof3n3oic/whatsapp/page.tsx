@@ -3,14 +3,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import ConexaoZap from "@/components/painel/ConexaoZap";
-import Conversas, { type Conversa } from "@/components/painel/Conversas";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import MensagensRecuperacao from "@/components/painel/MensagensRecuperacao";
+import WhatsAppAbas from "@/components/painel/WhatsAppAbas";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { lerTreinamento } from "@/lib/robo";
 import { ler } from "@/lib/config-integracoes";
 import { MENSAGEM_CARRINHO_PADRAO, MENSAGEM_PIX_PADRAO, modelosRecuperacao } from "@/lib/mensagens-recuperacao";
-import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import s from "@/components/painel/painel.module.css";
 import w from "@/components/painel/whatsapp.module.css";
@@ -19,10 +18,9 @@ export const metadata: Metadata = { title: "WhatsApp", robots: { index: false, f
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
-  const db = supabaseAdmin();
   const [vivos, treinamento, instancia, mensagemPix, mensagemCarrinho, atrasoPix, atrasoCarrinho, botaoPix] = await Promise.all([
     lerAoVivo(), lerTreinamento(), ler("ZAPI_INSTANCIA"),
     ler("WHATSAPP_MSG_PIX_PENDENTE"), ler("WHATSAPP_MSG_CARRINHO_ABANDONADO"),
@@ -30,24 +28,17 @@ export default async function Page() {
     ler("WHATSAPP_PIX_BOTAO_COPIAR"),
   ]);
 
-  let conversas: Conversa[] = [];
-  if (db) {
-    const { data } = await db.from("conversas").select("*").order("ultima_em", { ascending: false }).limit(60);
-    conversas = (data ?? []) as Conversa[];
-  }
-
-  const naoLidas = conversas.reduce((a, c) => a + (c.nao_lidas ?? 0), 0);
-
   const _inst = await estadoInstalacao();
 
   const _faltam = _inst?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
 
 
   return (
-    <Casca atual="/painel/whatsapp" titulo="WhatsApp"
-      subtitulo={`${conversas.length} conversa${conversas.length === 1 ? "" : "s"}${naoLidas ? ` · ${naoLidas} não lida${naoLidas === 1 ? "" : "s"}` : ""}`}
+    <Casca atual="/ioh3j4ciof3n3oic/whatsapp" titulo="WhatsApp"
+      subtitulo="Conexão e mensagens automáticas de recuperação"
       aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
+      <WhatsAppAbas atual="recuperacao" />
 
       <div className={w.barra}>
         <span className={`${w.estado} ${treinamento.ativo ? w.estadoOn : w.estadoOff}`}>
@@ -56,16 +47,16 @@ export default async function Page() {
         <span className={`${w.estado} ${instancia ? w.estadoOn : w.estadoOff}`}>
           Z-API {instancia ? "conectada" : "não configurada"}
         </span>
-        <Link href="/painel/whatsapp/treinamento" className={w.btnTreinar}>Treinar o robô</Link>
+        <Link href="/ioh3j4ciof3n3oic/whatsapp/treinamento" className={w.btnTreinar}>Treinar o robô</Link>
       </div>
 
       {!instancia && (
         <div className={s.aviso}>
           <p className={s.avisoTitulo}>Z-API não configurada</p>
           <p>
-            Preencha as credenciais em <Link href="/painel/integracoes" style={{ textDecoration: "underline" }}>Integrações</Link>{" "}
+            Preencha as credenciais em <Link href="/ioh3j4ciof3n3oic/integracoes" style={{ textDecoration: "underline" }}>Integrações</Link>{" "}
             e aponte o webhook de mensagens recebidas para{" "}
-            <code>https://cafecomdeusepai.com/api/webhooks/zapi</code>.
+            <code>https://cafecomdeusepai.com/api/webhooks/zapi?chave=SEU_SEGREDO_DO_WEBHOOK</code>.
           </p>
         </div>
       )}
@@ -75,8 +66,6 @@ export default async function Page() {
         carrinho={modelosRecuperacao(mensagemCarrinho, MENSAGEM_CARRINHO_PADRAO)}
         atrasoPix={Number(atrasoPix) || 0} atrasoCarrinho={Number(atrasoCarrinho) || 0}
         botaoPix={botaoPix !== "0"} />
-      <Conversas inicial={conversas} />
-
     </Casca>
   );
 }

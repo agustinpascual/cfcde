@@ -11,7 +11,7 @@ const PING = 20000;
 
 /* O painel admin não é visita de cliente. Sem isso o seu próprio acesso
    aparecia no mapa ao vivo e contava no funil. */
-const PRIVADAS = ["/painel"];
+const PRIVADAS = ["/ioh3j4ciof3n3oic"];
 export const rastreavel = (caminho: string) => !PRIVADAS.some((p) => caminho.startsWith(p));
 
 function idDaSessao() {

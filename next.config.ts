@@ -57,12 +57,13 @@ const nextConfig: NextConfig = {
     /* CSP: 'unsafe-inline' em script continua necessário para o bootstrap do
        Next; o resto é fechado. connect-src libera só ViaCEP e Supabase, que
        são os dois destinos que o navegador realmente chama. */
+    const avaliarEmDev = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
     const base: Record<string, string> = {
       "default-src": "'self'",
       /* connect.facebook.net serve o fbevents.js do Meta Pixel. Sem esta
          liberação a CSP bloqueia o script e o rastreamento morre calado —
          nenhum erro visível, só nenhum evento chegando ao Gerenciador. */
-      "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://*.doubleclick.net https://static.cloudflareinsights.com https://app.axxonpay.com.br https://js.stripe.com https://api.upaybrasil.com.br",
+      "script-src": `'self' 'unsafe-inline'${avaliarEmDev} https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://*.doubleclick.net https://static.cloudflareinsights.com https://app.axxonpay.com.br https://js.stripe.com https://api.upaybrasil.com.br`,
       "style-src": "'self' 'unsafe-inline'",
       /* O pixel também funciona por <img> quando o JS está desligado. */
       "img-src": "'self' data: blob: https://www.facebook.com https://connect.facebook.net https://*.google-analytics.com https://www.googletagmanager.com https://*.googleadservices.com https://*.googlesyndication.com https://*.doubleclick.net",
@@ -104,6 +105,24 @@ const nextConfig: NextConfig = {
       "frame-src": "https:",
       "form-action": "'self' https:",
     });
+    /* O painel não carrega pixels nem SDKs de pagamento. Uma política própria
+       impede que um XSS administrativo busque scripts ou envie dados para os
+       muitos terceiros necessários apenas na loja/checkout. */
+    const cspPainel = montar({
+      "default-src": "'self'",
+      "script-src": `'self' 'unsafe-inline'${avaliarEmDev}`,
+      "style-src": "'self' 'unsafe-inline'",
+      "img-src": "'self' data: blob: https:",
+      "media-src": "'self' data: blob: https:",
+      "font-src": "'self' data:",
+      "connect-src": "'self'",
+      "frame-src": "'none'",
+      "form-action": "'self'",
+      "base-uri": "'self'",
+      "frame-ancestors": "'none'",
+      "object-src": "'none'",
+      "upgrade-insecure-requests": "",
+    });
 
     const seguranca = [
       { key: "Content-Security-Policy", value: csp },
@@ -113,6 +132,7 @@ const nextConfig: NextConfig = {
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
       { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
       { key: "X-DNS-Prefetch-Control", value: "off" },
+      { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
     ];
 
     return [
@@ -128,11 +148,22 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
       {
+        source: "/marca/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
         // painel e checkout nunca em cache nem em índice
-        source: "/(painel|checkout|pagamento)/:path*",
+        source: "/(ioh3j4ciof3n3oic|checkout|pagamento)/:path*",
         headers: [
           { key: "Cache-Control", value: "no-store, max-age=0" },
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
+        source: "/ioh3j4ciof3n3oic/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: cspPainel },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
         ],
       },
       {

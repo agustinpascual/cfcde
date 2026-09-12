@@ -8,10 +8,10 @@ export default function SubAbasPedidos({
 }: { atual: "pedidos" | "abandonados"; abandonados?: number }) {
   return (
     <nav className={s.abas} aria-label="Seções de pedidos">
-      <Link href="/painel/pedidos" className={atual === "pedidos" ? s.ativa : s.aba}>
+      <Link href="/ioh3j4ciof3n3oic/pedidos" className={atual === "pedidos" ? s.ativa : s.aba}>
         Pedidos
       </Link>
-      <Link href="/painel/pedidos/abandonados" className={atual === "abandonados" ? s.ativa : s.aba}>
+      <Link href="/ioh3j4ciof3n3oic/pedidos/abandonados" className={atual === "abandonados" ? s.ativa : s.aba}>
         Abandonados
         {abandonados > 0 && <span className={s.contador}>{abandonados}</span>}
       </Link>

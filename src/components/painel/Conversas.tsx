@@ -40,7 +40,10 @@ const hora = (iso: string) => formatarHoraBrasilia(iso);
 const diaCheio = (iso: string) =>
   formatarDataBrasilia(iso, { month: "long" });
 
-export default function Conversas({ inicial }: { inicial: Conversa[] }) {
+export default function Conversas({ inicial, nomeAtendenteInicial }: {
+  inicial: Conversa[];
+  nomeAtendenteInicial: string;
+}) {
   const [conversas, setConversas] = useState(inicial);
   const [aberta, setAberta] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
@@ -54,6 +57,9 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
   const [anexo, setAnexo] = useState<{ dataUrl: string; nome: string; tipo: "imagem" | "audio" | "arquivo" } | null>(null);
   const [gravando, setGravando] = useState(false);
   const [segundos, setSegundos] = useState(0);
+  const [nomeAtendente, setNomeAtendente] = useState(nomeAtendenteInicial);
+  const [salvandoNome, setSalvandoNome] = useState(false);
+  const [estadoNome, setEstadoNome] = useState<"ok" | "erro" | null>(null);
 
   const arquivoRef = useRef<HTMLInputElement>(null);
   const gravadorRef = useRef<MediaRecorder | null>(null);
@@ -189,6 +195,30 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
     }
   }
 
+  async function salvarNome(e: React.FormEvent) {
+    e.preventDefault();
+    const nome = nomeAtendente.trim();
+    if (nome.length < 2) {
+      setEstadoNome("erro");
+      return;
+    }
+    setSalvandoNome(true);
+    setEstadoNome(null);
+    try {
+      const resposta = await fetch("/api/painel/conversas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atendente_nome: nome }),
+      });
+      setEstadoNome(resposta.ok ? "ok" : "erro");
+      if (resposta.ok) setNomeAtendente(nome);
+    } catch {
+      setEstadoNome("erro");
+    } finally {
+      setSalvandoNome(false);
+    }
+  }
+
   async function apagar() {
     if (!atual) return;
     const id = atual.id;
@@ -223,7 +253,29 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
   let diaAnterior = "";
 
   return (
-    <div className={`${w.painelChat} ${aberta ? w.comAberta : ""}`}>
+    <>
+      <form className={w.atendenteConfig} onSubmit={salvarNome}>
+        <label htmlFor="nome-atendente-manual">
+          <strong>Nome nas respostas manuais</strong>
+          <span>A mensagem chegará como <b>{nomeAtendente.trim() || "Nome"}:</b> seguida do texto.</span>
+        </label>
+        <input
+          id="nome-atendente-manual"
+          value={nomeAtendente}
+          onChange={(evento) => { setNomeAtendente(evento.target.value.slice(0, 60)); setEstadoNome(null); }}
+          placeholder="Ex.: Ana"
+          autoComplete="name"
+        />
+        <button type="submit" disabled={salvandoNome || nomeAtendente.trim().length < 2}>
+          {salvandoNome ? "Salvando…" : "Salvar nome"}
+        </button>
+        {estadoNome && (
+          <span className={estadoNome === "ok" ? w.nomeOk : w.nomeErro} role="status">
+            {estadoNome === "ok" ? "Nome salvo." : "Não foi possível salvar."}
+          </span>
+        )}
+      </form>
+      <div className={`${w.painelChat} ${aberta ? w.comAberta : ""}`}>
       {/* ---------- coluna esquerda ---------- */}
       <aside className={w.coluna}>
         <div className={w.buscaBox}>
@@ -429,6 +481,7 @@ export default function Conversas({ inicial }: { inicial: Conversa[] }) {
           </>
         )}
       </section>
-    </div>
+      </div>
+    </>
   );
 }

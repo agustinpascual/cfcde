@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
 import FaixaInstalar from "@/components/painel/FaixaInstalar";
 import Aprendizado from "@/components/painel/Aprendizado";
 import FormTreinamento from "@/components/painel/FormTreinamento";
+import WhatsAppAbas from "@/components/painel/WhatsAppAbas";
 import { estadoInstalacao, lerAoVivo } from "@/components/painel/dados";
 import { lerTreinamento } from "@/lib/robo";
 import { intencoesEmbutidas } from "@/lib/robo-interno";
@@ -28,8 +28,8 @@ const ROTULOS: Record<string, string> = {
 };
 
 export default async function Page() {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const [vivos, treinamento] = await Promise.all([lerAoVivo(), lerTreinamento()]);
   const semChave = !process.env.ANTHROPIC_API_KEY;
@@ -40,14 +40,10 @@ export default async function Page() {
 
 
   return (
-    <Casca atual="/painel/whatsapp" titulo="Treinamento do robô"
+    <Casca atual="/ioh3j4ciof3n3oic/whatsapp" titulo="Treinamento do robô"
       subtitulo="Define como ele responde no WhatsApp" aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
-      <p style={{ marginBottom: 18 }}>
-        <Link href="/painel/whatsapp" style={{ fontSize: 13, color: "#2f5fd0", textDecoration: "underline" }}>
-          ← Voltar para as conversas
-        </Link>
-      </p>
+      <WhatsAppAbas atual="treinamento" />
 
       <div className={s.avisoOk}>
         <p className={s.avisoTitulo}>

@@ -16,11 +16,11 @@ const videos = [1, 2, 3, 4, 5, 6, 7].map((number) => ({
 
 const wrap = (index: number) => (index + videos.length) % videos.length;
 
-export default function HomeVideoStories() {
+export default function HomeVideoStories({ floating = false }: { floating?: boolean }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [center, setCenter] = useState(0);
   const [story, setStory] = useState<number | null>(null);
-  const [mediaAtiva, setMediaAtiva] = useState(false);
+  const [mediaAtiva, setMediaAtiva] = useState(floating);
   const [muted, setMuted] = useState(true);
   const [liked, setLiked] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -29,6 +29,7 @@ export default function HomeVideoStories() {
   const visible = [-2, -1, 0, 1, 2].map((offset) => ({ index: wrap(center + offset), offset }));
 
   useEffect(() => {
+    if (floating) return;
     const section = sectionRef.current;
     if (!section) return;
 
@@ -48,7 +49,7 @@ export default function HomeVideoStories() {
 
     observer.observe(section);
     return () => observer.disconnect();
-  }, []);
+  }, [floating]);
 
   function close() { setStory(null); setProgress(0); }
   function move(direction: number) {
@@ -93,34 +94,43 @@ export default function HomeVideoStories() {
     else await navigator.clipboard?.writeText(window.location.href);
   }
 
-  return <section ref={sectionRef} className={styles.section} aria-labelledby="stories-title">
-    <div className={styles.inner}>
-      <h2 id="stories-title">Descubra cada detalhe em vídeo</h2>
-      <div className={styles.carousel}>
-        {visible.map(({ index, offset }) => <button key={index} className={`${styles.card} ${offset === 0 ? styles.central : ""} ${Math.abs(offset) === 2 ? styles.edge : ""}`} type="button" onClick={() => open(index)} aria-label={`Abrir vídeo ${index + 1}`}>
-          <video
-            ref={(element) => {
-              if (element) cardVideos.current.set(index, element);
-              else cardVideos.current.delete(index);
-            }}
-            /* A mídia só é conectada quando a seção se aproxima da tela.
-               Isso evita baixar vários megabytes de vídeo durante a abertura
-               da home, sem atrasar a reprodução quando o visitante chegar. */
-            src={mediaAtiva && offset === 0 ? videos[index].src : undefined}
-            poster={mediaAtiva ? videos[index].poster : undefined}
-            muted
-            playsInline
-            autoPlay={mediaAtiva && offset === 0}
-            preload={mediaAtiva && offset === 0 ? "metadata" : "none"}
-            onEnded={offset === 0 ? avancar : undefined}
-          />
-          <span className={styles.play} aria-hidden="true">▶</span>
-        </button>)}
+  const launcher = floating ? (
+    <button className={styles.launcher} type="button" onClick={() => open(0)} aria-label="Abrir stories em vídeo">
+      <span className={styles.launcherMedia}>
+        <video src={videos[0].src} poster={videos[0].poster} muted autoPlay loop playsInline preload="metadata" aria-hidden="true" />
+        <span className={styles.launcherShade} aria-hidden="true" />
+      </span>
+    </button>
+  ) : (
+    <section ref={sectionRef} className={styles.section} aria-labelledby="stories-title">
+      <div className={styles.inner}>
+        <h2 id="stories-title">Descubra cada detalhe em vídeo</h2>
+        <div className={styles.carousel}>
+          {visible.map(({ index, offset }) => <button key={index} className={`${styles.card} ${offset === 0 ? styles.central : ""} ${Math.abs(offset) === 2 ? styles.edge : ""}`} type="button" onClick={() => open(index)} aria-label={`Abrir vídeo ${index + 1}`}>
+            <video
+              ref={(element) => {
+                if (element) cardVideos.current.set(index, element);
+                else cardVideos.current.delete(index);
+              }}
+              /* A mídia só é conectada quando a seção se aproxima da tela.
+                 Isso evita baixar vários megabytes de vídeo durante a abertura
+                 da home, sem atrasar a reprodução quando o visitante chegar. */
+              src={mediaAtiva && offset === 0 ? videos[index].src : undefined}
+              poster={mediaAtiva ? videos[index].poster : undefined}
+              muted
+              playsInline
+              autoPlay={mediaAtiva && offset === 0}
+              preload={mediaAtiva && offset === 0 ? "metadata" : "none"}
+              onEnded={offset === 0 ? avancar : undefined}
+            />
+            <span className={styles.play} aria-hidden="true">▶</span>
+          </button>)}
+        </div>
       </div>
-    </div>
+    </section>
+  );
 
-    {/* Portal no body: o ScrollReveal deixa "will-change: transform" nas
-        seções, e isso prende qualquer position:fixed dentro da seção. */}
+  return <>{launcher}
     {story !== null && createPortal(<div className={styles.modal} role="dialog" aria-modal="true" aria-label={`Story ${story + 1} de ${videos.length}`}>
       <div className={styles.story}>
         <div className={styles.stage}>
@@ -141,5 +151,5 @@ export default function HomeVideoStories() {
         <button className={`${styles.zone} ${styles.right}`} type="button" onClick={() => move(1)} aria-label="Próximo story" />
       </div>
     </div>, document.body)}
-  </section>;
+  </>;
 }

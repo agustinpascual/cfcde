@@ -10,7 +10,7 @@ type ConfigMarketing = { metaPixelIds: string[]; googleTagIds: string[]; googleT
 
 const IDS_FALLBACK = [...new Set((process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "")
   .split(",").map((id) => id.trim()).filter((id) => /^\d{8,25}$/.test(id)))];
-const publico = (path: string) => path !== "/painel" && !path.startsWith("/painel/");
+const publico = (path: string) => path !== "/ioh3j4ciof3n3oic" && !path.startsWith("/ioh3j4ciof3n3oic/");
 const filaMeta: EventoPendente[] = [];
 const filaGoogle: EventoPendente[] = [];
 let configResolvida = false;

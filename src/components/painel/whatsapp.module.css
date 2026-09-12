@@ -5,6 +5,24 @@
 .btnTreinar { margin-left: auto; background: var(--cdp-menu); color: #fff; font-size: 13px; font-weight: 700; border-radius: 9px; padding: 10px 18px; }
 .btnTreinar:hover { background: var(--cdp-menu-2); }
 
+.subAbas { display: flex; gap: 7px; margin: 0 0 20px; padding: 5px; border: 1px solid var(--cdp-borda); border-radius: 12px; background: #fff; width: fit-content; max-width: 100%; }
+.subAba, .subAbaAtiva { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0 17px; border-radius: 8px; color: var(--cdp-tinta-2); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.subAba:hover { background: var(--cdp-fundo); color: var(--cdp-tinta); }
+.subAbaAtiva { background: var(--cdp-menu); color: #fff; }
+
+.atendenteConfig { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 14px 16px; border: 1px solid var(--cdp-borda); border-radius: 12px; background: #fff; }
+.atendenteConfig label { flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px; color: var(--cdp-tinta); font-size: 13px; }
+.atendenteConfig label strong { font-size: 13.5px; }
+.atendenteConfig label span { color: var(--cdp-tinta-3); font-size: 11.5px; line-height: 1.4; }
+.atendenteConfig input { width: min(220px, 100%); min-height: 40px; padding: 0 12px; border: 1px solid var(--cdp-borda); border-radius: 8px; background: var(--cdp-fundo); color: var(--cdp-tinta); font: inherit; font-size: 13px; }
+.atendenteConfig input:focus { outline: 2px solid var(--cdp-ouro-escuro); outline-offset: -1px; background: #fff; }
+.atendenteConfig button { min-height: 40px; padding: 0 15px; border: 0; border-radius: 8px; background: var(--cdp-menu); color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: background-color .15s; }
+.atendenteConfig button:hover:not(:disabled) { background: var(--cdp-menu-2); }
+.atendenteConfig button:disabled { opacity: .55; cursor: default; }
+.nomeOk, .nomeErro { flex: 0 0 100%; font-size: 12px; }
+.nomeOk { color: var(--cdp-ok); }
+.nomeErro { color: var(--cdp-erro); }
+
 .lista { display: flex; flex-direction: column; }
 .item { display: flex; align-items: center; gap: 13px; padding: 14px 4px; border-bottom: 1px solid var(--cdp-fundo); }
 .item:last-child { border-bottom: 0; }
@@ -20,6 +38,13 @@
 .pendente { background: var(--cdp-aviso-fundo); color: var(--cdp-aviso); font-size: 11px; font-weight: 700; border-radius: 20px; padding: 3px 9px; }
 
 @media (max-width: 600px) { .btnTreinar { margin-left: 0; width: 100%; text-align: center; } }
+@media (max-width: 600px) {
+  .subAbas { width: 100%; overflow-x: auto; }
+  .subAba, .subAbaAtiva { flex: 1 0 auto; padding: 0 13px; }
+  .atendenteConfig { align-items: stretch; flex-direction: column; }
+  .atendenteConfig label { flex-basis: auto; }
+  .atendenteConfig input { width: 100%; }
+}
 
 /* ================= modelos de recuperação ================= */
 .recuperacao { margin-bottom: 20px; padding: 20px; border: 1px solid var(--cdp-borda); border-radius: 14px; background: #fff; }
@@ -65,7 +90,8 @@
 .mensagemOk, .mensagemErro { margin-right: auto; font-size: 13px; }
 .mensagemOk { color: var(--cdp-ok); }
 .mensagemErro { color: var(--cdp-erro); }
-.salvarMensagens { min-height: 42px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9px; background: var(--cdp-menu); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+.salvarMensagens { min-height: 42px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9px; background: var(--cdp-menu); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: background-color .15s; }
+.salvarMensagens:hover:not(:disabled) { background: var(--cdp-menu-2); }
 .salvarMensagens svg { width: 16px; height: 16px; }
 .salvarMensagens:disabled { opacity: .6; cursor: default; }
 

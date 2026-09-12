@@ -15,11 +15,11 @@ test("converte UTC para a data e hora civil de Brasília", () => {
 
 test("painel, WhatsApp, recibos e exportação usam o formatador central", () => {
   for (const caminho of [
-    "../src/app/painel/pedidos/page.tsx",
-    "../src/app/painel/pedidos/[id]/page.tsx",
-    "../src/app/painel/pedidos/[id]/recibo/page.tsx",
-    "../src/app/painel/pedidos/abandonados/page.tsx",
-    "../src/app/painel/pedidos/abandonados/[sessao]/page.tsx",
+    "../src/app/ioh3j4ciof3n3oic/pedidos/page.tsx",
+    "../src/app/ioh3j4ciof3n3oic/pedidos/[id]/page.tsx",
+    "../src/app/ioh3j4ciof3n3oic/pedidos/[id]/recibo/page.tsx",
+    "../src/app/ioh3j4ciof3n3oic/pedidos/abandonados/page.tsx",
+    "../src/app/ioh3j4ciof3n3oic/pedidos/abandonados/[sessao]/page.tsx",
     "../src/app/api/painel/pedidos/exportar/route.ts",
     "../src/components/painel/Conversas.tsx",
     "../src/components/painel/Emails.tsx",

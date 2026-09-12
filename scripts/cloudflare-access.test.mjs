@@ -27,11 +27,11 @@ test("bloqueia POST de PIX e todos os dispositivos sem depender do user-agent", 
 
 test("preserva painel e integrações, sem liberar prefixos parecidos", () => {
   for (const city of ["Itajaí", "Navegantes", "Balneário Camboriú"]) {
-    for (const caminho of ["/painel", "/painel/entrar", "/api/painel/entrar", "/api/webhooks/pinpay", "/api/cron/avisos-pix", "/_next/static/app.js", "/sites/logo.webp"]) {
+    for (const caminho of ["/ioh3j4ciof3n3oic", "/ioh3j4ciof3n3oic/entrar", "/api/painel/entrar", "/api/webhooks/pinpay", "/api/cron/avisos-pix", "/_next/static/app.js", "/sites/logo.webp"]) {
       assert.equal(bloqueioRegional(requisicao(caminho, { country: "BR", city })), null, `${city} ${caminho}`);
     }
   }
-  for (const caminho of ["/painel-falso", "/api/painel-falso", "/api/webhooks-falso"]) {
+  for (const caminho of ["/ioh3j4ciof3n3oic-falso", "/api/painel-falso", "/api/webhooks-falso"]) {
     assert.equal(bloqueioRegional(requisicao(caminho))?.status, 403, caminho);
   }
 });

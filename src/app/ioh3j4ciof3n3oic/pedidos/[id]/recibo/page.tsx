@@ -20,8 +20,8 @@ const PAGAMENTO: Record<string, string> = {
 };
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const { id } = await params;
   const [pedido, razao, cnpj, ie, endereco, telefone, logo] = await Promise.all([
@@ -50,7 +50,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className={s.tela}>
       <div className={s.barra}>
-        <Link href={`/painel/pedidos/${id}`} className={s.voltar}>← Voltar ao pedido</Link>
+        <Link href={`/ioh3j4ciof3n3oic/pedidos/${id}`} className={s.voltar}>← Voltar ao pedido</Link>
         <Imprimir className={s.imprimir} />
       </div>
 

@@ -13,24 +13,36 @@ export default function ScrollReveal() {
       .filter((element) => element.querySelector("img"));
 
     sections.forEach((element) => element.classList.add(styles.section));
-    items.forEach((element, index) => {
+    items.forEach((element) => {
       element.classList.add(styles.item);
-      element.style.setProperty("--reveal-delay", `${(index % 5) * 70}ms`);
+      const siblings = element.parentElement ? [...element.parentElement.children] : [];
+      const index = Math.max(0, siblings.indexOf(element));
+      element.style.setProperty("--reveal-delay", `${Math.min(index, 4) * 85}ms`);
     });
     const elements = [...sections, ...items];
     if (reduced) {
       elements.forEach((element) => element.classList.add(styles.visible));
       return;
     }
+    const timers = new Set<number>();
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        (entry.target as HTMLElement).classList.add(styles.visible);
+        const element = entry.target as HTMLElement;
+        element.classList.add(styles.visible);
+        const timer = window.setTimeout(() => {
+          element.classList.add(styles.settled);
+          timers.delete(timer);
+        }, 1250);
+        timers.add(timer);
         observer.unobserve(entry.target);
       });
-    }, { threshold: 0.1, rootMargin: "0px 0px -7% 0px" });
+    }, { threshold: 0.08, rootMargin: "0px 0px -5% 0px" });
     elements.forEach((element) => observer.observe(element));
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
   }, []);
   return null;
 }

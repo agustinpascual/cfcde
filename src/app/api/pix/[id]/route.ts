@@ -6,6 +6,7 @@ import { sincronizarAxxon } from "@/lib/pagamentos-axxon";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { confirmarPorEmail, depois, registrarCompraNoPixel } from "@/lib/confirmar-pedido";
 import { entregarAcessoApp } from "@/lib/entrega-app";
+import { excedeu, ipDe } from "@/lib/limite";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,10 @@ export const maxDuration = 60;
 /* Consulta usada pela página de pagamento (render + polling).
    Devolve status e os dados do QR — nunca dados do pagador.
    O id é um UUID não adivinhável; ainda assim, nada de PII sai daqui. */
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  if (excedeu(`consultar-pix:${ipDe(req)}`, 180, 60_000)) {
+    return new NextResponse(null, { status: 429, headers: { "Retry-After": "60" } });
+  }
   const { id } = await ctx.params;
   if (!/^[A-Za-z0-9_-]{4,64}$/.test(id)) {
     return NextResponse.json({ erro: "ID inválido" }, { status: 400 });

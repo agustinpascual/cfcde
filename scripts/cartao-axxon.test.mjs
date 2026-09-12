@@ -155,6 +155,7 @@ function rotaPainel({ adquirente, credencial } = {}) {
   const chamadas = [];
   const { POST } = modulo("../src/app/api/painel/gateways/route.ts", {
     "@/lib/painel-auth": { autenticado: async () => true },
+    "@/lib/mesma-origem": { mesmaOrigem: () => true },
     "@/lib/gateways-config": { configGatewaysValida: () => true },
     "@/lib/config-integracoes": { salvar: async (...args) => { chamadas.push(["salvar", ...args]); } },
     "@/lib/axxonpay": {

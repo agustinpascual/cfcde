@@ -173,7 +173,7 @@
   .atividadeEstado { display: none; }
 }
 @media (max-width: 430px) { .kpisCompactos { grid-template-columns: 1fr; } }
-.sair { display: inline-block; color: var(--cdp-menu-fraco); font-size: 12px; margin-bottom: 8px; text-decoration: underline; }
+.sair { display: inline-block; padding: 0; border: 0; background: none; color: var(--cdp-menu-fraco); font: inherit; font-size: 12px; margin-bottom: 8px; text-decoration: underline; cursor: pointer; }
 .sair:hover { color: #fff; }
 .linkPedido { color: var(--cdp-ouro-escuro); font-weight: 700; }
 .linkPedido:hover { text-decoration: underline; }

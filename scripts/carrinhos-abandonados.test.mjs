@@ -29,6 +29,10 @@ function rotaTrack(erroEvento = null) {
     require(id) {
       if (id === "next/server") return { NextResponse };
       if (id === "@/lib/limite") return { excedeu: () => false, ipDe: () => "127.0.0.1" };
+      if (id === "@/lib/corpo-json") return {
+        ErroCorpo: class ErroCorpo extends Error {},
+        lerJsonObjeto: req => req.json(),
+      };
       if (id === "@/lib/supabase/servidor") return { supabaseAdmin: () => db };
       if (id === "@/lib/dispositivos") return { detectarDispositivo: () => "desktop" };
       throw new Error(`Dependência externa não autorizada: ${id}`);
@@ -68,7 +72,7 @@ test("checkout reenvia abandono e painel diferencia vazio de erro", () => {
   assert.match(checkout, /window\.addEventListener\("pagehide", enviarPendente\)/);
   assert.match(checkout, /document\.addEventListener\("visibilitychange", aoMudarVisibilidade\)/);
 
-  const painel = fonte("../src/app/painel/pedidos/abandonados/page.tsx");
+  const painel = fonte("../src/app/ioh3j4ciof3n3oic/pedidos/abandonados/page.tsx");
   assert.match(painel, /lerCarrinhosComEstado/);
   assert.match(painel, /role="alert"/);
   assert.match(painel, /!erro && carrinhos\.length === 0/);
@@ -104,14 +108,14 @@ test("link de recuperação é assinado, expira e não carrega dados pessoais na
 });
 
 test("painel abre o detalhe e checkout lê o token somente do cookie HttpOnly", () => {
-  const lista = fonte("../src/app/painel/pedidos/abandonados/page.tsx");
-  const detalhe = fonte("../src/app/painel/pedidos/abandonados/[sessao]/page.tsx");
+  const lista = fonte("../src/app/ioh3j4ciof3n3oic/pedidos/abandonados/page.tsx");
+  const detalhe = fonte("../src/app/ioh3j4ciof3n3oic/pedidos/abandonados/[sessao]/page.tsx");
   const entrada = fonte("../src/app/checkout/recuperar/[token]/route.ts");
   const nextConfig = fonte("../next.config.ts");
   const checkoutPage = fonte("../src/app/checkout/page.tsx");
   const checkout = fonte("../src/components/sites/cafecomdeuspai-com-8456844d/checkout/CheckoutCafe.tsx");
 
-  assert.match(lista, /painel\/pedidos\/abandonados\/\$\{encodeURIComponent\(c\.sessao\)\}/);
+  assert.match(lista, /ioh3j4ciof3n3oic\/pedidos\/abandonados\/\$\{encodeURIComponent\(c\.sessao\)\}/);
   assert.match(detalhe, /checkout\/recuperar\//);
   assert.match(entrada, /httpOnly: true/);
   assert.match(entrada, /Referrer-Policy", "no-referrer"/);

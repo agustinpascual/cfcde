@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { excedeu, ipDe } from "@/lib/limite";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { detectarDispositivo } from "@/lib/dispositivos";
+import { ErroCorpo, lerJsonObjeto } from "@/lib/corpo-json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ const TIPOS = new Set(["pageview", "secao", "comprar", "checkout", "checkout_par
 
 /* O cliente já não manda ping do painel, mas a rota é pública: quem chamar
    direto também não polui o mapa nem o funil. */
-const PRIVADAS = ["/painel"];
+const PRIVADAS = ["/ioh3j4ciof3n3oic"];
 const privada = (caminho: string | null) => Boolean(caminho && PRIVADAS.some((p) => caminho.startsWith(p)));
 const txt = (v: unknown, max = 120) => (typeof v === "string" ? v.slice(0, max) : null);
 
@@ -29,10 +30,10 @@ export async function POST(req: Request) {
   if (!db) return NextResponse.json({ ok: false, motivo: "sem_supabase" }, { status: 202 });
 
   let corpo: Record<string, unknown>;
-  try {
-    corpo = await req.json();
-  } catch {
-    return NextResponse.json({ erro: "JSON inválido" }, { status: 400 });
+  try { corpo = await lerJsonObjeto(req, 8 * 1024); }
+  catch (e) {
+    if (e instanceof ErroCorpo) return NextResponse.json({ erro: e.message }, { status: e.status });
+    return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
   }
 
   const sessao = txt(corpo.sessao, 64);

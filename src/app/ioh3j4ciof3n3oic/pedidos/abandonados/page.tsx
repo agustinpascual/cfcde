@@ -22,14 +22,14 @@ const tel = (v: string | null) => {
 };
 
 export default async function Page() {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const [resultado, vivos] = await Promise.all([lerCarrinhosComEstado(), lerAoVivo()]);
   const { carrinhos, erro } = resultado;
 
   return (
-    <Casca atual="/painel/pedidos" titulo="Pedidos"
+    <Casca atual="/ioh3j4ciof3n3oic/pedidos" titulo="Pedidos"
       subtitulo={erro ? "Não foi possível consultar os carrinhos"
         : carrinhos.length === 0 ? "Nenhum carrinho abandonado"
         : `${carrinhos.length} ${carrinhos.length === 1 ? "carrinho abandonado" : "carrinhos abandonados"} · quem preencheu dados e não pagou`}
@@ -65,7 +65,7 @@ export default async function Page() {
                   <tr key={c.sessao} className={s.linhaPedido}>
                     <td data-label="Contato">
                       <Link
-                        href={`/painel/pedidos/abandonados/${encodeURIComponent(c.sessao)}`}
+                        href={`/ioh3j4ciof3n3oic/pedidos/abandonados/${encodeURIComponent(c.sessao)}`}
                         className={s.linkPedido}
                         aria-label={`Abrir dados do carrinho de ${c.nome ?? c.email ?? "cliente sem nome"}`}
                       >

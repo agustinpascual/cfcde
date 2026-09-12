@@ -3,6 +3,7 @@
 import { getImageProps } from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/HeaderFooter";
+import HomeVideoStories from "./HomeVideoStories";
 import styles from "./HomeHero.module.css";
 
 const assetRoot = "/sites/cafecomdeuspai-com-8456844d/root-8a5edab2";
@@ -25,7 +26,7 @@ type HomeHeroProps = {
 
 export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) {
   const slide = slides[0];
-  const comum = { alt: slide.alt, sizes: "100vw", fetchPriority: "high" as const };
+  const comum = { alt: slide.alt, sizes: "100vw", fetchPriority: "high" as const, loading: "eager" as const };
   const { props: { srcSet: desktopSrcSet } } = getImageProps({
     ...comum, src: slide.desktopImage, width: 1580, height: 600, quality: 75,
   });
@@ -63,6 +64,7 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
               ) : null}
             </article>
         </div>
+        <HomeVideoStories floating />
       </section>
     </>
   );

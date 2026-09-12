@@ -33,12 +33,12 @@ echo "══ 4/5  Enviando os segredos ═════════════�
 # Cada valor sai do .env.local e vai direto para a Cloudflare, sem passar
 # por arquivo intermediário nem pelo histórico do shell.
 for VAR in \
-  SUPABASE_SERVICE_ROLE_KEY PAINEL_EMAIL PAINEL_SENHA CHAVE_MESTRA RECUPERACAO_CARRINHO_SECRET \
+  SUPABASE_SERVICE_ROLE_KEY PAINEL_EMAIL PAINEL_SENHA PAINEL_SESSION_SECRET CHAVE_MESTRA RECUPERACAO_CARRINHO_SECRET CRON_SECRET \
   PINPAY_TOKEN PINPAY_WEBHOOK_SECRET \
   AXXONPAY_PUBLIC_KEY AXXONPAY_SECRET_KEY AXXONPAY_WEBHOOK_URL \
   RESEND_API_KEY RESEND_REMETENTE META_CAPI_TOKEN \
   CORREIOS_URL CORREIOS_SECRET \
-  ZAPI_INSTANCIA ZAPI_TOKEN ZAPI_CLIENT_TOKEN; do
+  ZAPI_INSTANCIA ZAPI_TOKEN ZAPI_CLIENT_TOKEN ZAPI_WEBHOOK_SECRET; do
   VALOR="$(grep -m1 "^${VAR}=" .env.local | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')"
   if [ -z "$VALOR" ]; then
     echo "  ⚠  ${VAR} está vazia no .env.local — pulando"
@@ -50,7 +50,7 @@ done
 
 echo
 echo "══ 5/5  Testando o que subiu ══════════════════════════"
-for URL in "https://cafecomdeusepai.com/" "https://cafecomdeusepai.com/painel/entrar"; do
+for URL in "https://cafecomdeusepai.com/" "https://cafecomdeusepai.com/ioh3j4ciof3n3oic/entrar"; do
   printf '%-45s ' "$URL"
   curl -s -o /dev/null -w 'HTTP %{http_code}\n' --max-time 20 "$URL" || echo "sem resposta"
 done

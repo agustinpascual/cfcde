@@ -19,8 +19,8 @@ function linkEditor(): string {
 }
 
 export default async function Page() {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   // Esta é a única tela que precisa furar o cache: depois de aplicar o SQL,
   // a conferência deve refletir as tabelas novas já na próxima atualização.
@@ -30,7 +30,7 @@ export default async function Page() {
   const pronto = Boolean(estado) && faltam.length === 0 && incompletas.length === 0;
 
   return (
-    <Casca atual="/painel/instalar" titulo="Instalação do banco">
+    <Casca atual="/ioh3j4ciof3n3oic/instalar" titulo="Instalação do banco">
       {!estado ? (
         <div className={s.aviso}>
           <p className={s.avisoTitulo}>Supabase não configurado</p>

@@ -8,7 +8,7 @@
 .input:focus { border-color: var(--cdp-ouro-escuro); }
 .inputErro { border-color: var(--cdp-erro-borda); background: var(--cdp-erro-fundo); }
 .erro { font-size: 12.5px; color: var(--cdp-erro); margin-top: 8px; }
-.botao { width: 100%; height: 48px; margin-top: 18px; background: var(--cdp-menu); color: #fff; font-size: 15px; font-weight: 700; border-radius: 10px; }
-.botao:hover { background: var(--cdp-menu-2); }
+.botao { width: 100%; height: 48px; margin-top: 18px; background: var(--cdp-menu); color: #fff; font-size: 15px; font-weight: 700; border-radius: 10px; transition: background-color .15s; }
+.botao:hover:not(:disabled) { background: var(--cdp-menu-2); }
 .botao:disabled { opacity: .5; cursor: default; }
 .rotuloEspaco { margin-top: 16px; }

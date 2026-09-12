@@ -30,8 +30,8 @@ const quando = (iso: string) =>
   formatarDataHoraBrasilia(iso, { year: "2-digit" });
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ p?: string; busca?: string; status?: string; metodo?: string; de?: string; ate?: string }> }) {
-  if (!painelConfigurado()) redirect("/painel");
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const sp = await searchParams;
   const pagina = Math.max(1, Number(sp.p) || 1);
@@ -44,7 +44,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   return (
-    <Casca atual="/painel/pedidos" titulo="Pedidos"
+    <Casca atual="/ioh3j4ciof3n3oic/pedidos" titulo="Pedidos"
       subtitulo={total === 0 ? "Nenhum pedido ainda"
         : `${total} ${total === 1 ? "pedido" : "pedidos"}${paginas > 1 ? ` · página ${pagina} de ${paginas}` : ""} · clique para ver os detalhes`}
       aoVivo={vivos.length}>
@@ -84,7 +84,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
                 {pedidos.map((p) => (
                   <tr key={p.id} className={s.linhaPedido}>
                     <td className={s.mono} data-label="Pedido">
-                      <Link href={`/painel/pedidos/${p.id}`} className={s.linkPedido}
+                      <Link href={`/ioh3j4ciof3n3oic/pedidos/${p.id}`} className={s.linkPedido}
                         aria-label={`Abrir pedido ${p.referencia}${p.cliente_nome ? ` de ${p.cliente_nome}` : ""}`}>
                         {p.referencia}
                       </Link>
@@ -111,7 +111,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
         )}
       </section>
 
-      <Paginacao pagina={pagina} total={total} porPagina={POR_PAGINA} base="/painel/pedidos"
+      <Paginacao pagina={pagina} total={total} porPagina={POR_PAGINA} base="/ioh3j4ciof3n3oic/pedidos"
         query={{ busca: sp.busca, status: sp.status, metodo: sp.metodo, de: sp.de, ate: sp.ate }} />
     </Casca>
   );

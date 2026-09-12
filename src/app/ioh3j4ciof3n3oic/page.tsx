@@ -33,7 +33,7 @@ export default async function Page({ searchParams }: {
   searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
 }) {
   if (!painelConfigurado()) return <SemSenha />;
-  if (!(await autenticado())) redirect("/painel/entrar");
+  if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const periodo = resolverPeriodo(await searchParams);
   const [resumo, dias, funil, vivos] = await Promise.all([
@@ -73,7 +73,7 @@ export default async function Page({ searchParams }: {
 
 
   return (
-    <Casca atual="/painel" titulo="Dashboard" subtitulo={`Visão geral da operação · ${periodo.rotulo}`} aoVivo={vivos.length}>
+    <Casca atual="/ioh3j4ciof3n3oic" titulo="Dashboard" subtitulo={`Visão geral da operação · ${periodo.rotulo}`} aoVivo={vivos.length}>
       <FaixaInstalar faltam={_faltam} />
       <AvisoConfig faltando={faltando} />
       <Recarrega segundos={15} />
@@ -225,11 +225,12 @@ function SemSenha() {
       <div className={s.conteudo}>
         <main className={s.corpo}>
           <div className={s.aviso}>
-            <p className={s.avisoTitulo}>Painel sem credenciais configuradas</p>
+            <p className={s.avisoTitulo}>Painel sem configuração segura</p>
             <p>
-              Defina <code>PAINEL_EMAIL</code> e <code>PAINEL_SENHA</code> no <code>.env.local</code>
-              {" "}(e nas variáveis do Vercel) para liberar o acesso. Sem isso o painel fica bloqueado —
-              se ficasse aberto, qualquer pessoa com a URL veria os pedidos.
+              Defina <code>PAINEL_EMAIL</code>, uma <code>PAINEL_SENHA</code> com pelo menos
+              12 caracteres e <code>PAINEL_SESSION_SECRET</code> com pelo menos 32 caracteres
+              no ambiente do servidor. <code>CHAVE_MESTRA</code> também pode assinar a sessão,
+              mas uma chave exclusiva facilita a rotação. Sem isso o painel permanece bloqueado.
             </p>
           </div>
         </main>

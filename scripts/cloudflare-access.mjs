@@ -12,7 +12,7 @@ export function bloqueioRegional(request) {
   const caminho = new URL(request.url).pathname;
   // Mantém o painel autenticado e as integrações operacionais. Arquivos
   // compartilhados são necessários para carregar o painel (CSS, JS e imagens).
-  const excecoes = ["/painel", "/api/painel", "/api/webhooks", "/api/cron", "/_next", "/sites"];
+  const excecoes = ["/ioh3j4ciof3n3oic", "/api/painel", "/api/webhooks", "/api/cron", "/_next", "/sites"];
   if (excecoes.some((raiz) => dentroDe(caminho, raiz))) return null;
 
   return new Response("Acesso indisponível.", {
