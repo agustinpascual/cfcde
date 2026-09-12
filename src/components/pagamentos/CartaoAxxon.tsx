@@ -6,6 +6,7 @@ import { LoaderCircle, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { acompanharPix } from "@/lib/acompanhar-pix";
 import { calcularParcelamentoCartao, luhn } from "@/lib/cartao";
+import { cliente3dsAxxon, normalizarCompradorAxxon } from "@/lib/axxonpay-comprador";
 import { concluirTentativa, liberarTentativaEncerrada, tentativaPagamento } from "@/lib/tentativa-pagamento";
 import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
@@ -47,7 +48,7 @@ const ETAPAS_PROVIDER: Record<string, Etapa3ds> = {
 
 export type PayloadCartao = {
   produto: string; nome: string; email: string; documento: string; celular: string;
-  endereco: { logradouro: string; numero: string; bairro: string; localidade: string; uf: string; cep: string };
+  endereco: { logradouro: string; numero: string; complemento?: string; bairro: string; localidade: string; uf: string; cep: string };
 } & Record<string, unknown>;
 
 const SDK_URL = "https://app.axxonpay.com.br/v1/js/sdk.js";
@@ -354,10 +355,13 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     let tentativa = tentativaPagamento(payload.produto, "cartao");
     let criada = false;
     try {
+      // Captura uma única vez: a criação e o 3DS usam o mesmo comprador,
+      // inclusive se houver espaços nas entradas ou novo render durante o POST.
+      const comprador = normalizarCompradorAxxon(payload);
       const enviar = async (id: string) => {
         const resposta = await fetch("/api/pagamentos/cartao", {
           method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ...payload, cartao: { numero: num, titular: nome, mes, ano, cvv: codigo }, installments: parcelas, tentativa: id }),
+          body: JSON.stringify({ ...payload, ...comprador, cartao: { numero: num, titular: nome, mes, ano, cvv: codigo }, installments: parcelas, tentativa: id }),
           signal: AbortSignal.timeout(35000),
         });
         return { resposta, dados: await resposta.json() };
@@ -396,7 +400,6 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         setPopupProcessamento("banco");
         await new Promise<void>(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
         setPopupProcessamento("idle");
-        const e = payload.endereco;
         let etapa3ds: Etapa3ds = "chamando_sdk";
         const acompanharEtapa = (evento3ds: Event) => {
           const estado = (evento3ds as CustomEvent<{ state?: unknown }>).detail?.state;
@@ -413,8 +416,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
           resultado = await window.Axxon.handleNextAction(dados.nextAction, {
             amount: dados.total, installments: parcelas,
             card: { number: num, expMonth: String(mes).padStart(2, "0"), expYear: String(ano), cvv: codigo, holderName: nome },
-            customer: { name: payload.nome, email: payload.email, phone: digitos(payload.celular), document: digitos(payload.documento),
-              address: { street: e.logradouro.trim(), number: e.numero.trim(), neighborhood: e.bairro.trim(), city: e.localidade.trim(), state: e.uf.trim().toUpperCase(), zip: digitos(e.cep) } },
+            customer: cliente3dsAxxon(comprador),
           });
           etapa3ds = "retorno_sdk";
         } catch (erro3ds) {

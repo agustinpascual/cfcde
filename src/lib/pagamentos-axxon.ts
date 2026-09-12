@@ -10,6 +10,7 @@ import { urlWebhookAxxon } from "./axxonpay-webhook";
 import { sortearNumeroPedido } from "./numero-pedido";
 import { calcularParcelamentoCartao, PARCELAS_MAX, semCartao, validarCartao, type CartaoBruto } from "./cartao";
 import { documentoBrasileiroValido } from "./documento-br";
+import { clienteCriacaoAxxon, normalizarCompradorAxxon } from "./axxonpay-comprador";
 
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const texto = (valor: unknown) => typeof valor === "string" ? valor.trim().slice(0, 200) : "";
@@ -136,8 +137,8 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   }
   const referenciaLegada = `AXX-${tentativa}`;
   let referencia = referenciaLegada;
-  const nome = texto(body.nome), email = texto(body.email), documento = digitos(body.documento), celular = digitos(body.celular);
-  const endereco = (body.endereco ?? {}) as Record<string, unknown>;
+  const comprador = normalizarCompradorAxxon(body);
+  const { nome, email, documento, celular, endereco } = comprador;
   if (body.loja !== "cafecomdeuspai" || nome.split(/\s+/).length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)
       || ![11, 14].includes(documento.length) || ![10, 11].includes(celular.length)) {
     return respostaErro("Confira nome completo, e-mail, CPF/CNPJ e telefone com DDD.");
@@ -145,7 +146,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   if (!documentoBrasileiroValido(documento)) {
     return respostaErro("Digite um CPF ou CNPJ válido. Confira os números antes de continuar.");
   }
-  if (!["logradouro", "numero", "bairro", "localidade", "uf"].every(campo => texto(endereco[campo])) || digitos(endereco.cep).length !== 8) {
+  if (![endereco.logradouro, endereco.numero, endereco.bairro, endereco.localidade, endereco.uf].every(Boolean) || endereco.cep.length !== 8) {
     return respostaErro("Complete o endereço para pagamento.");
   }
   // CEP de dígitos repetidos e UF fora do padrão são recusados pelo SDK da
@@ -214,7 +215,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
         valor_centavos: totalCobrado, subtotal_centavos: valores.subtotal, desconto_centavos: valores.desconto,
         frete_centavos: valores.frete.centavos, frete_tipo: valores.frete.nome, kit: valores.kit.nome, quantidade: valores.quantidadeTotal,
         cliente_nome: nome, cliente_email: email, cliente_documento: documento, cliente_telefone: celular,
-        endereco: Object.fromEntries(["logradouro", "numero", "complemento", "bairro", "localidade", "uf", "cep"].map(campo => [campo, texto(endereco[campo])])),
+        endereco,
         ...(orderBumps.adicionais.length ? { order_bumps: orderBumps.registro } : {}),
       });
       if (!reserva) { reservou = true; break; }
@@ -257,9 +258,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       amount: totalCobrado, paymentMethod: metodo === "pix" ? "pix" : "credit_card",
       description: descricao,
       ...(metodo === "cartao" ? { installments: parcelas, card: cartao ?? { hash } } : {}),
-      customer: { name: nome, email, phone: celular, document: { number: documento, type: documento.length === 11 ? "cpf" : "cnpj" },
-        address: { street: texto(endereco.logradouro), number: texto(endereco.numero), neighborhood: texto(endereco.bairro),
-          city: texto(endereco.localidade), state: texto(endereco.uf).toUpperCase(), zipCode: digitos(endereco.cep) } },
+      customer: clienteCriacaoAxxon(comprador),
       metadata: { external_reference: referencia, payment_attempt: tentativa }, postbackUrl,
     });
     const enviarEmailDoPix = (brcode: string) => depois(enviarPixPorEmail({

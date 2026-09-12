@@ -16,6 +16,18 @@ A seleção só é salva após validar as credenciais. O cache de configuração
 
 ### Auditoria de 12/09/2026
 
+Conferência adicional após o cadastro de domínio: `axxonpay-comprador.ts` prepara
+um único retrato do comprador, usado pelo POST da criação e pelo 3DS. Nome,
+e-mail, documento, telefone, rua, número (inclusive `S/N`), bairro, cidade, UF e
+CEP mantêm valores idênticos; somente os nomes exigidos pelo contrato diferem
+(`document.number`/`document` e `zipCode`/`zip`). O complemento permanece no pedido
+de entrega: não existe campo correspondente no schema público `DirectPaymentRequest`
+ou no `paymentData` documentado. Não são inventados campos de autenticação.
+`amount` continua vindo do cálculo do servidor e é reutilizado no 3DS, assim como
+as parcelas da tentativa; `nextAction` permanece intacto. Testes verificam CPF,
+CNPJ, campos mascarados, espaços, limites, endereço sem número e bloqueio de cada
+campo obrigatório ausente antes de reservar/cobrar. Veja também [aliases no Dokploy](dominios-dokploy.md).
+
 A documentação oficial atual foi conferida integralmente para criação direta, SDK JavaScript/3DS, consulta e webhook. O contrato implementado permanece alinhado: valor em centavos, `paymentMethod: "credit_card"`, cartão bruto com `expirationMonth`/`expirationYear` somente na criação Bloopi, `expMonth`/`expYear` no `paymentData`, comprador com os seis campos obrigatórios de endereço, `nextAction` opaco e aprovação exclusivamente por consulta autenticada/webhook.
 
 Os eventos recentes mostraram que a AxxonPay criou e devolveu o ID das cobranças, mas o navegador encerrou a etapa seguinte como falha de rede 3DS antes da autenticação terminar. As primeiras quatro ocorrências de 12/09 foram em iPhone. A tentativa de homologação `#916003`, feita depois no Chrome/macOS, isolou melhor o ponto: o ambiente da Bloopi abriu, mas o desafio não chegou a ser apresentado; a falha ocorreu cerca de oito segundos após a criação e o intent ficou pendente. Isso descarta um problema exclusivo de Safari e localiza a interrupção antes do challenge, nas chamadas cross-origin que consultam o intent e iniciam a sessão.

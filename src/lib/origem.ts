@@ -1,15 +1,10 @@
 import "server-only";
+import { mesmaOrigem } from "./mesma-origem";
 
-/* Defesa contra clone que funciona no SERVIDOR.
-
-   O caso real: alguém sobe "loja-clonada.com" como proxy reverso do seu site.
-   A trava de domínio em JavaScript pega isso (o navegador sabe que está em
-   loja-clonada.com), mas o clonador pode apagar aquele script do HTML que ele
-   serve. O que ele NÃO controla é o cabeçalho `Origin`: quem envia é o próprio
-   navegador da vítima, em toda requisição do checkout.
-
-   Então mesmo que o clone fique de pé, ele não consegue criar cobrança na sua
-   conta da PinPay — que é o que realmente dói. */
+/* Requisições do navegador devem vir da mesma origem encaminhada pelo proxy
+   ou de uma origem explicitamente permitida. Isso bloqueia chamadas diretas
+   cross-origin; nenhum cabeçalho identifica de forma infalível um proxy malicioso.
+   Na VPS, os routers do Traefik são responsáveis pelos domínios cadastrados. */
 
 const OFICIAIS = (process.env.NEXT_PUBLIC_DOMINIOS_OFICIAIS ?? "")
   .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
@@ -30,6 +25,10 @@ function hostPermitido(host: string) {
  * aqui é o navegador num domínio que não é o seu, que sempre manda.
  */
 export function origemOficial(req: Request): boolean {
+  // O Traefik encaminha somente os hosts cadastrados no aplicativo. Um novo
+  // alias acessa o mesmo checkout sem depender da lista congelada no build.
+  // Origin externo divergente do host continua dependendo da lista explícita.
+  if (mesmaOrigem(req)) return true;
   if (!OFICIAIS.length) return true;
 
   const origin = req.headers.get("origin");

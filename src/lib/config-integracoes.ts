@@ -62,7 +62,7 @@ async function doBanco(): Promise<Map<string, string>> {
 
 async function carregarDoBanco(): Promise<Map<string, string>> {
   const db = supabaseAdmin();
-  if (!db || !temChaveMestra()) return new Map();
+  if (!db) return new Map();
 
   /* A leitura acontece em rotas críticas (checkout e painel). Um erro curto de
      rede/autenticação do Supabase não pode transformar credenciais existentes
@@ -72,6 +72,11 @@ async function carregarDoBanco(): Promise<Map<string, string>> {
   for (let tentativa = 0; tentativa < 3; tentativa++) {
     const { data, error } = await db.from("configuracoes").select("chave,valor_cifrado");
     if (!error) {
+      // Um deploy sem a chave permanente não transforma um cofre existente
+      // em configuração vazia (o que selecionava PinPay e desativava cartão).
+      if (data?.length && !temChaveMestra()) {
+        throw new Error("CHAVE_MESTRA ausente: restaure a chave original para abrir as integrações salvas.");
+      }
       const valores = new Map<string, string>();
       let indecifraveis = 0;
       for (const linha of data ?? []) {

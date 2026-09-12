@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
+import { cliente3dsAxxon, normalizarCompradorAxxon } from "../src/lib/axxonpay-comprador.ts";
 
 // Executar com o Next dev já aberto e AXXONPAY_PUBLIC_KEY (pública) no ambiente.
 // Carrega o SDK REAL da Axxon e o bloopi.js sob a CSP do checkout. O POST de
@@ -9,13 +10,18 @@ import { chromium, webkit } from "playwright";
 // 3DS até a Bloopi recusar o intent inexistente, o que também valida a CSP dos
 // provedores de 3DS. Não substitui a homologação com cartão próprio.
 const base = process.env.CHECKOUT_TEST_BASE_URL ?? "http://localhost:3000";
+// WebKit aplica upgrade-insecure-requests até no localhost. Este proxy de
+// teste serve o build local sob um alias HTTPS interceptado pelo Playwright,
+// reproduzindo Host/X-Forwarded-* do Traefik, sem alterar a CSP da aplicação.
+const proxyLocal = process.env.CHECKOUT_TEST_PROXY_TARGET;
+if (proxyLocal && !["127.0.0.1", "localhost"].includes(new URL(proxyLocal).hostname)) throw new Error("Proxy de teste deve apontar para localhost.");
 const publicKey = process.env.AXXONPAY_PUBLIC_KEY;
 const usandoWebkit = process.env.CHECKOUT_TEST_BROWSER === "webkit";
 const motor = usandoWebkit ? webkit : chromium;
 
 test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { skip: !publicKey && "defina AXXONPAY_PUBLIC_KEY" }, async () => {
   for (const [caminho, deve] of [["/checkout?produto=testes", true], ["/", false]]) {
-    const csp = (await fetch(`${base}${caminho}`, { redirect: "manual" })).headers.get("content-security-policy") ?? "";
+    const csp = (await fetch(`${proxyLocal ?? base}${caminho}`, { redirect: "manual" })).headers.get("content-security-policy") ?? "";
     assert.equal(csp.includes("app.bloopi.io") && csp.includes("frame-src https:") && csp.includes("form-action 'self' https:"), deve, `CSP de ${caminho}`);
     assert.match(csp, /frame-ancestors 'none'/);
   }
@@ -24,16 +30,33 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
     const violacoes = [], erros = [], externos = new Set(), falhasRede = [], respostasExternas = [];
     const postsCartao = [], eventosTrack = [], leiturasBloopi = [];
+    let aliasConfirmado = false;
     let cobrancas = 0, postsAcs = 0, liberarAprovacao = false;
     await context.addInitScript(() => document.addEventListener("securitypolicyviolation", e => console.log(`CSPVIOLATION ${e.violatedDirective} ${e.blockedURI}`)));
+    if (usandoWebkit) await context.addInitScript(() => { navigator.sendBeacon = () => true; });
     await context.route("**/*", async route => {
       const req = route.request(), url = new URL(req.url());
+      const servidorLocal = async () => {
+        if (!proxyLocal) return route.continue();
+        const resposta = await route.fetch({
+          url: `${proxyLocal}${url.pathname}${url.search}`,
+          headers: { ...req.headers(), host: url.host, "x-forwarded-host": url.host, "x-forwarded-proto": url.protocol.slice(0, -1) },
+        });
+        if (url.pathname === "/api/seguranca/origem") aliasConfirmado = resposta.status() === 200 && (await resposta.json()).permitido === true;
+        return route.fulfill({ response: resposta });
+      };
       if (url.host === "acs-test.invalid") {
         if (req.method() === "POST") postsAcs++;
         return route.fulfill({ status: 204, body: "" });
       }
-      if (url.origin !== base) { externos.add(url.host); return route.continue(); }
+      if (url.origin !== base) {
+        externos.add(url.host);
+        // Só scripts/configurações públicas são necessários. Nenhum POST
+        // externo de pagamento ou telemetria pode sair deste teste.
+        return req.method() === "GET" ? route.continue() : route.abort();
+      }
       if (url.pathname.startsWith("/api/pagamentos/bloopi-leitura/")) leiturasBloopi.push(url.pathname);
+      if (proxyLocal && url.pathname === "/api/seguranca/origem") return servidorLocal();
       if (req.method() !== "GET") {
         if (url.pathname === "/api/track") {
           eventosTrack.push(JSON.parse(req.postData() ?? "{}"));
@@ -58,7 +81,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
       if (url.pathname.startsWith("/api/pix/")) return route.fulfill({ json: liberarAprovacao
         ? { id: "axxon_teste", status: "approved", pedido: "100001", codigo_rastreio: null }
         : { id: "axxon_teste", status: "pending" } });
-      return route.continue();
+      return servidorLocal();
     });
     const page = await context.newPage();
     page.on("console", m => {
@@ -95,7 +118,16 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.equal(postsAcs, 1, "form POST do Cardinal chega ao ACS HTTPS");
     await page.locator("#csp-acs-probe").evaluate(iframe => iframe.remove());
     await page.getByLabel("CEP", { exact: true }).fill("01001000");
-    await page.getByRole("radio", { name: /Correios - PAC/ }).check();
+    try {
+      await page.getByRole("radio", { name: /Correios - PAC/ }).check({ timeout: 10000 });
+    } catch (erro) {
+      console.error("Diagnóstico da entrega (somente cenário fictício):", {
+        url: page.url(), cep: await page.getByLabel("CEP", { exact: true }).inputValue(),
+        erros, falhasRede, respostasExternas,
+        avisos: await page.locator('[role="alert"]').allTextContents(),
+      });
+      throw erro;
+    }
     await page.getByLabel("E-mail", { exact: true }).fill("teste@example.com");
     await page.getByLabel("Nome", { exact: true }).fill("Teste");
     await page.getByLabel("Sobrenome", { exact: true }).fill("Local");
@@ -112,6 +144,14 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     const botao = page.getByRole("button", { name: /Finalizar compra|Carregando pagamento seguro|Cartão indisponível/ });
     await botao.waitFor({ timeout: 15000 });
     await page.waitForFunction(() => window.Axxon?.isReady === true && typeof window.Bloopi === "function", null, { timeout: 60000 });
+    await page.evaluate(() => {
+      const continuar = window.Axxon.handleNextAction.bind(window.Axxon);
+      window.Axxon.handleNextAction = (acao, dados) => {
+        // Somente os dados fictícios deste cenário, em memória, sem cartão.
+        window.__comprador3dsTeste = { customer: dados.customer, amount: dados.amount, installments: dados.installments };
+        return continuar(acao, dados);
+      };
+    });
     assert.equal(await botao.innerText(), "Finalizar compra");
     assert.ok(await botao.isEnabled());
     // globals.css zera background/borda/padding/fonte de todo <button> fora de
@@ -145,6 +185,10 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.deepEqual(postsCartao[0].body.cartao, postCartao.body.cartao);
     assert.notEqual(postsCartao[0].body.tentativa, postCartao.body.tentativa, "nova tentativa usa outro UUID");
     assert.equal(postCartao.body.installments, 2);
+    const dados3ds = await page.evaluate(() => window.__comprador3dsTeste);
+    assert.deepEqual(dados3ds.customer, cliente3dsAxxon(normalizarCompradorAxxon(postCartao.body)), "3DS recebe o mesmo comprador do POST");
+    assert.equal(dados3ds.amount, 1000, "3DS usa o total confirmado na resposta do servidor");
+    assert.equal(dados3ds.installments, postCartao.body.installments, "mesmas parcelas na criação e autenticação");
     assert.match(postCartao.body.tentativa, /^[a-f0-9-]{36}$/);
     assert.equal(postCartao.body.produto, "testes:1|presente:0|dedicatoria:0");
     assert.ok(await page.evaluate(() => [...document.querySelectorAll("input[autocomplete^=cc-]")].every(i => i.value === "")), "campos de cartão limpos");
@@ -163,6 +207,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.deepEqual(violacoes, [], "sem violações de CSP");
     assert.deepEqual(erros, [], "sem erros de página");
     assert.equal(cobrancas, 0, "nenhum PIX gerado");
+    if (proxyLocal) assert.equal(aliasConfirmado, true, "alias HTTPS novo confirmado sem alterar a lista embutida no build");
 
     // A consulta autenticada aprova: o cartão segue para a mesma tela final
     // do PIX e nunca leva PAN/CVV para o sessionStorage.

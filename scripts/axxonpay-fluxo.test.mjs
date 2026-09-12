@@ -6,6 +6,7 @@ import ts from "typescript";
 import * as protocolo from "../src/lib/axxonpay-protocolo.ts";
 import * as webhook from "../src/lib/axxonpay-webhook.ts";
 import * as cartao from "../src/lib/cartao.ts";
+import * as comprador from "../src/lib/axxonpay-comprador.ts";
 
 // Executa o serviço real transpilado, com banco/gateway/e-mails substituídos.
 // Não usa credenciais, rede, pedidos reais ou cartões de clientes.
@@ -58,6 +59,7 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
     "server-only": {}, "qrcode": { toDataURL: async () => "data:image/png;base64,TESTE" },
     "./supabase/servidor": { supabaseAdmin: () => ({ from: () => new Consulta() }) },
     "./axxonpay": gateway, "./axxonpay-protocolo": protocolo, "./axxonpay-webhook": webhook, "./cartao": cartao,
+    "./axxonpay-comprador": comprador,
     "./numero-pedido": { sortearNumeroPedido: () => numeros ? numeros[numerosSorteados++ % numeros.length] : String(100001 + numerosSorteados++) },
     "./precos": {
       calcularCarrinhoCafe: () => ({ total: 2500, subtotal: 2500, desconto: 0,
@@ -347,6 +349,46 @@ test("banco indisponível impede cobrança órfã", async () => {
 // Número de teste público (Luhn válido), nunca um cartão real.
 const cartaoTeste = { numero: "4111 1111 1111 1111", titular: "Cliente  Ficticio", mes: 12, ano: 2035, cvv: "123" };
 const vazouCartao = /4111|1111|"cvv"|Ficticio.{0,40}123/;
+
+for (const documento of ["529.982.247-25", "11.222.333/0001-81"]) {
+  test(`criação e 3DS recebem exatamente o mesmo comprador: ${documento.length === 14 ? "CPF" : "CNPJ"}`, async () => {
+    let enviado;
+    const a = ambiente({ provider: "bloopi", criar: async p => {
+      enviado = p;
+      return { id: "payment_uuid", nextAction: { type: "CLIENT_CONFIRMATION", payload: {} } };
+    } });
+    const entrada = { ...body, cartao: cartaoTeste, installments: 5,
+      nome: "  Cliente  Ficticio  ", email: "  teste@example.com  ", documento, celular: "(11) 99999-9999",
+      endereco: { logradouro: `  Rua ${"A".repeat(230)} `, numero: " S/N ", complemento: " Apto 21 ",
+        bairro: " Centro ", localidade: " São Paulo ", uf: " sp ", cep: "01001-000" } };
+    assert.equal((await a.processarAxxon(entrada, "cartao")).status, 200);
+    const snapshot = comprador.normalizarCompradorAxxon(entrada);
+    assert.deepEqual(comprador.normalizarCompradorAxxon(snapshot), snapshot, "normalização é idempotente");
+    const sdk = comprador.cliente3dsAxxon(snapshot);
+    assert.deepEqual(enviado.customer, {
+      ...sdk, document: { number: sdk.document, type: documento.length === 14 ? "cpf" : "cnpj" },
+      address: { street: sdk.address.street, number: sdk.address.number, neighborhood: sdk.address.neighborhood,
+        city: sdk.address.city, state: sdk.address.state, zipCode: sdk.address.zip },
+    });
+    assert.equal(enviado.customer.email, "teste@example.com");
+    assert.equal(enviado.customer.address.number, "S/N");
+    assert.equal(enviado.customer.address.state, "SP");
+    assert.equal(enviado.customer.address.zipCode, "01001000");
+    assert.equal(a.pedido().endereco.complemento, "Apto 21", "complemento preservado para entrega");
+    assert.equal(enviado.amount, 3125, "valor com juros confirmado pelo servidor");
+    assert.equal(enviado.installments, 5);
+  });
+}
+
+for (const campo of ["logradouro", "numero", "bairro", "localidade", "uf", "cep"]) {
+  test(`cartão sem ${campo} não reserva pedido nem chama gateway`, async () => {
+    const a = ambiente({ provider: "bloopi" });
+    const r = await a.processarAxxon({ ...body, cartao: cartaoTeste, endereco: { ...body.endereco, [campo]: "" } }, "cartao");
+    assert.equal(r.status, 422);
+    assert.equal(a.pedidos.size, 0);
+    assert.equal(a.contadores().chamadas, 0);
+  });
+}
 
 test("campos antigos de cartão são rejeitados antes de gravar ou chamar gateway", async () => {
   const a = ambiente();

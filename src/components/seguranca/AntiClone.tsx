@@ -53,14 +53,23 @@ function permitido(host: string) {
 
 export default function AntiClone() {
   useEffect(() => {
+    const controller = new AbortController();
     if (!permitido(window.location.hostname.toLowerCase())) {
-      window.location.replace(DESTINO);
-      return;
+      // Um alias novo pode ainda não existir na lista embutida no JavaScript.
+      // Confere o host que o proxy encaminhou à aplicação, sem alterar gateways.
+      void fetch("/api/seguranca/origem", {
+        method: "POST", credentials: "omit", cache: "no-store",
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]),
+      }).then(async resposta => {
+        if (resposta.status !== 403) return;
+        const dados = await resposta.json();
+        if (!controller.signal.aborted && dados.permitido === false) window.location.replace(DESTINO);
+      }).catch(() => { /* Falha de rede não é evidência de clone. */ });
     }
 
     /* O painel fica livre para diagnóstico e manutenção. A barreira atua só
        nas páginas públicas da loja. */
-    if (window.location.pathname.startsWith("/ioh3j4ciof3n3oic")) return;
+    if (window.location.pathname.startsWith("/ioh3j4ciof3n3oic")) return () => controller.abort();
 
     const redirecionar = () => window.location.replace(DESTINO);
     const aoPressionarTecla = (evento: KeyboardEvent) => {
@@ -79,6 +88,7 @@ export default function AntiClone() {
     window.addEventListener("contextmenu", aoAbrirMenu, true);
 
     return () => {
+      controller.abort();
       window.removeEventListener("keydown", aoPressionarTecla, true);
       window.removeEventListener("contextmenu", aoAbrirMenu, true);
     };

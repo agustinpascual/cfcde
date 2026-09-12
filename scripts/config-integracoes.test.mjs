@@ -6,7 +6,7 @@ import ts from "typescript";
 
 const fonte = readFileSync(new URL("../src/lib/config-integracoes.ts", import.meta.url), "utf8");
 
-function carregar(resultados, { decifrar = (valor) => valor, ambiente = {} } = {}) {
+function carregar(resultados, { decifrar = (valor) => valor, ambiente = {}, chaveMestra = true } = {}) {
   let consultas = 0;
   const fila = [...resultados];
   const db = {
@@ -30,7 +30,7 @@ function carregar(resultados, { decifrar = (valor) => valor, ambiente = {} } = {
       if (id === "server-only") return {};
       if (id === "./cofre") return {
         cifrar: (v) => v, decifrar, mascarar: (v) => v,
-        temChaveMestra: () => true,
+        temChaveMestra: () => chaveMestra,
       };
       if (id === "./supabase/servidor") return { supabaseAdmin: () => db };
       throw new Error(`Dependência externa não autorizada: ${id}`);
@@ -72,4 +72,23 @@ test("cofre encerra após três falhas com mensagem recuperável", async () => {
   const mod = carregar([{ data: null, error: { message: "indisponível" } }]);
   await assert.rejects(() => mod.api.ler("PINPAY_TOKEN"), /após 3 tentativas/);
   assert.equal(mod.consultas(), 3);
+});
+
+test("redeploy sem chave não apresenta gateways salvos como desativados", async () => {
+  const mod = carregar([{ data: [{ chave: "PAGAMENTOS_GATEWAYS", valor_cifrado: "cofre-existente" }], error: null }], { chaveMestra: false });
+  await assert.rejects(() => mod.api.ler("PAGAMENTOS_GATEWAYS"), /restaure a chave original/);
+});
+
+test("instalação realmente vazia ainda pode ler configuração do ambiente", async () => {
+  const mod = carregar([{ data: [], error: null }], { chaveMestra: false, ambiente: { AXXONPAY_PUBLIC_KEY: "pk_teste" } });
+  assert.equal(await mod.api.ler("AXXONPAY_PUBLIC_KEY"), "pk_teste");
+});
+
+test("mesmo cofre e gateways são usados independentemente do domínio de acesso", async () => {
+  const config = JSON.stringify({ pix: "axxonpay", cartao: "axxonpay" });
+  for (const site of ["https://cfcde.85.122.114.210.nip.io", "https://vinimaiochi.fans", "https://novo.example"]) {
+    const mod = carregar([{ data: [{ chave: "PAGAMENTOS_GATEWAYS", valor_cifrado: config }], error: null }],
+      { ambiente: { NEXT_PUBLIC_SITE_URL: site } });
+    assert.equal(await mod.api.ler("PAGAMENTOS_GATEWAYS"), config);
+  }
 });
