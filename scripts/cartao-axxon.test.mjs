@@ -215,8 +215,15 @@ test("checkout: cartão em componente próprio, sem campos de cartão no formul�
   assert.match(checkout, /classeBotao=\{styles\.payButton\}/, "cartão usa o mesmo botão visual do Pix");
   assert.match(checkout, /Cartão processado pela/);
   assert.match(checkout, /cielo-logo\.svg/);
+  assert.match(checkout, /performance\.getEntriesByType\("navigation"\)/, "checkout identifica documento iniciado fora da rota segura");
+  assert.match(checkout, /window\.location\.replace\(window\.location\.href\)/, "navegação SPA é convertida em documento com a CSP do checkout");
   assert.doesNotMatch(checkout, /cc-number|cc-csc|cvv|numeroCartao|\/api\/pagamentos\/cartao|cartao-sandbox|chaveAtivacao/);
   assert.match(checkout, /fetch\("\/api\/pix"/);
+  const carrinho = fonte("../src/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/CartDrawer.tsx");
+  assert.match(carrinho, /<a href=\{checkoutHref\}/, "botão principal abre um documento novo com a CSP do 3DS");
+  assert.doesNotMatch(carrinho, /<Link href=\{checkoutHref\}/);
+  const ofertaSaida = fonte("../src/components/sites/cafecomdeuspai-com-8456844d/shared/ExitOffer.tsx");
+  assert.match(ofertaSaida, /window\.location\.assign\(destino\.toString\(\)\)/, "oferta também troca o documento antes do cartão");
   const componente = fonte("../src/components/pagamentos/CartaoAxxon.tsx");
   assert.match(componente, /identificarBandeiraCartao/);
   assert.match(componente, /Processando seu cartão/);

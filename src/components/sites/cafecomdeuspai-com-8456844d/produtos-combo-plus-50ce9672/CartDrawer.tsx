@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { calcularDescontosCarrinho, cupomValidoCarrinho } from "@/lib/promocoes";
@@ -73,7 +72,10 @@ export default function CartDrawer({ open, onClose, cart }: Props) {
         <div className={styles.coupon}><label htmlFor="cart-coupon">CUPOM DE DESCONTO</label><div><input id="cart-coupon" value={coupon} onChange={event => { setCoupon(event.target.value); setCouponStatus("idle"); }} placeholder="Digite seu Cupom" /><button type="button" onClick={apply}>Aplicar</button></div>{couponStatus !== "idle" && <p className={couponStatus === "valid" ? styles.success : styles.error} role="status">{couponStatus === "valid" ? `Cupom ${cupomAplicado} aplicado!` : "Cupom inválido para os produtos da sacola."}</p>}</div>
         {descontos.cupomAplicado && <div className={styles.summary}><span>Cupom {descontos.cupomAplicado}:</span><strong>− {money.format(descontos.cupomCentavos / 100)}</strong></div>}
         <div className={styles.total}><span>Total:</span><strong>{money.format(total / 100)}</strong></div>
-        {cart.items.length ? <Link href={checkoutHref} className={styles.checkout}>Finalizar compra</Link> : <span className={`${styles.checkout} ${styles.disabled}`}>Finalizar compra</span>}
+        {/* O checkout tem uma CSP própria para o 3DS. Uma âncora comum força
+            um documento novo; navegação SPA conservaria a CSP mais fechada
+            da vitrine e bloquearia o desafio do banco. */}
+        {cart.items.length ? <a href={checkoutHref} className={styles.checkout}>Finalizar compra</a> : <span className={`${styles.checkout} ${styles.disabled}`}>Finalizar compra</span>}
         <button className={styles.continue} type="button" onClick={onClose}>Continuar comprando</button>
       </footer>
     </aside>

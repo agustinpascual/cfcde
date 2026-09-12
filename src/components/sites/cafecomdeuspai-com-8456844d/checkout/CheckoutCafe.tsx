@@ -72,7 +72,23 @@ function deliveryDate(days: number) {
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+function documentoFoiAbertoNoCheckout() {
+  if (typeof window === "undefined") return true;
+  const navegacao = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+  if (!navegacao?.name) return true;
+  try { return new URL(navegacao.name).pathname.startsWith("/checkout"); }
+  catch { return true; }
+}
+
 export default function CheckoutCafe({ products, prefill = null }: { products: CheckoutProduct[]; prefill?: CheckoutPrefill | null }) {
+  /* CSP é política do documento, não da árvore React. Se o Next chegar aqui
+     por navegação SPA a partir da vitrine, o navegador conserva a CSP antiga
+     e bloqueia conexões/iframes do 3DS. Reabre a mesma URL como documento e
+     passa a usar a CSP específica de /checkout. */
+  const [documentoSeguro] = useState(documentoFoiAbertoNoCheckout);
+  useEffect(() => {
+    if (!documentoSeguro) window.location.replace(window.location.href);
+  }, [documentoSeguro]);
   const product = products[0];
   const subtotalProdutosCents = products.reduce((total, item) => total + item.priceCents * item.quantity, 0);
   const productCartKey = products.map((item) => `${item.slug}:${item.quantity}`).join("|");
@@ -645,6 +661,12 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     setCopied(true); window.setTimeout(() => setCopied(false), 1800);
   }
 
+  if (!documentoSeguro) {
+    return <main className={styles.secureReload} role="status" aria-live="polite">
+      <LockKeyhole aria-hidden="true" />
+      <span>Preparando o ambiente seguro do pagamento…</span>
+    </main>;
+  }
 
   return (
     <div className={styles.shell}>

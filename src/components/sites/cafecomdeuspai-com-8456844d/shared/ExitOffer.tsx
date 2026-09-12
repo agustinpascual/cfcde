@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./ExitOffer.module.css";
 
@@ -25,7 +24,6 @@ export default function ExitOffer({
   descricao,
   chaveSessao = CHAVE_SESSAO,
 }: Props) {
-  const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
@@ -115,7 +113,12 @@ export default function ExitOffer({
       return;
     }
     if (!slug) return;
-    router.push(`/checkout?produto=${encodeURIComponent(slug)}&cupom=${encodeURIComponent(cupom)}`);
+    /* O checkout recebe uma CSP exclusiva para o 3DS. Trocar o documento é
+       obrigatório: uma transição SPA mantém a CSP da página de produto. */
+    const destino = new URL("/checkout", window.location.origin);
+    destino.searchParams.set("produto", slug);
+    destino.searchParams.set("cupom", cupom);
+    window.location.assign(destino.toString());
   }
 
   if (!aberto) return null;
