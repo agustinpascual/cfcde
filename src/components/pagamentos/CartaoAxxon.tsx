@@ -24,6 +24,8 @@ type ResultadoSDK = { status?: "succeeded" | "processing" | "failed" | "requires
 type SDK = { setPublicKey(chave: string): Promise<void>; handleNextAction(acao: unknown, dados: unknown): Promise<ResultadoSDK> };
 declare global { interface Window { Axxon?: SDK; Bloopi?: unknown } }
 
+type Etapa3ds = "chamando_sdk" | "ambiente_aberto" | "desafio_aberto" | "retorno_sdk";
+
 export type PayloadCartao = {
   produto: string; nome: string; email: string; documento: string; celular: string;
   endereco: { logradouro: string; numero: string; bairro: string; localidade: string; uf: string; cep: string };
@@ -324,15 +326,34 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         setFase3ds("abrindo");
         setPopupProcessamento("banco");
         await new Promise<void>(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
-        setFase3ds("desafio");
         setPopupProcessamento("idle");
         const e = payload.endereco;
-        const resultado = await window.Axxon.handleNextAction(dados.nextAction, {
-          amount: dados.total, installments: parcelas,
-          card: { number: num, expMonth: String(mes).padStart(2, "0"), expYear: String(ano), cvv: codigo, holderName: nome },
-          customer: { name: payload.nome, email: payload.email, phone: digitos(payload.celular), document: digitos(payload.documento),
-            address: { street: e.logradouro.trim(), number: e.numero.trim(), neighborhood: e.bairro.trim(), city: e.localidade.trim(), state: e.uf.trim().toUpperCase(), zip: digitos(e.cep) } },
-        });
+        let etapa3ds: Etapa3ds = "chamando_sdk";
+        const acompanharEtapa = (evento3ds: Event) => {
+          const estado = (evento3ds as CustomEvent<{ state?: unknown }>).detail?.state;
+          if (estado === "progress_opened") etapa3ds = "ambiente_aberto";
+          if (estado === "challenge_presented") {
+            etapa3ds = "desafio_aberto";
+            setFase3ds("desafio");
+          }
+        };
+        window.addEventListener("bloopi:3ds-state", acompanharEtapa);
+        let resultado: ResultadoSDK;
+        try {
+          resultado = await window.Axxon.handleNextAction(dados.nextAction, {
+            amount: dados.total, installments: parcelas,
+            card: { number: num, expMonth: String(mes).padStart(2, "0"), expYear: String(ano), cvv: codigo, holderName: nome },
+            customer: { name: payload.nome, email: payload.email, phone: digitos(payload.celular), document: digitos(payload.documento),
+              address: { street: e.logradouro.trim(), number: e.numero.trim(), neighborhood: e.bairro.trim(), city: e.localidade.trim(), state: e.uf.trim().toUpperCase(), zip: digitos(e.cep) } },
+          });
+          etapa3ds = "retorno_sdk";
+        } catch (erro3ds) {
+          const diagnostico = classificarErro3ds(erro3ds);
+          registrar("checkout_parcial", { etapa: "Pagamento", falha_cartao: "3ds", motivo: diagnostico.motivo, fase: etapa3ds });
+          throw Object.assign(erro3ds instanceof Error ? erro3ds : new Error(String(erro3ds ?? "")), { rastreado3ds: true });
+        } finally {
+          window.removeEventListener("bloopi:3ds-state", acompanharEtapa);
+        }
         setFase3ds("conferindo");
         if (resultado?.status === "failed") {
           setAutenticacaoFalhou(true);
@@ -349,7 +370,9 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     } catch (erro) {
       if (criada) {
         const diagnostico = classificarErro3ds(erro);
-        registrar("checkout_parcial", { etapa: "Pagamento", falha_cartao: "3ds", motivo: diagnostico.motivo });
+        if (!(erro as { rastreado3ds?: boolean } | null)?.rastreado3ds) {
+          registrar("checkout_parcial", { etapa: "Pagamento", falha_cartao: "3ds", motivo: diagnostico.motivo, fase: "antes_3ds" });
+        }
         setFase3ds("erro");
         setAutenticacaoFalhou(true);
         setMensagem(diagnostico.mensagem);

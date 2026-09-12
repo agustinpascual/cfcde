@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 // Executar com o Next dev já aberto e AXXONPAY_PUBLIC_KEY (pública) no ambiente.
 // Carrega o SDK REAL da Axxon e o bloopi.js sob a CSP do checkout. O POST de
@@ -10,6 +10,7 @@ import { chromium } from "playwright";
 // provedores de 3DS. Não substitui a homologação com cartão próprio.
 const base = process.env.CHECKOUT_TEST_BASE_URL ?? "http://localhost:3000";
 const publicKey = process.env.AXXONPAY_PUBLIC_KEY;
+const motor = process.env.CHECKOUT_TEST_BROWSER === "webkit" ? webkit : chromium;
 
 test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { skip: !publicKey && "defina AXXONPAY_PUBLIC_KEY" }, async () => {
   for (const [caminho, deve] of [["/checkout?produto=testes", true], ["/", false]]) {
@@ -17,11 +18,11 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.equal(csp.includes("app.bloopi.io") && csp.includes("frame-src https:") && csp.includes("form-action 'self' https:"), deve, `CSP de ${caminho}`);
     assert.match(csp, /frame-ancestors 'none'/);
   }
-  const browser = await chromium.launch({ headless: true });
+  const browser = await motor.launch({ headless: true });
   try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
-    const violacoes = [], erros = [], externos = new Set();
-    const postsCartao = [], eventosTrack = [];
+    const violacoes = [], erros = [], externos = new Set(), falhasRede = [], respostasExternas = [];
+    const postsCartao = [], eventosTrack = [], leiturasBloopi = [];
     let cobrancas = 0, postsAcs = 0, liberarAprovacao = false;
     await context.addInitScript(() => document.addEventListener("securitypolicyviolation", e => console.log(`CSPVIOLATION ${e.violatedDirective} ${e.blockedURI}`)));
     await context.route("**/*", async route => {
@@ -31,6 +32,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
         return route.fulfill({ status: 204, body: "" });
       }
       if (url.origin !== base) { externos.add(url.host); return route.continue(); }
+      if (url.pathname.startsWith("/api/pagamentos/bloopi-leitura/")) leiturasBloopi.push(url.pathname);
       if (req.method() !== "GET") {
         if (url.pathname === "/api/track") {
           eventosTrack.push(JSON.parse(req.postData() ?? "{}"));
@@ -63,6 +65,14 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
       if (t.startsWith("CSPVIOLATION") || /violates the following Content Security Policy/.test(t)) violacoes.push(t.slice(0, 200));
     });
     page.on("pageerror", e => erros.push(String(e).slice(0, 200)));
+    page.on("requestfailed", req => {
+      const url = new URL(req.url());
+      if (url.origin !== base) falhasRede.push({ host: url.host, caminho: url.pathname, erro: req.failure()?.errorText?.slice(0, 80) });
+    });
+    page.on("response", resposta => {
+      const url = new URL(resposta.url());
+      if (url.origin !== base && resposta.status() >= 400) respostasExternas.push({ host: url.host, caminho: url.pathname, status: resposta.status() });
+    });
 
     await page.goto(`${base}/checkout?produto=testes`, { waitUntil: "networkidle" });
     assert.ok((await page.getByText(/Produto de teste/).count()) > 0, "produto de homologação no checkout");
@@ -98,10 +108,10 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     const opcao = page.getByRole("radio", { name: /Cartão de crédito/ });
     await opcao.waitFor({ timeout: 10000 });
     await opcao.click();
-    const botao = page.getByRole("button", { name: /Pagar R\$|Carregando pagamento seguro|Cartão indisponível/ });
+    const botao = page.getByRole("button", { name: /Finalizar compra|Carregando pagamento seguro|Cartão indisponível/ });
     await botao.waitFor({ timeout: 15000 });
     await page.waitForFunction(() => window.Axxon?.isReady === true && typeof window.Bloopi === "function", null, { timeout: 60000 });
-    assert.match(await botao.innerText(), /^Pagar R\$\s10,00$/);
+    assert.equal(await botao.innerText(), "Finalizar compra");
     assert.ok(await botao.isEnabled());
     // globals.css zera background/borda/padding/fonte de todo <button> fora de
     // .sf-root; o botão precisa vencer essa regra ou vira texto solto.
@@ -135,11 +145,14 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.notEqual(postsCartao[0].body.tentativa, postCartao.body.tentativa, "nova tentativa usa outro UUID");
     assert.equal(postCartao.body.installments, 2);
     assert.match(postCartao.body.tentativa, /^[a-f0-9-]{36}$/);
-    assert.equal(postCartao.body.produto, "testes:1");
+    assert.equal(postCartao.body.produto, "testes:1|presente:0|dedicatoria:0");
     assert.ok(await page.evaluate(() => [...document.querySelectorAll("input[autocomplete^=cc-]")].every(i => i.value === "")), "campos de cartão limpos");
     assert.match(await page.locator("p[role=alert]").innerText(), /autenticação|autenticação do banco/i);
-    assert.ok(eventosTrack.some(e => e.tipo === "checkout_parcial" && e.dados?.falha_cartao === "3ds" && typeof e.dados?.motivo === "string"), "falha 3DS categorizada sem conteúdo sensível");
-    for (const host of ["app.axxonpay.com.br", "api.bloopi.io"]) assert.ok(externos.has(host), `contatou ${host}`);
+    assert.ok(eventosTrack.some(e => e.tipo === "checkout_parcial" && e.dados?.falha_cartao === "3ds" && typeof e.dados?.motivo === "string"), `falha 3DS categorizada sem conteúdo sensível: ${JSON.stringify({ falhasRede, respostasExternas })}`);
+    assert.ok(externos.has("app.axxonpay.com.br"), "contatou app.axxonpay.com.br");
+    assert.ok(leiturasBloopi.some(c => c.includes("checkout-config")), "configuração Bloopi lida pela origem da loja");
+    assert.ok(leiturasBloopi.some(c => c.includes("get-checkout-info")), "contexto do intent lido pela origem da loja");
+    assert.equal(externos.has("api.bloopi.io"), false, "Safari não depende de GET CORS para iniciar o 3DS");
     assert.equal(externos.has("app.bloopi.io"), false, "SDK da Bloopi veio pela origem da loja");
     assert.deepEqual(violacoes, [], "sem violações de CSP");
     assert.deepEqual(erros, [], "sem erros de página");

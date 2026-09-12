@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 const ORIGENS = [
-  "https://js.bloopi.io/bloopi.js",
+  // Origem publicada pela configuração da AxxonPay. O antigo js.bloopi.io
+  // não possui DNS e fazia cada cache frio esperar o timeout antes do fallback.
   "https://app.bloopi.io/bloopi.js",
 ];
 
@@ -18,8 +19,14 @@ async function baixar() {
         signal: AbortSignal.timeout(8000),
       });
       if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
-      const codigo = await resposta.text();
+      const original = await resposta.text();
+      const codigo = original
+        .replace('API_BASE + "/checkout-config"', '"/api/pagamentos/bloopi-leitura/checkout-config"')
+        .replace('API_BASE + "/get-checkout-info/"', '"/api/pagamentos/bloopi-leitura/get-checkout-info/"');
       if (codigo.length < 1000 || !codigo.includes("Bloopi")) throw new Error("SDK inválido");
+      if (codigo === original || codigo.includes('API_BASE + "/checkout-config"') || codigo.includes('API_BASE + "/get-checkout-info/"')) {
+        throw new Error("Contrato do SDK incompatível");
+      }
       cache = { codigo, atualizadoEm: Date.now() };
       return codigo;
     } catch (erro) {

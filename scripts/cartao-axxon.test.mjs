@@ -11,7 +11,8 @@ function modulo(caminho, deps) {
   const fonte = readFileSync(new URL(caminho, import.meta.url), "utf8");
   const js = ts.transpileModule(fonte, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const exports = {};
-  vm.runInNewContext(js, { exports, Response, URL, require: id => {
+  vm.runInNewContext(js, { exports, Response, Request, Headers, URL, AbortSignal, setTimeout, fetch: deps.$fetch ?? globalThis.fetch, require: id => {
+    if (id === "$fetch") throw new Error("Dependência interna inválida");
     if (!(id in deps)) throw new Error(`Dependência externa não autorizada no teste: ${id}`);
     return deps[id];
   } });
@@ -224,6 +225,8 @@ test("checkout: cartão em componente próprio, sem campos de cartão no formul�
   assert.doesNotMatch(componente, /`Pagar \$\{money\.format/);
   assert.match(componente, /onFalha\?\.\(\)/);
   assert.match(componente, /podeOferecerPix/, "não oferece Pix em falha ambígua que ainda pode cobrar");
+  assert.match(componente, /bloopi:3ds-state/, "acompanha se o desafio bancário chegou a abrir");
+  assert.match(componente, /fase: etapa3ds/, "falha 3DS registra somente uma fase fechada, sem dados do cartão");
   assert.doesNotMatch(componente, /binlist|lookup\.binlist|api\.card/);
   for (const exigido of [/useRef<HTMLInputElement>/, /autoComplete="cc-number"/, /autoComplete="cc-csc"/, /type="password"/, /fetch\("\/api\/pagamentos\/cartao"/, /handleNextAction\(/, /form\.current\?\.reset\(\)/, /acompanharPix\(/, /salvarPagamentoParaTela\(/, /router\.replace\("\/pagamento"\)/, /https:\/\/app\.axxonpay\.com\.br\/v1\/js\/sdk\.js/]) {
     assert.match(componente, exigido);
@@ -245,4 +248,44 @@ test("CSP: hosts de 3DS só no checkout; o resto do site continua fechado", () =
   assert.doesNotMatch(checkout, /"frame-ancestors"|"script-src": "'self' 'unsafe-inline' 'unsafe-eval' https:"/, "herda frame-ancestors 'none' e não abre script-src");
   assert.match(config, /source: "\/checkout\/:path\*", headers: \[\{ key: "Content-Security-Policy", value: cspCheckout \}\]/);
   assert.match(config, /source: "\/api\/pagamentos\/config"[\s\S]*?"Cache-Control", value: "no-store, max-age=0"/, "a configuração do cartão não pode ficar obsoleta no navegador");
+});
+
+test("proxy do SDK Bloopi usa somente a origem pública ativa", () => {
+  const rota = fonte("../src/app/api/pagamentos/sdk/bloopi/route.ts");
+  assert.match(rota, /https:\/\/app\.bloopi\.io\/bloopi\.js/);
+  assert.doesNotMatch(rota, /https:\/\/js\.bloopi\.io/, "não espera oito segundos por um host sem DNS");
+  assert.match(rota, /bloopi-leitura\/checkout-config/);
+  assert.match(rota, /bloopi-leitura\/get-checkout-info/);
+  const leitura = fonte("../src/app/api/pagamentos/bloopi-leitura/[...path]/route.ts");
+  assert.match(leitura, /export async function GET/);
+  assert.doesNotMatch(leitura, /export async function POST/, "operações mutáveis continuam diretas no navegador");
+});
+
+test("leituras Bloopi: somente GET permitido, com repetição segura e sem cache", async () => {
+  const chamadas = [];
+  let respostas = 0;
+  const { GET } = modulo("../src/app/api/pagamentos/bloopi-leitura/[...path]/route.ts", {
+    "@/lib/origem": { origemOficial: () => true },
+    "@/lib/limite": { excedeu: () => false, ipDe: () => "127.0.0.1" },
+    $fetch: async (url, init) => {
+      chamadas.push({ url, init });
+      respostas++;
+      if (respostas === 1) return Response.json({ error: "transitório" }, { status: 503 });
+      return Response.json({ data: { ok: true } });
+    },
+  });
+  const req = new Request("https://loja.example/api/pagamentos/bloopi-leitura/get-checkout-info/pi_teste", {
+    headers: { origin: "https://loja.example", "x-public-key": "pk_teste", "x-checkout-secret": "segredo-ficticio" },
+  });
+  const resposta = await GET(req, { params: Promise.resolve({ path: ["get-checkout-info", "pi_teste"] }) });
+  assert.equal(resposta.status, 200);
+  assert.match(resposta.headers.get("cache-control"), /no-store/);
+  assert.equal(chamadas.length, 2, "GET 503 é repetido uma única vez");
+  assert.equal(chamadas[1].url, "https://api.bloopi.io/functions/v1/get-checkout-info/pi_teste");
+  assert.equal(chamadas[1].init.headers.get("x-checkout-secret"), "segredo-ficticio");
+
+  const antes = chamadas.length;
+  const invalida = await GET(req, { params: Promise.resolve({ path: ["confirm-payment"] }) });
+  assert.equal(invalida.status, 404);
+  assert.equal(chamadas.length, antes, "rota mutável não chega à Bloopi");
 });

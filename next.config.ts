@@ -130,7 +130,7 @@ const nextConfig: NextConfig = {
        segue na política fechada. */
     const cspCheckout = montar({
       ...base,
-      "script-src": `${base["script-src"]} https://app.bloopi.io https://js.bloopi.io https://*.online-metrix.net`
+      "script-src": `${base["script-src"]} https://app.bloopi.io https://*.online-metrix.net`
         + " https://static.safe2pay.dev https://3ds-nx-js.stone.com.br https://assets.pagseguro.com.br https://sdk.pagseguro.com https://cdn.marlim.co"
         + " https://*.cardinaltrusted.com https://*.cardinalcommerce.com https://m1.openfpcdn.io https://fpjs.dev",
       "connect-src": `${base["connect-src"]} https://api.bloopi.io https://*.online-metrix.net`
