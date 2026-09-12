@@ -258,6 +258,8 @@ test("proxy do SDK Bloopi usa somente a origem pública ativa", () => {
   assert.match(rota, /bloopi-leitura\/get-checkout-info/);
   assert.match(rota, /bloopi-envio\/initiate-3ds/);
   assert.match(rota, /bloopi-envio\/confirm-payment/);
+  assert.match(rota, /safe2PayReady/);
+  assert.match(rota, /existingScript\.remove\(\)/, "MPI incompleto é removido antes da tentativa seguinte");
   const leitura = fonte("../src/app/api/pagamentos/bloopi-leitura/[...path]/route.ts");
   assert.match(leitura, /export async function GET/);
   assert.doesNotMatch(leitura, /export async function POST/, "a rota idempotente continua exclusiva para leitura");

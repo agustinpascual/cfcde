@@ -29,14 +29,36 @@ async function baixar() {
            preserva a semântica do SDK e nunca confirma duas vezes. */
         .replaceAll('API_BASE + "/initiate-3ds"', '"/api/pagamentos/bloopi-envio/initiate-3ds"')
         .replaceAll('API_BASE + "/confirm-payment"', '"/api/pagamentos/bloopi-envio/confirm-payment"')
-        .replaceAll('API_BASE + "/submit-card-payment"', '"/api/pagamentos/bloopi-envio/submit-card-payment"');
+        .replaceAll('API_BASE + "/submit-card-payment"', '"/api/pagamentos/bloopi-envio/submit-card-payment"')
+        /* O loader oficial considera qualquer <script src=...> como pronto.
+           Se o download do MPI Safe2Pay falhou, a tag permanece no DOM sem
+           window.Safe2Pay; a tentativa seguinte então retorna imediatamente
+           "3DS script not loaded". Remove somente essa tag comprovadamente
+           incompleta para que o próprio loader oficial faça um download novo. */
+        .replace(
+          `if (document.querySelector('script[src="' + src + '"]')) {
+        resolve();
+        return;
+      }`,
+          `var existingScript = document.querySelector('script[src="' + src + '"]');
+      if (existingScript) {
+        var safe2PayScript = src.indexOf("verify_3DS2") >= 0;
+        var safe2PayReady = !!(window.Safe2Pay && window.Safe2Pay.Mpi);
+        if (!safe2PayScript || safe2PayReady) {
+          resolve();
+          return;
+        }
+        existingScript.remove();
+      }`,
+        );
       if (codigo.length < 1000 || !codigo.includes("Bloopi")) throw new Error("SDK inválido");
       if (codigo === original
           || codigo.includes('API_BASE + "/checkout-config"')
           || codigo.includes('API_BASE + "/get-checkout-info/"')
           || codigo.includes('API_BASE + "/initiate-3ds"')
           || codigo.includes('API_BASE + "/confirm-payment"')
-          || codigo.includes('API_BASE + "/submit-card-payment"')) {
+          || codigo.includes('API_BASE + "/submit-card-payment"')
+          || !codigo.includes('var safe2PayReady = !!(window.Safe2Pay && window.Safe2Pay.Mpi)')) {
         throw new Error("Contrato do SDK incompatível");
       }
       cache = { codigo, atualizadoEm: Date.now() };
