@@ -10,7 +10,8 @@ import { chromium, webkit } from "playwright";
 // provedores de 3DS. Não substitui a homologação com cartão próprio.
 const base = process.env.CHECKOUT_TEST_BASE_URL ?? "http://localhost:3000";
 const publicKey = process.env.AXXONPAY_PUBLIC_KEY;
-const motor = process.env.CHECKOUT_TEST_BROWSER === "webkit" ? webkit : chromium;
+const usandoWebkit = process.env.CHECKOUT_TEST_BROWSER === "webkit";
+const motor = usandoWebkit ? webkit : chromium;
 
 test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { skip: !publicKey && "defina AXXONPAY_PUBLIC_KEY" }, async () => {
   for (const [caminho, deve] of [["/checkout?produto=testes", true], ["/", false]]) {
@@ -148,7 +149,12 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     assert.equal(postCartao.body.produto, "testes:1|presente:0|dedicatoria:0");
     assert.ok(await page.evaluate(() => [...document.querySelectorAll("input[autocomplete^=cc-]")].every(i => i.value === "")), "campos de cartão limpos");
     assert.match(await page.locator("p[role=alert]").innerText(), /autenticação|autenticação do banco/i);
-    assert.ok(eventosTrack.some(e => e.tipo === "checkout_parcial" && e.dados?.falha_cartao === "3ds" && typeof e.dados?.motivo === "string"), `falha 3DS categorizada sem conteúdo sensível: ${JSON.stringify({ falhasRede, respostasExternas })}`);
+    // O sendBeacon do WebKit não passa pelo context.route do Playwright. A
+    // telemetria continua coberta no Chromium; no WebKit validamos o fluxo e
+    // as requisições, que são o comportamento relevante para o Safari/iPhone.
+    if (!usandoWebkit) {
+      assert.ok(eventosTrack.some(e => e.tipo === "checkout_parcial" && e.dados?.falha_cartao === "3ds" && typeof e.dados?.motivo === "string"), `falha 3DS categorizada sem conteúdo sensível: ${JSON.stringify({ falhasRede, respostasExternas })}`);
+    }
     assert.ok(externos.has("app.axxonpay.com.br"), "contatou app.axxonpay.com.br");
     assert.ok(leiturasBloopi.some(c => c.includes("checkout-config")), "configuração Bloopi lida pela origem da loja");
     assert.ok(leiturasBloopi.some(c => c.includes("get-checkout-info")), "contexto do intent lido pela origem da loja");
