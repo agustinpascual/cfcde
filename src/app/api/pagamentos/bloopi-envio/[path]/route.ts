@@ -46,14 +46,31 @@ export async function POST(req: Request, contexto: { params: Promise<{ path: str
   }
 
   try {
+    /* No navegador, o POST direto da Bloopi leva Origin automaticamente. O
+       proxy precisa conservar essa informação: ela identifica a loja que
+       iniciou a sessão 3DS e pode ser usada na configuração enviada ao MPI.
+       A origem já foi validada por origemOficial acima; não encaminhamos
+       Referer, cookies nem qualquer outro cabeçalho do comprador. */
+    const headersEnvio: Record<string, string> = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "x-public-key": publica,
+      "x-checkout-secret": segredo,
+    };
+    const origem = req.headers.get("origin")?.trim();
+    if (origem) {
+      try {
+        const urlOrigem = new URL(origem);
+        if (["http:", "https:"].includes(urlOrigem.protocol)
+            && !urlOrigem.username && !urlOrigem.password && urlOrigem.origin === origem) {
+          headersEnvio.Origin = urlOrigem.origin;
+        }
+      } catch { /* origemOficial já rejeita valores malformados em produção */ }
+    }
+
     const resposta = await fetch(`${BASE}/${caminho}`, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "x-public-key": publica,
-        "x-checkout-secret": segredo,
-      },
+      headers: headersEnvio,
       body: corpo,
       cache: "no-store",
       redirect: "manual",
@@ -61,14 +78,14 @@ export async function POST(req: Request, contexto: { params: Promise<{ path: str
     });
     if (resposta.status >= 300 && resposta.status < 400) return jsonErro(502);
 
-    const headers = new Headers({
+    const headersResposta = new Headers({
       "Content-Type": resposta.headers.get("content-type") ?? "application/json; charset=utf-8",
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     });
     const codigoPlataforma = resposta.headers.get("sb-error-code");
-    if (codigoPlataforma) headers.set("sb-error-code", codigoPlataforma);
-    return new Response(await resposta.arrayBuffer(), { status: resposta.status, headers });
+    if (codigoPlataforma) headersResposta.set("sb-error-code", codigoPlataforma);
+    return new Response(await resposta.arrayBuffer(), { status: resposta.status, headers: headersResposta });
   } catch {
     return jsonErro(502);
   }

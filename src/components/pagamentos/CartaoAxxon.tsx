@@ -85,6 +85,36 @@ const classificarErroSdk = (erro: unknown) => {
    somente uma categoria fechada para distinguir banco, rede e integração. */
 const classificarErro3ds = (erro: unknown) => {
   const texto = erro instanceof Error ? erro.message : String(erro ?? "");
+  if (/cartão não participa|card.*(?:not enrolled|unenrolled)|not eligible/i.test(texto)) {
+    return {
+      motivo: "cartao_nao_elegivel_3ds",
+      mensagem: "Este cartão ou banco não participa da autenticação 3DS exigida para esta compra. Nenhum valor foi confirmado; use outro cartão habilitado para compras online ou pague com Pix.",
+    };
+  }
+  if (/3ds authentication failed|authentication failure/i.test(texto)) {
+    return {
+      motivo: "banco_nao_autenticou_3ds",
+      mensagem: "O banco recebeu a solicitação 3DS, mas não autenticou este pagamento. Nenhum valor foi confirmado; confira no aplicativo do banco ou use outro cartão/Pix.",
+    };
+  }
+  if (/3ds authentication disabled|authentication disabled/i.test(texto)) {
+    return {
+      motivo: "3ds_desabilitado",
+      mensagem: "A autenticação 3DS está desabilitada para esta transação. Nenhum valor foi confirmado; use outro cartão habilitado para compras online ou pague com Pix.",
+    };
+  }
+  if (/unsupported brand|brand does not support 3ds|bandeira.*(?:sem suporte|não suport)/i.test(texto)) {
+    return {
+      motivo: "bandeira_sem_3ds",
+      mensagem: "A bandeira deste cartão não oferece o 3DS exigido para esta compra. Nenhum valor foi confirmado; use outro cartão ou pague com Pix.",
+    };
+  }
+  if (/3ds authentication incomplete|authentication incomplete/i.test(texto)) {
+    return {
+      motivo: "retorno_3ds_incompleto",
+      mensagem: "O banco devolveu a autenticação sem os dados necessários para confirmar o pagamento. Estamos conferindo o status antes de liberar outra tentativa.",
+    };
+  }
   if (/authentication was not completed|not authenticated|auth_not_supported|change_payment_method|require_challenge|cancel|closed/i.test(texto)) {
     return {
       motivo: "banco_nao_concluiu",

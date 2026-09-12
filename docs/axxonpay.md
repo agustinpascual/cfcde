@@ -24,6 +24,8 @@ As consultas idempotentes `checkout-config`/`get-checkout-info` passam pela rota
 
 Uma tentativa subsequente no mesmo Chrome isolou outro defeito do loader público: depois de uma falha anterior, a tag `verify_3DS2.min.js` podia permanecer no DOM sem expor `window.Safe2Pay.Mpi`. O loader da Bloopi verificava apenas a existência da tag e a considerava carregada, produzindo `3DS script not loaded` com outro cartão. O SDK servido pela loja agora remove somente a tag Safe2Pay comprovadamente incompleta; o loader oficial então baixa o MPI novamente. Scripts válidos e desafios em andamento não são removidos.
 
+Os POSTs mutáveis feitos pelo proxy preservam o `Origin` que já foi validado pela loja. Esse cabeçalho existia automaticamente no fluxo direto e identifica para a Bloopi a origem que iniciou a sessão 3DS; cookies, `Referer` e demais cabeçalhos do comprador não são encaminhados. Os resultados oficiais do MPI Safe2Pay também são classificados separadamente (`onFailure`, `onUnenrolled`, `onDisabled`, bandeira sem suporte e autenticação incompleta), sem registrar mensagem crua ou dados do cartão.
+
 O fluxo foi validado no Chromium mobile e no WebKit/Safari com os SDKs públicos reais da AxxonPay/Bloopi, CSP, leitura local do contexto e POST de ACS, mantendo a criação da cobrança interceptada. Essa prova verifica carregamento e integração sem cobrar. A homologação financeira final ainda exige um cartão próprio do lojista em `/produto/testes`, porque nenhum teste automatizado pode afirmar aprovação do emissor sem uma transação real.
 
 ### Decisão de 09/09/2026: adquirente Bloopi, cartão em claro pelo servidor

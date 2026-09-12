@@ -227,6 +227,9 @@ test("checkout: cartão em componente próprio, sem campos de cartão no formul�
   assert.match(componente, /podeOferecerPix/, "não oferece Pix em falha ambígua que ainda pode cobrar");
   assert.match(componente, /bloopi:3ds-state/, "acompanha se o desafio bancário chegou a abrir");
   assert.match(componente, /fase: etapa3ds/, "falha 3DS registra somente uma fase fechada, sem dados do cartão");
+  for (const motivo of ["cartao_nao_elegivel_3ds", "banco_nao_autenticou_3ds", "3ds_desabilitado", "bandeira_sem_3ds", "retorno_3ds_incompleto"]) {
+    assert.match(componente, new RegExp(motivo), `classifica retorno seguro do MPI: ${motivo}`);
+  }
   assert.doesNotMatch(componente, /binlist|lookup\.binlist|api\.card/);
   for (const exigido of [/useRef<HTMLInputElement>/, /autoComplete="cc-number"/, /autoComplete="cc-csc"/, /type="password"/, /fetch\("\/api\/pagamentos\/cartao"/, /handleNextAction\(/, /form\.current\?\.reset\(\)/, /acompanharPix\(/, /salvarPagamentoParaTela\(/, /router\.replace\("\/pagamento"\)/, /https:\/\/app\.axxonpay\.com\.br\/v1\/js\/sdk\.js/]) {
     assert.match(componente, exigido);
@@ -319,9 +322,11 @@ test("envio Bloopi: repassa a mutação uma única vez e nunca registra o corpo"
   assert.equal(chamadas[0].url, "https://api.bloopi.io/functions/v1/initiate-3ds");
   assert.equal(chamadas[0].init.body, corpo);
   assert.equal(chamadas[0].init.headers["x-checkout-secret"], "segredo-ficticio");
+  assert.equal(chamadas[0].init.headers.Origin, "https://loja.example", "preserva a origem validada exigida pela sessão 3DS");
 
   const fonteEnvio = fonte("../src/app/api/pagamentos/bloopi-envio/[path]/route.ts");
   assert.doesNotMatch(fonteEnvio, /console\.|JSON\.stringify\(json\)|JSON\.stringify\(corpo\)/, "dados do envio não entram em log nem são serializados de novo");
+  assert.doesNotMatch(fonteEnvio, /headers\.get\("cookie"\)|headers\.get\("referer"\)/i, "proxy não repassa cookie nem referer");
 });
 
 test("envio Bloopi: falha de rede não repete uma confirmação", async () => {
