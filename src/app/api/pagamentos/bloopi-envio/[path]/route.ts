@@ -1,5 +1,6 @@
 import { ipDe, excedeu } from "@/lib/limite";
 import { origemOficial } from "@/lib/origem";
+import { origemParaRepasse } from "@/lib/origem-repasse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,16 +58,8 @@ export async function POST(req: Request, contexto: { params: Promise<{ path: str
       "x-public-key": publica,
       "x-checkout-secret": segredo,
     };
-    const origem = req.headers.get("origin")?.trim();
-    if (origem) {
-      try {
-        const urlOrigem = new URL(origem);
-        if (["http:", "https:"].includes(urlOrigem.protocol)
-            && !urlOrigem.username && !urlOrigem.password && urlOrigem.origin === origem) {
-          headersEnvio.Origin = urlOrigem.origin;
-        }
-      } catch { /* origemOficial já rejeita valores malformados em produção */ }
-    }
+    const origem = origemParaRepasse(req);
+    if (origem) headersEnvio.Origin = origem;
 
     const resposta = await fetch(`${BASE}/${caminho}`, {
       method: "POST",

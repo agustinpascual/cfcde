@@ -30,6 +30,87 @@ async function baixar() {
         .replaceAll('API_BASE + "/initiate-3ds"', '"/api/pagamentos/bloopi-envio/initiate-3ds"')
         .replaceAll('API_BASE + "/confirm-payment"', '"/api/pagamentos/bloopi-envio/confirm-payment"')
         .replaceAll('API_BASE + "/submit-card-payment"', '"/api/pagamentos/bloopi-envio/submit-card-payment"')
+        /* O contrato público da Safe2Pay exige quatro booleanos no Init. A
+           sessão da Bloopi normalmente já os fornece; se vierem ausentes ou
+           parciais, normaliza somente esses campos públicos em vez de deixar
+           o SDK lançar TypeError antes mesmo de consultar o emissor. O 3DS
+           continua obrigatório e nenhum fallback sem autenticação é criado. */
+        .replace(
+          "  BloopiSDK.prototype._initializeSafe2Pay = function (session, amount) {",
+          `  function safe2PayConfigForSession(session, sdkConfig) {
+    var provided = session && (session.mpi_config || session.safe2pay_config);
+    var config = provided && typeof provided === "object" && !Array.isArray(provided)
+      ? Object.assign({}, provided)
+      : {};
+    if (typeof config.IsEnabled !== "boolean") config.IsEnabled = true;
+    if (typeof config.IsSandbox !== "boolean") {
+      config.IsSandbox = !!(session && typeof session.is_sandbox === "boolean"
+        ? session.is_sandbox
+        : sdkConfig && sdkConfig.is_sandbox);
+    }
+    if (typeof config.IsDebug !== "boolean") config.IsDebug = false;
+    if (typeof config.IsChallengeSuppressed !== "boolean") config.IsChallengeSuppressed = false;
+    if (!config.OrderNumber && session && session.session_id) config.OrderNumber = session.session_id;
+    return config;
+  }
+
+  BloopiSDK.prototype._initializeSafe2Pay = function (session, amount) {`,
+        )
+        .replaceAll(
+          "mpi.Init(session.mpi_config || session.safe2pay_config || {}, amount / 100);",
+          "mpi.Init(safe2PayConfigForSession(session, self.config), amount / 100);",
+        )
+        .replaceAll(
+          "mpi.Init(session.mpi_config || session.safe2pay_config, amount / 100);",
+          `browserReporter.report("mpi_init_started");
+        mpi.Init(safe2PayConfigForSession(session, self.config), amount / 100);`,
+        )
+        .replace(
+          `if (matchingPreparation) return matchingPreparation;
+        return self._getPaymentIntentContext(params);`,
+          `if (matchingPreparation) return matchingPreparation;
+        emit3dsState("context_started");
+        return self._getPaymentIntentContext(params);`,
+        )
+        .replace(
+          `if (context && context.psp === "paytime") {
+          return self._submitPaytimeCard(params, context);
+        }
+        return self._initiateSession(params);`,
+          `if (context && context.psp === "paytime") {
+          return self._submitPaytimeCard(params, context);
+        }
+        emit3dsState("session_started");
+        return self._initiateSession(params);`,
+        )
+        .replace(
+          `.then(function (session) {
+        if (session && session.__paytime) return session;
+        cspReporter.setSession(session && session.session_id);`,
+          `.then(function (session) {
+        if (session && session.__paytime) return session;
+        emit3dsState("session_ready");
+        cspReporter.setSession(session && session.session_id);`,
+        )
+        /* Expõe apenas nomes fechados de etapas (nunca mensagem, cartão ou
+           segredo) para o checkout distinguir sessão, MPI, desafio e banco. */
+        .replace(
+          `report: function (event, code, message) {
+        if (!sessionId) return;`,
+          `report: function (event, code, message) {
+        var visibleEvents = {
+          session_ready: true, script_loaded: true, script_load_failed: true,
+          mpi_init_started: true, mpi_ready: true, checkout_started: true,
+          challenge_presented: true, challenge_removed: true,
+          mpi_error: true, authentication_succeeded: true,
+          authentication_failed: true, authentication_disabled: true,
+          unsupported_brand: true, success_incomplete: true,
+          authentication_timeout: true, authentication_timeout_before_challenge: true,
+          authentication_timeout_after_challenge: true, confirm_started: true
+        };
+        if (visibleEvents[event]) emit3dsState("provider_" + event);
+        if (!sessionId) return;`,
+        )
         /* O loader oficial considera qualquer <script src=...> como pronto.
            Se o download do MPI Safe2Pay falhou, a tag permanece no DOM sem
            window.Safe2Pay; a tentativa seguinte então retorna imediatamente
@@ -58,7 +139,12 @@ async function baixar() {
           || codigo.includes('API_BASE + "/initiate-3ds"')
           || codigo.includes('API_BASE + "/confirm-payment"')
           || codigo.includes('API_BASE + "/submit-card-payment"')
-          || !codigo.includes('var safe2PayReady = !!(window.Safe2Pay && window.Safe2Pay.Mpi)')) {
+          || !codigo.includes('var safe2PayReady = !!(window.Safe2Pay && window.Safe2Pay.Mpi)')
+          || !codigo.includes("function safe2PayConfigForSession")
+          || !codigo.includes('emit3dsState("context_started")')
+          || !codigo.includes('emit3dsState("session_started")')
+          || !codigo.includes('emit3dsState("session_ready")')
+          || !codigo.includes('emit3dsState("provider_" + event)')) {
         throw new Error("Contrato do SDK incompatível");
       }
       cache = { codigo, atualizadoEm: Date.now() };

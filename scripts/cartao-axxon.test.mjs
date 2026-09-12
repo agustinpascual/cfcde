@@ -5,6 +5,7 @@ import vm from "node:vm";
 import ts from "typescript";
 import * as cartao from "../src/lib/cartao.ts";
 import { CHAVE_PAGAMENTO, lerPagamentoDaTela, salvarPagamentoParaTela } from "../src/lib/pagamento-navegacao.ts";
+import { origemParaRepasse } from "../src/lib/origem-repasse.ts";
 
 // Rotas reais transpiladas com dependências simuladas: sem rede, banco ou cartão real.
 function modulo(caminho, deps) {
@@ -262,6 +263,8 @@ test("proxy do SDK Bloopi usa somente a origem pública ativa", () => {
   assert.match(rota, /bloopi-envio\/initiate-3ds/);
   assert.match(rota, /bloopi-envio\/confirm-payment/);
   assert.match(rota, /safe2PayReady/);
+  assert.match(rota, /safe2PayConfigForSession/);
+  assert.match(rota, /emit3dsState\("provider_" \+ event\)/, "expõe somente a etapa fechada do provedor");
   assert.match(rota, /existingScript\.remove\(\)/, "MPI incompleto é removido antes da tentativa seguinte");
   const leitura = fonte("../src/app/api/pagamentos/bloopi-leitura/[...path]/route.ts");
   assert.match(leitura, /export async function GET/);
@@ -271,11 +274,25 @@ test("proxy do SDK Bloopi usa somente a origem pública ativa", () => {
   assert.doesNotMatch(envio, /for \(let tentativa|await esperar|while \(/, "POST mutável nunca é repetido automaticamente");
 });
 
+test("origem pública do 3DS é preservada também nos GETs same-origin", () => {
+  assert.equal(origemParaRepasse(new Request("https://loja.example/api/pagamentos/bloopi-leitura/checkout-config")), "https://loja.example");
+  assert.equal(origemParaRepasse(new Request("http://10.0.0.2:3000/api/pagamentos/bloopi-leitura/checkout-config", {
+    headers: { "x-forwarded-host": "checkout.example", "x-forwarded-proto": "https" },
+  })), "https://checkout.example");
+  assert.equal(origemParaRepasse(new Request("https://loja.example/api", {
+    headers: { origin: "https://loja.example" },
+  })), "https://loja.example");
+  assert.equal(origemParaRepasse(new Request("https://loja.example/api", {
+    headers: { origin: "javascript:alert(1)" },
+  })), null);
+});
+
 test("leituras Bloopi: somente GET permitido, com repetição segura e sem cache", async () => {
   const chamadas = [];
   let respostas = 0;
   const { GET } = modulo("../src/app/api/pagamentos/bloopi-leitura/[...path]/route.ts", {
     "@/lib/origem": { origemOficial: () => true },
+    "@/lib/origem-repasse": { origemParaRepasse: () => "https://loja.example" },
     "@/lib/limite": { excedeu: () => false, ipDe: () => "127.0.0.1" },
     $fetch: async (url, init) => {
       chamadas.push({ url, init });
@@ -293,6 +310,7 @@ test("leituras Bloopi: somente GET permitido, com repetição segura e sem cache
   assert.equal(chamadas.length, 2, "GET 503 é repetido uma única vez");
   assert.equal(chamadas[1].url, "https://api.bloopi.io/functions/v1/get-checkout-info/pi_teste");
   assert.equal(chamadas[1].init.headers.get("x-checkout-secret"), "segredo-ficticio");
+  assert.equal(chamadas[1].init.headers.get("origin"), "https://loja.example", "GET mantém a origem pública do checkout");
 
   const antes = chamadas.length;
   const invalida = await GET(req, { params: Promise.resolve({ path: ["confirm-payment"] }) });
@@ -304,6 +322,7 @@ test("envio Bloopi: repassa a mutação uma única vez e nunca registra o corpo"
   const chamadas = [];
   const { POST } = modulo("../src/app/api/pagamentos/bloopi-envio/[path]/route.ts", {
     "@/lib/origem": { origemOficial: () => true },
+    "@/lib/origem-repasse": { origemParaRepasse: () => "https://loja.example" },
     "@/lib/limite": { excedeu: () => false, ipDe: () => "127.0.0.1" },
     $fetch: async (url, init) => {
       chamadas.push({ url, init });
@@ -333,6 +352,7 @@ test("envio Bloopi: falha de rede não repete uma confirmação", async () => {
   let chamadas = 0;
   const { POST } = modulo("../src/app/api/pagamentos/bloopi-envio/[path]/route.ts", {
     "@/lib/origem": { origemOficial: () => true },
+    "@/lib/origem-repasse": { origemParaRepasse: () => null },
     "@/lib/limite": { excedeu: () => false, ipDe: () => "127.0.0.1" },
     $fetch: async () => { chamadas++; throw new Error("rede simulada"); },
   });

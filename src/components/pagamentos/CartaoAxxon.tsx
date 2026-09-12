@@ -24,7 +24,26 @@ type ResultadoSDK = { status?: "succeeded" | "processing" | "failed" | "requires
 type SDK = { setPublicKey(chave: string): Promise<void>; handleNextAction(acao: unknown, dados: unknown): Promise<ResultadoSDK> };
 declare global { interface Window { Axxon?: SDK; Bloopi?: unknown } }
 
-type Etapa3ds = "chamando_sdk" | "ambiente_aberto" | "desafio_aberto" | "retorno_sdk";
+type Etapa3ds = "chamando_sdk" | "ambiente_aberto" | "contexto_pagamento" | "iniciando_sessao"
+  | "sessao_criada" | "script_3ds" | "inicializando_mpi" | "mpi_pronto" | "enviando_ao_banco"
+  | "erro_mpi" | "desafio_aberto" | "confirmando_adquirente" | "retorno_sdk";
+
+const ETAPAS_PROVIDER: Record<string, Etapa3ds> = {
+  context_started: "contexto_pagamento",
+  session_started: "iniciando_sessao",
+  session_ready: "sessao_criada",
+  provider_session_ready: "sessao_criada",
+  provider_script_loaded: "script_3ds",
+  provider_script_load_failed: "script_3ds",
+  provider_mpi_init_started: "inicializando_mpi",
+  provider_mpi_ready: "mpi_pronto",
+  provider_checkout_started: "enviando_ao_banco",
+  provider_mpi_error: "erro_mpi",
+  provider_challenge_presented: "desafio_aberto",
+  provider_challenge_removed: "desafio_aberto",
+  provider_authentication_succeeded: "confirmando_adquirente",
+  provider_confirm_started: "confirmando_adquirente",
+};
 
 export type PayloadCartao = {
   produto: string; nome: string; email: string; documento: string; celular: string;
@@ -83,7 +102,7 @@ const classificarErroSdk = (erro: unknown) => {
 /* O SDK contém detalhes técnicos úteis, mas eles não podem chegar crus ao
    comprador nem carregar dados do pagamento para o rastreamento. Mantemos
    somente uma categoria fechada para distinguir banco, rede e integração. */
-const classificarErro3ds = (erro: unknown) => {
+const classificarErro3ds = (erro: unknown, etapa?: Etapa3ds) => {
   const texto = erro instanceof Error ? erro.message : String(erro ?? "");
   if (/cartão não participa|card.*(?:not enrolled|unenrolled)|not eligible/i.test(texto)) {
     return {
@@ -149,6 +168,24 @@ const classificarErro3ds = (erro: unknown) => {
     return {
       motivo: "inicializacao_3ds",
       mensagem: "Não foi possível iniciar a autenticação do banco. Estamos conferindo o status do pagamento antes de liberar outra tentativa.",
+    };
+  }
+  if (etapa === "contexto_pagamento" || etapa === "iniciando_sessao") {
+    return {
+      motivo: etapa === "contexto_pagamento" ? "contexto_3ds" : "sessao_3ds",
+      mensagem: "A adquirente não conseguiu iniciar a sessão de autenticação 3DS. Nenhuma autorização chegou ao banco; estamos conferindo a tentativa antes de liberar outra.",
+    };
+  }
+  if (["sessao_criada", "script_3ds", "inicializando_mpi"].includes(etapa ?? "")) {
+    return {
+      motivo: "inicializacao_mpi",
+      mensagem: "A sessão foi criada na adquirente, mas o ambiente 3DS não terminou de inicializar. Nenhuma autorização chegou ao banco; estamos conferindo a tentativa antes de liberar outra.",
+    };
+  }
+  if (etapa === "erro_mpi") {
+    return {
+      motivo: "erro_sistemico_mpi",
+      mensagem: "O provedor 3DS interrompeu o fluxo antes da autenticação do banco. Estamos conferindo a tentativa antes de liberar outra.",
     };
   }
   return {
@@ -362,7 +399,8 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         const acompanharEtapa = (evento3ds: Event) => {
           const estado = (evento3ds as CustomEvent<{ state?: unknown }>).detail?.state;
           if (estado === "progress_opened") etapa3ds = "ambiente_aberto";
-          if (estado === "challenge_presented") {
+          if (typeof estado === "string" && ETAPAS_PROVIDER[estado]) etapa3ds = ETAPAS_PROVIDER[estado];
+          if (estado === "challenge_presented" || estado === "provider_challenge_presented") {
             etapa3ds = "desafio_aberto";
             setFase3ds("desafio");
           }
@@ -378,7 +416,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
           });
           etapa3ds = "retorno_sdk";
         } catch (erro3ds) {
-          const diagnostico = classificarErro3ds(erro3ds);
+          const diagnostico = classificarErro3ds(erro3ds, etapa3ds);
           registrar("checkout_parcial", { etapa: "Pagamento", falha_cartao: "3ds", motivo: diagnostico.motivo, fase: etapa3ds });
           throw Object.assign(erro3ds instanceof Error ? erro3ds : new Error(String(erro3ds ?? "")), { rastreado3ds: true });
         } finally {

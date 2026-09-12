@@ -1,5 +1,6 @@
 import { ipDe, excedeu } from "@/lib/limite";
 import { origemOficial } from "@/lib/origem";
+import { origemParaRepasse } from "@/lib/origem-repasse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,6 +41,12 @@ export async function GET(req: Request, contexto: { params: Promise<{ path: stri
 
   const headers = new Headers({ Accept: "application/json", "x-public-key": publica });
   if (segredo) headers.set("x-checkout-secret", segredo);
+  /* O GET original do navegador era CORS e levava Origin. Ao trazê-lo para a
+     mesma origem, o browser deixa de enviar esse cabeçalho automaticamente;
+     reconstrói a origem pública já validada para a Bloopi resolver o intent
+     no mesmo contexto em que a sessão 3DS será iniciada. */
+  const origem = origemParaRepasse(req);
+  if (origem) headers.set("Origin", origem);
 
   for (let tentativa = 0; tentativa < 2; tentativa++) {
     try {
