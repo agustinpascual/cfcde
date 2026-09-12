@@ -41,12 +41,12 @@ export default async function ComprovantePedido({ pedidoId, status }: { pedidoId
         <dl className={d.campos}>
           <div><dt>Recebido no servidor</dt><dd>{formatarDataHoraBrasilia(c.recebido_em)}</dd></div>
           <div><dt>Cópia informada pelo navegador</dt><dd>{c.copiado_em ? formatarDataHoraBrasilia(c.copiado_em) : "Não registrada (pode ter usado QR Code)"}</dd></div>
-          <div><dt>Nome informado</dt><dd>{c.nome_informado} · {resultado(c.nome_compativel)}</dd></div>
-          <div><dt>Valor informado</dt><dd>{moeda(c.valor_informado)} · {resultado(c.valor_compativel)}</dd></div>
-          <div><dt>Horário informado (Brasília)</dt><dd>{formatarDataHoraBrasilia(c.horario_informado)} · {resultado(c.horario_compativel)}</dd></div>
+          <div><dt>Nome informado</dt><dd>{c.nome_informado ? `${c.nome_informado} · ${resultado(c.nome_compativel)}` : "Não solicitado"}</dd></div>
+          <div><dt>Valor informado</dt><dd>{c.valor_informado === null ? "Não solicitado" : `${moeda(c.valor_informado)} · ${resultado(c.valor_compativel)}`}</dd></div>
+          <div><dt>Horário informado (Brasília)</dt><dd>{c.horario_informado ? `${formatarDataHoraBrasilia(c.horario_informado)} · ${resultado(c.horario_compativel)}` : "Não solicitado"}</dd></div>
           <div><dt>IP na geração e no envio</dt><dd>{c.mesmo_ip === null ? "Não disponível" : c.mesmo_ip ? "Mesmo IP observado" : "IP diferente — pode ter trocado de rede"}</dd></div>
         </dl>
-        <p className={d.comprovanteNota}>Nome, valor e horário foram digitados pelo cliente, não extraídos do arquivo. A comparação não valida sua autenticidade. Confira visualmente pagador, destinatário, valor, data, status efetivado e identificador da transação, e confirme o recebimento na adquirente. O IP é apenas um indício, não prova de pagamento. Arquivos não passaram por antivírus.</p>
+        <p className={d.comprovanteNota}>Confira visualmente pagador, destinatário, valor, data, status efetivado e identificador da transação, e confirme o recebimento na adquirente. O IP é apenas um indício, não prova de pagamento. Arquivos não passaram por antivírus.</p>
       </div>
     </div>
   </section>;

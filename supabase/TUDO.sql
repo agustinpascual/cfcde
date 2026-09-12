@@ -753,3 +753,26 @@ on conflict (id) do update set public = false, file_size_limit = excluded.file_s
   allowed_mime_types = excluded.allowed_mime_types;
 -- Sem políticas públicas de storage: upload/download somente pelo backend.
 commit;
+
+-- O cliente envia somente o arquivo; a conferência dos dados passa a ser visual.
+begin;
+alter table public.pix_comprovantes
+  alter column nome_informado drop not null,
+  alter column valor_informado drop not null,
+  alter column horario_informado drop not null,
+  alter column valor_compativel drop not null,
+  alter column horario_compativel drop not null;
+
+comment on table public.pix_comprovantes is
+  'Arquivo privado para conferência humana. Não altera pedidos.status ou pago_em.';
+commit;
+
+begin;
+
+alter table public.pedidos
+  add column if not exists order_bumps jsonb not null default '{}'::jsonb;
+
+comment on column public.pedidos.order_bumps is
+  'Adicionais escolhidos no checkout e conteúdo da carta, validados e precificados pelo backend.';
+
+commit;

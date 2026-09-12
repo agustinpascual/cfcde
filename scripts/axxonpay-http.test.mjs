@@ -28,7 +28,8 @@ test("contrato HTTP: envia centavos e webhook, consulta converte reais para cent
   const postbackUrl = "https://webhooks.loja.example/api/webhooks/axxonpay";
   const criado = await api.criarPagamentoAxxon({ amount: 12300, paymentMethod: "pix", postbackUrl });
   assert.equal(criado.id, "payment_uuid");
-  assert.equal(criado.amount, undefined, "valor da criação não é usado como valor confirmado");
+  assert.equal(criado.amount, 123, "valor bruto da criação fica disponível para comparação estrita");
+  assert.equal(criado.qrCode, undefined, "resposta incompleta continua exigindo GET canônico");
   const p = await api.consultarPagamentoAxxon(criado.id);
   assert.equal(p.amount, 12300);
   assert.equal(p.qrCode, "PIX-FICTICIO");

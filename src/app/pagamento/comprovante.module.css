@@ -1,13 +1,12 @@
-.bloco, .aviso { margin-top: 22px; padding: 20px; border: 1px solid #dfe6dd; border-radius: 14px; background: #fafbf8; color: #253528; }
-.bloco h2 { margin: 0 0 8px; font-size: 18px; }
+.bloco, .aviso { margin-top: 18px; padding: 18px; border: 1px solid #dfe6dd; border-radius: 10px; background: #fafbf8; color: #253528; }
+.bloco h2 { margin: 0 0 14px; font-size: 16px; }
 .bloco p, .aviso p { font-size: 13px; line-height: 1.6; margin: 8px 0 16px; }
 .bloco fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
-.bloco label { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 600; margin-bottom: 14px; min-width: 0; }
+.bloco label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; font-weight: 600; margin-bottom: 12px; min-width: 0; }
 .bloco input { width: 100%; min-width: 0; box-sizing: border-box; padding: 11px; border: 1px solid #cbd3c8; border-radius: 8px; background: #fff; color: #253528; font: inherit; font-size: 16px; }
-.bloco input[type=file] { font-size: 12px; }
+.bloco input[type=file] { padding: 9px; font-size: 12px; }
+.bloco input[type=file]::file-selector-button { margin-right: 10px; border: 0; border-radius: 6px; padding: 9px 11px; background: #ecefe9; color: #253528; font: inherit; font-weight: 700; cursor: pointer; }
 .bloco input:focus-visible, .bloco button:focus-visible, .abrir:focus-visible { outline: 2px solid #425b38; outline-offset: 3px; }
-.campos { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; }
-.bloco .nota { font-size: 11px; color: #586452; }
 .bloco button { width: 100%; padding: 13px; border: 0; border-radius: 9px; background: #2f432b; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .bloco button:hover:not(:disabled) { background: #3c5436; }
 .bloco fieldset:disabled button { opacity: .6; cursor: wait; }
@@ -15,5 +14,5 @@
 .aviso { background: #fff9e9; border-color: #ecd699; color: #654b15; }
 .aviso strong { font-size: 15px; }
 .aviso p { margin-bottom: 0; }
-.abrir { margin-top: 16px; border: 0; padding: 10px 0; background: transparent; color: #344c2c; font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
-@media (max-width: 480px) { .campos { grid-template-columns: 1fr; gap: 0; } .bloco, .aviso { padding: 16px; } }
+.abrir { display: block; width: 100%; margin-top: 16px; border: 1px solid #cfd6cc; border-radius: 8px; padding: 11px 12px; background: #f8faf7; color: #344c2c; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+@media (max-width: 480px) { .bloco, .aviso { padding: 15px; } }

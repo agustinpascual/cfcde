@@ -1,5 +1,32 @@
 import type { NextConfig } from "next";
 
+const ALIASES_BOX_PLUS_2027 = [
+  "/boxlancamento",
+  "/box-2027",
+  "/combo2027",
+  "/boxplus2027",
+  "/box-plus-2027",
+  "/combo-plus-2027",
+  "/combo-plus2027",
+  "/lancamento2027",
+  "/lancamento-2027",
+  "/box-cafe-com-deus-pai",
+  "/box-cafe-com-deus-pai-2027",
+  "/combo-cafe-com-deus-pai",
+  "/combo-cafe-com-deus-pai-2027",
+  "/cafe-com-deus-pai-2027",
+  "/colecao2027",
+  "/colecao-2027",
+  "/colecao-cafe-com-deus-pai",
+  "/nova-colecao-2027",
+  "/box-volume-7",
+  "/combo-volume-7",
+  "/volume-7-2027",
+  "/kit2027",
+  "/kit-2027",
+  "/kit-cafe-com-deus-pai",
+] as const;
+
 const nextConfig: NextConfig = {
   /* IDs públicos do Meta Pixel. O fallback mantém o rastreamento ativo também
      nos builds do Cloudflare que não importam arquivos .env.local. Tokens da
@@ -20,6 +47,8 @@ const nextConfig: NextConfig = {
     // larguras usadas pela página (evita gerar variantes inúteis)
     deviceSizes: [390, 640, 768, 1024, 1280, 1440, 1920],
     imageSizes: [16, 18, 26, 32, 50, 55, 60, 72, 98, 114, 130, 133, 341, 712],
+    // Mantém as variantes mais acessadas rápidas sem deixar o cache crescer sem limite.
+    maximumDiskCacheSize: 500_000_000,
     minimumCacheTTL: 60 * 60 * 24 * 365,
   },
   experimental: {
@@ -27,6 +56,13 @@ const nextConfig: NextConfig = {
   },
   // não anuncia a stack
   productionBrowserSourceMaps: false,
+
+  async rewrites() {
+    return ALIASES_BOX_PLUS_2027.map((source) => ({
+      source,
+      destination: "/produto/box-plus2027",
+    }));
+  },
 
   async redirects() {
     return [

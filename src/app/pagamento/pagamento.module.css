@@ -5,15 +5,15 @@
 /* Página do PIX: uma tarefa só — pagar. Sem menu, sem vitrine, sem sacola.
    Tudo que competiria com o pagamento foi retirado de propósito. */
 
-.tela { min-height: 100vh; background: #fff; color: #222; display: flex; flex-direction: column; font-family: var(--font-inter), Inter, Arial, sans-serif; }
+.tela { min-height: 100vh; min-height: 100dvh; width: 100%; min-width: 0; overflow-x: clip; background: #fff; color: #222; display: flex; flex-direction: column; font-family: var(--font-inter), Inter, Arial, sans-serif; touch-action: pan-y; }
 
 .cabecalho {
-  width: 100%; max-width: 1120px; height: 150px; margin: 0 auto;
-  padding: 22px 0; display: flex; align-items: flex-start;
+  width: 100%; max-width: 1120px; height: 112px; margin: 0 auto;
+  padding: 13px 0; display: flex; align-items: center;
 }
-.logo { width: 92px; height: 104px; object-fit: contain; display: block; }
+.logo { width: 76px; height: 86px; object-fit: contain; display: block; }
 
-.corpo { flex: 1 1 auto; width: 100%; max-width: 1120px; margin: 0 auto; padding: 24px 0 80px; }
+.corpo { flex: 1 1 auto; width: 100%; min-width: 0; max-width: 1120px; margin: 0 auto; padding: 24px 0 80px; }
 .pixEntrada{animation:pixPaginaEntrada .48s cubic-bezier(.2,.8,.2,1) both}
 .carregandoPagamento { display: grid; align-content: start; gap: 12px; }
 .carregandoLinha,.carregandoTitulo,.carregandoTexto,.carregandoCartao { display: block; overflow: hidden; position: relative; border-radius: 4px; background: #f1f1f1; }
@@ -155,8 +155,8 @@
 }
 
 @media (max-width: 800px) {
-  .cabecalho { height: 128px; justify-content: center; padding: 16px 20px; border-bottom: 1px solid #e2e2e2; }
-  .logo { width: 84px; height: 95px; }
+  .cabecalho { height: 88px; justify-content: center; padding: 9px 20px; border-bottom: 1px solid #e2e2e2; }
+  .logo { width: 62px; height: 70px; }
   .corpo { padding: 26px 20px 60px; }
   .pagamentoGrid { grid-template-columns: 1fr; gap: 20px; }
   .colunaResumo { grid-template-columns: 1fr 1fr; }
@@ -164,24 +164,28 @@
 }
 
 @media (max-width: 480px) {
-  .cabecalho { height: 118px; justify-content: center; padding: 15px 0; border-bottom: 1px solid #e2e2e2; }
-  .logo { width: 78px; height: 88px; }
-  .corpo { padding: 22px 14px 48px; }
-  .topoPagamento { display: block; padding-bottom: 22px; }
-  .topoPagamento h1 { font-size: 26px; }
+  .cabecalho { height: 76px; justify-content: center; padding: 7px 0; border-bottom: 1px solid #e2e2e2; }
+  .logo { width: 55px; height: 62px; }
+  .corpo { padding: 16px 14px max(44px, env(safe-area-inset-bottom)); }
+  .topoPagamento { display: block; padding-bottom: 16px; text-align: center; }
+  .topoPagamento h1 { margin-top: 6px; font-size: 25px; }
   .topoPagamento>div>p:last-child { font-size: 14px; }
-  .timerPix { width: 100%; margin-top: 18px; grid-template-columns:20px 1fr auto; align-items:center; }
+  .etapa { justify-content: center; }
+  .timerPix { width: 100%; margin-top: 14px; grid-template-columns:20px 1fr auto; align-items:center; }
   .timerPix svg { grid-row: auto; }
   .timerPix strong { grid-column: 3; grid-row: 1; }
-  .pagamentoGrid { display: flex; flex-direction: column; gap: 18px; padding-top: 22px; }
-  .cartao { width: 100%; padding: 20px 16px; }
+  .pagamentoGrid { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; }
+  .cartao { width: 100%; padding: 18px 14px; }
   .qrBloco { display: block; text-align: center; }
   .qrMoldura { width: max-content; margin: 0 auto; padding: 9px; }
-  .qr { width: 196px; height: 196px; }
-  .qrBloco>div:last-child { max-width: none; margin-top: 13px; }
+  .qr { width: 184px; height: 184px; }
+  .qrBloco>div:last-child { max-width: none; margin-top: 10px; }
   .qrBloco strong { font-size: 16px; }
   .qrBloco p { margin-top: 4px; font-size: 13px; }
-  .codigo { height: 76px; font-size: 11px; }
+  .ou { margin: 18px 0 14px; }
+  .codigoLabel { text-align: center; }
+  .codigo { height: 72px; font-size: 11px; text-align: center; }
+  .copiar.copiar { min-height: 52px; padding: 13px; }
   .confirmacaoAutomatica { align-items: flex-start; text-align: left; }
   .colunaResumo { width: 100%; grid-template-columns: 1fr; }
   .resumoPedido { padding: 18px 16px; }

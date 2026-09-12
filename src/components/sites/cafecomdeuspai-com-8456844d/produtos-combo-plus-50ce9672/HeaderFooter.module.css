@@ -1,6 +1,6 @@
 .promoBar { height:40px; display:flex; align-items:center; justify-content:center; padding:0 20px; background:#050505; color:#fff; font-size:11px; font-weight:700; letter-spacing:.06em; text-align:center; text-transform:uppercase; }
-.header { position:relative; z-index:30; width:100%; background:#fff; border-bottom:1px solid #ededed; color:#080808; }
-.headerInner { height:72px; max-width:1300px; margin:0 auto; padding:0 18px; display:flex; align-items:center; gap:24px; }
+.header { position:relative; z-index:30; width:100%; background:#fff; border-bottom:1px solid #ededed; color:#080808; transition:background-color .22s ease,border-color .22s ease,box-shadow .22s ease; }
+.headerInner { height:72px; max-width:1300px; margin:0 auto; padding:0 18px; display:flex; align-items:center; gap:24px; transition:height .22s ease; }
 .logoLink { width:57px; height:58px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; overflow:hidden; }
 .logo { width:51px; height:57px; object-fit:contain; }
 .desktopNav { display:flex; flex:1 1 auto; align-items:center; justify-content:center; gap:clamp(13px,1.35vw,22px); white-space:nowrap; }
@@ -93,7 +93,9 @@
    mesmo se a foto tiver uma área clara logo abaixo do menu. */
 /* O posicionamento passou para o contêiner .sobreposto; aqui fica só a
    aparência. */
-.sobreposto { position: absolute; top: 0; right: 0; left: 0; z-index: 30; }
+.sobreposto { position:fixed; top:0; right:0; left:0; z-index:40; }
+.sobreposto .promoBar { overflow:hidden; transition:height .22s ease,opacity .16s ease; }
+.sobrepostoRolado .promoBar { height:0; opacity:0; }
 .headerTransparente {
   border-bottom: 0;
   background: linear-gradient(180deg, rgba(0,0,0,.42) 0%, rgba(0,0,0,.12) 70%, transparent 100%);
@@ -108,3 +110,20 @@
 .headerTransparente .logo,
 .headerTransparente .logoLink img { filter: brightness(0) invert(1); }
 .headerTransparente .cartCount { background: #fff; color: #151515; }
+.header.headerRolado {
+  border-bottom:1px solid #e8e8e8;
+  background:#fff;
+  color:#080808;
+  box-shadow:0 4px 18px rgb(0 0 0/9%);
+}
+.headerRolado .headerInner { height:60px; }
+.header.headerRolado a,
+.header.headerRolado button,
+.header.headerRolado svg { color:#080808; }
+.header.headerRolado .logo,
+.header.headerRolado .logoLink img { filter:none; }
+.header.headerRolado .cartCount { background:#111; color:#fff; }
+
+@media(max-width:768px){
+  .headerRolado .headerInner{height:54px}
+}

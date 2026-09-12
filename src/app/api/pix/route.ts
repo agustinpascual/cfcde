@@ -4,7 +4,7 @@ import { criarPix } from "@/lib/pinpay";
 import { lerGateways } from "@/lib/gateways-config";
 import { processarAxxon } from "@/lib/pagamentos-axxon";
 import { excedeu, ipDe } from "@/lib/limite";
-import { calcularCarrinhoCafe, calcularTotal, calcularTotalCafe, type IdFrete, type ItemCarrinhoCafe } from "@/lib/precos";
+import { calcularCarrinhoCafe, calcularTotal, calcularTotalCafe, lerOrderBumpsCheckout, type IdFrete, type ItemCarrinhoCafe, type OrderBumpsCheckout } from "@/lib/precos";
 import { ler } from "@/lib/config-integracoes";
 import { depois, enviarPixPorEmail } from "@/lib/confirmar-pedido";
 import { novoNumeroPedido } from "@/lib/numero-pedido";
@@ -72,14 +72,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "CPF ou CNPJ inválido." }, { status: 422 });
 
   let valores: ReturnType<typeof calcularTotal> | ReturnType<typeof calcularTotalCafe>;
+  let orderBumps: OrderBumpsCheckout = { adicionais: [], registro: {} };
   try {
     // O valor NÃO vem do cliente — é recalculado a partir do catálogo do servidor.
-    valores = body.loja === "cafecomdeuspai"
-      ? calcularCarrinhoCafe(itensDoCorpo(body), String(body.frete ?? ""), {
+    if (body.loja === "cafecomdeuspai") {
+      orderBumps = lerOrderBumpsCheckout(body.order_bumps);
+      valores = calcularCarrinhoCafe(itensDoCorpo(body), String(body.frete ?? ""), {
           cupom: typeof body.cupom === "string" ? body.cupom : undefined,
           pagamento: "pix",
-        })
-      : calcularTotal(kitIndex, qtd, frete);
+          adicionais: orderBumps.adicionais,
+        });
+    } else {
+      valores = calcularTotal(kitIndex, qtd, frete);
+    }
   } catch (e) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 422 });
   }
@@ -133,6 +138,7 @@ export async function POST(req: Request) {
       cliente_documento: documento,
       cliente_telefone: soDigitos(body.celular) || null,
       endereco: (body.endereco && typeof body.endereco === "object") ? body.endereco : null,
+      ...(orderBumps.adicionais.length ? { order_bumps: orderBumps.registro } : {}),
     };
     const registrar = db
       ? db.from("pedidos").insert({

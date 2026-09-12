@@ -206,12 +206,24 @@ test("checkout: cartão em componente próprio, sem campos de cartão no formul�
   const checkout = fonte("../src/components/sites/cafecomdeuspai-com-8456844d/checkout/CheckoutCafe.tsx");
   assert.match(checkout, /import CartaoAxxon from "@\/components\/pagamentos\/CartaoAxxon"/);
   assert.match(checkout, /cartaoDisponivel && gatewayConfig\?\.publicKey/);
+  assert.match(checkout, /onFalha=\{mostrarOfertaPix\}/, "falha do cartão oferece recuperação por Pix");
+  assert.match(checkout, /Continue sua compra pelo Pix com desconto aplicado automaticamente/);
+  assert.match(checkout, /Embrulhar para presente/);
+  assert.match(checkout, /Dedicatória escrita por Junior Rostirola/);
+  assert.match(checkout, /classeBotao=\{styles\.payButton\}/, "cartão usa o mesmo botão visual do Pix");
+  assert.match(checkout, /Cartão processado pela/);
+  assert.match(checkout, /cielo-logo\.svg/);
   assert.doesNotMatch(checkout, /cc-number|cc-csc|cvv|numeroCartao|\/api\/pagamentos\/cartao|cartao-sandbox|chaveAtivacao/);
   assert.match(checkout, /fetch\("\/api\/pix"/);
   const componente = fonte("../src/components/pagamentos/CartaoAxxon.tsx");
   assert.match(componente, /identificarBandeiraCartao/);
   assert.match(componente, /Processando seu cartão/);
   assert.match(componente, /Abrindo a segurança do banco/);
+  assert.match(componente, /"Finalizar compra"/);
+  assert.match(componente, /\{seloProcessador\}/);
+  assert.doesNotMatch(componente, /`Pagar \$\{money\.format/);
+  assert.match(componente, /onFalha\?\.\(\)/);
+  assert.match(componente, /podeOferecerPix/, "não oferece Pix em falha ambígua que ainda pode cobrar");
   assert.doesNotMatch(componente, /binlist|lookup\.binlist|api\.card/);
   for (const exigido of [/useRef<HTMLInputElement>/, /autoComplete="cc-number"/, /autoComplete="cc-csc"/, /type="password"/, /fetch\("\/api\/pagamentos\/cartao"/, /handleNextAction\(/, /form\.current\?\.reset\(\)/, /acompanharPix\(/, /salvarPagamentoParaTela\(/, /router\.replace\("\/pagamento"\)/, /https:\/\/app\.axxonpay\.com\.br\/v1\/js\/sdk\.js/]) {
     assert.match(componente, exigido);

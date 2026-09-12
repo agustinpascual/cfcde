@@ -37,6 +37,7 @@
 .itemNome { font-size: 15px; font-weight: 700; color: var(--cdp-tinta); }
 .qtd { font-style: normal; font-weight: 400; color: var(--cdp-tinta-2); margin-left: 7px; }
 .itemValor { font-size: 15px; font-weight: 700; color: var(--cdp-tinta); }
+.orderBumps{display:flex;flex-direction:column;gap:9px;padding:15px 0;border-bottom:1px solid var(--cdp-fundo)}.orderBumps h3{margin:0 0 2px;color:var(--cdp-tinta-2);font-size:10px;letter-spacing:.06em;text-transform:uppercase}.orderBumps>div{display:flex;justify-content:space-between;gap:14px;font-size:12.5px}.orderBumps>div span{white-space:nowrap}.orderBumps article{padding:11px 12px;border-radius:7px;background:var(--cdp-fundo)}.orderBumps article>b,.orderBumps article>strong{display:block}.orderBumps article>b{margin-bottom:6px;color:var(--cdp-tinta-2);font-size:10px;text-transform:uppercase}.orderBumps article>strong{font-size:13px}.orderBumps article>p{margin:5px 0 0;white-space:pre-wrap;color:var(--cdp-tinta-2);font-size:12.5px;line-height:1.5}
 
 .valores { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; }
 .valores > div { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--cdp-tinta-2); }

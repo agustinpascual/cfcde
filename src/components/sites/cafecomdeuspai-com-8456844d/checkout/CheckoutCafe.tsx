@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, LockKeyhole, Mail, MapPin, Truck, X } from "lucide-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard, Gift, LockKeyhole, Mail, MapPin, PenLine, Truck, X } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
@@ -18,6 +18,8 @@ import { documentoBrasileiroValido } from "@/lib/documento-br";
 import { SAVED_CONTACT_KEY, normalizeContactEmail, readCheckoutContact, saveCheckoutContact } from "@/lib/checkout-contato";
 
 const logo = "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/logo.png";
+const stoneLogo = "/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/images/stone.webp";
+const cieloLogo = "/sites/cafecomdeuspai-com-8456844d/cielo-logo.svg";
 const LAST_CEP_KEY = "cdp-last-shipping-cep";
 const CUPOM_SAIDA = "CAFECOMDEUSPAI27";
 const DESCONTO_SAIDA = 4;
@@ -72,8 +74,8 @@ const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL
 
 export default function CheckoutCafe({ products, prefill = null }: { products: CheckoutProduct[]; prefill?: CheckoutPrefill | null }) {
   const product = products[0];
-  const subtotalCents = products.reduce((total, item) => total + item.priceCents * item.quantity, 0);
-  const cartKey = products.map((item) => `${item.slug}:${item.quantity}`).join("|");
+  const subtotalProdutosCents = products.reduce((total, item) => total + item.priceCents * item.quantity, 0);
+  const productCartKey = products.map((item) => `${item.slug}:${item.quantity}`).join("|");
   const productName = products.length === 1 ? product.name : `${products.length} produtos`;
   const [gatewayConfig, setGatewayConfig] = useState<{ pix: string; cartao: string; publicKey: string | null; cartaoDisponivel?: boolean; parcelas?: number } | null>(null);
   const [gatewayConfigStatus, setGatewayConfigStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -138,6 +140,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
 
   const [paymentError, setPaymentError] = useState("");
   const [generatingPix, setGeneratingPix] = useState(false);
+  const geracaoPixEmAndamento = useRef(false);
   const [pixStage, setPixStage] = useState<"idle" | "criando" | "pronto">("idle");
   const [copied, setCopied] = useState(false);
   const [withoutNumber, setWithoutNumber] = useState(Boolean(prefill?.withoutNumber));
@@ -145,6 +148,13 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
   const [draftShipping, setDraftShipping] = useState<"pac" | "sedex">("pac");
   const [paymentExpanded, setPaymentExpanded] = useState(false);
+  const [pixRecoveryOpen, setPixRecoveryOpen] = useState(false);
+  const [embrulhoPresente, setEmbrulhoPresente] = useState(false);
+  const [cartaAtiva, setCartaAtiva] = useState(false);
+  const [cartaTitulo, setCartaTitulo] = useState("");
+  const [cartaTexto, setCartaTexto] = useState("");
+  const [dedicatoriaJunior, setDedicatoriaJunior] = useState(false);
+  const [orderBumpError, setOrderBumpError] = useState("");
   const [savePaymentData, setSavePaymentData] = useState(false);
   const consentEmail = useRef("");
   const restoredEmail = useRef("");
@@ -153,17 +163,85 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   const firstNameInput = useRef<HTMLInputElement>(null);
   const addressNumberInput = useRef<HTMLInputElement>(null);
   const documentInput = useRef<HTMLInputElement>(null);
+  const paymentSection = useRef<HTMLElement>(null);
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const shippingFeeCents = shippingMethod === "sedex" ? 2032 : 0;
+  const orderBumpsCents = (embrulhoPresente ? 990 : 0) + (dedicatoriaJunior ? 1490 : 0);
+  const subtotalCents = subtotalProdutosCents + orderBumpsCents;
+  const cartKey = `${productCartKey}|presente:${Number(embrulhoPresente)}|dedicatoria:${Number(dedicatoriaJunior)}`;
+  const itensParaDesconto = [
+    ...products.map((item) => ({ produtoSlug: item.slug, subtotalCentavos: item.priceCents * item.quantity })),
+    ...(embrulhoPresente ? [{ produtoSlug: "embrulho_presente", subtotalCentavos: 990 }] : []),
+    ...(dedicatoriaJunior ? [{ produtoSlug: "dedicatoria_junior", subtotalCentavos: 1490 }] : []),
+  ];
   /* Mesma conta do servidor (lib/promocoes): cupom primeiro, Pix sobre o
      valor já com cupom. Quem cobra é a API, isto aqui só mostra. */
   const descontos = calcularDescontosCarrinho({
-    itens: products.map((item) => ({ produtoSlug: item.slug, subtotalCentavos: item.priceCents * item.quantity })),
+    itens: itensParaDesconto,
     cupom: cupomAplicado,
     pagamento: payment === "pix" ? "pix" : "cartao",
     freteCentavos: shippingFeeCents,
   });
   const totalCents = subtotalCents - descontos.totalCentavos + shippingFeeCents;
+  const descontosPixRecuperacao = calcularDescontosCarrinho({
+    itens: itensParaDesconto,
+    cupom: cupomAplicado,
+    pagamento: "pix",
+    freteCentavos: shippingFeeCents,
+  });
+  const descontosCartaoRecuperacao = calcularDescontosCarrinho({
+    itens: itensParaDesconto,
+    cupom: cupomAplicado,
+    pagamento: "cartao",
+    freteCentavos: shippingFeeCents,
+  });
+  const totalPixRecuperacao = subtotalCents - descontosPixRecuperacao.totalCentavos + shippingFeeCents;
+  const totalCartaoRecuperacao = subtotalCents - descontosCartaoRecuperacao.totalCentavos + shippingFeeCents;
+  const economiaPixRecuperacao = Math.max(0, totalCartaoRecuperacao - totalPixRecuperacao);
+
+  const mostrarOfertaPix = useCallback(() => setPixRecoveryOpen(true), [setPixRecoveryOpen]);
+
+  function escolherPixRecuperacao() {
+    setPixRecoveryOpen(false);
+    setPayment("pix");
+    setPaymentExpanded(true);
+    setPaymentError("");
+    setPixCharge(null);
+    window.setTimeout(() => paymentSection.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+  }
+
+  function validarOrderBumps() {
+    if (embrulhoPresente && cartaAtiva && (!cartaTitulo.trim() || !cartaTexto.trim())) {
+      setOrderBumpError("Preencha o título e o texto principal da carta.");
+      return false;
+    }
+    setOrderBumpError("");
+    return true;
+  }
+
+  function alterarEmbrulho(ativo: boolean) {
+    setEmbrulhoPresente(ativo);
+    setOrderBumpError("");
+    if (!ativo) {
+      setCartaAtiva(false);
+      setCartaTitulo("");
+      setCartaTexto("");
+    }
+  }
+
+  useEffect(() => {
+    if (!pixRecoveryOpen) return;
+    const overflowAnterior = document.body.style.overflow;
+    const fecharComEscape = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape") setPixRecoveryOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", fecharComEscape);
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      document.removeEventListener("keydown", fecharComEscape);
+    };
+  }, [pixRecoveryOpen]);
 
   useEffect(() => {
     if (prefill) return;
@@ -270,6 +348,11 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       frete_tipo: shippingMethod,
       metodo_pagamento: payment,
       cupom: cupomAplicado || null,
+      order_bumps: {
+        embrulho_presente: embrulhoPresente,
+        carta_ativa: embrulhoPresente && cartaAtiva,
+        dedicatoria_junior: dedicatoriaJunior,
+      },
       sem_numero: withoutNumber,
       valor: totalCents,
     };
@@ -280,7 +363,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
       });
     }, 1200);
     return () => window.clearTimeout(id);
-  }, [email, firstName, lastName, phone, documentNumber, cep, address, step, products, totalCents, shippingMethod, payment, cupomAplicado, withoutNumber]);
+  }, [email, firstName, lastName, phone, documentNumber, cep, address, step, products, totalCents, shippingMethod, payment, cupomAplicado, withoutNumber, embrulhoPresente, cartaAtiva, dedicatoriaJunior]);
 
   /* No celular a aba pode ser congelada sem dar tempo ao debounce. Envia o
      último estado pendente quando a página é ocultada ou fechada. */
@@ -482,9 +565,22 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     documento: documentNumber,
     celular: phone,
     endereco: { logradouro: address.street, numero: withoutNumber ? "S/N" : address.number, complemento: address.complement, bairro: address.neighborhood, localidade: address.city, uf: address.state, cep },
+    order_bumps: {
+      embrulho_presente: embrulhoPresente,
+      carta_ativa: embrulhoPresente && cartaAtiva,
+      carta_titulo: embrulhoPresente && cartaAtiva ? cartaTitulo.trim() : "",
+      carta_texto: embrulhoPresente && cartaAtiva ? cartaTexto.trim() : "",
+      dedicatoria_junior: dedicatoriaJunior,
+    },
   };
 
   async function generatePix() {
+    if (!validarOrderBumps()) return;
+    /* O estado visual só é aplicado no próximo render. O ref fecha também a
+       janela de um clique duplo no mesmo frame, que poderia criar duas
+       cobranças antes de o botão ficar desabilitado. */
+    if (geracaoPixEmAndamento.current) return;
+    geracaoPixEmAndamento.current = true;
     setGeneratingPix(true); setPixStage("criando"); setPaymentError(""); setPixCharge(null);
     try {
       const tentativa = tentativaPagamento(cartKey, "pix");
@@ -505,14 +601,13 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
         }
         throw new Error(data.erro || "Não foi possível gerar o PIX.");
       }
-      setPixCharge(data);
-      setPixStage("pronto");
       finalizado.current = true;   // saiu do funil de abandono: PIX gerado
       abandonoPendente.current = null;
       pixel("AddPaymentInfo", { ...dadosProdutoPixel(cartKey, productName, data.total, products.reduce((sum, item) => sum + item.quantity, 0)), payment_method: "pix" });
       /* O PIX passa a ter página própria: tela sem menu nem sacola, só o
          código e o passo a passo. Guardar no sessionStorage evita uma
          segunda ida ao servidor — o dado já está aqui. */
+      let pagamentoSalvo = false;
       try {
         salvarPagamentoParaTela({
           ...data,
@@ -521,13 +616,27 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
           produto_nome: productName,
           produto_imagem: product.image,
         });
+        pagamentoSalvo = true;
       } catch { /* storage bloqueado */ }
-      // Uma confirmação curta evita que a troca imediata de rota pareça um
-      // piscar ou uma tela travada, sem acrescentar espera perceptível.
-      await new Promise<void>(resolve => window.setTimeout(resolve, 360));
-      router.push("/pagamento");
+
+      if (pagamentoSalvo) {
+        /* A rota já foi aquecida pelo prefetch acima. Navegar assim que o
+           gateway responde remove espera artificial e evita montar outro QR
+           Code nesta tela antes de montar a página definitiva. */
+        router.push("/pagamento");
+        return;
+      }
+
+      /* sessionStorage pode ser bloqueado pelo navegador. Nesse caso, não
+         navega para uma página vazia: usa o resultado que já existia aqui. */
+      setPixCharge(data);
+      setPixStage("pronto");
     } catch (error) { setPaymentError(error instanceof Error ? error.message : "Não foi possível gerar o PIX."); }
-    finally { setGeneratingPix(false); setPixStage("idle"); }
+    finally {
+      geracaoPixEmAndamento.current = false;
+      setGeneratingPix(false);
+      setPixStage("idle");
+    }
   }
 
   async function copyPix() {
@@ -539,7 +648,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
 
   return (
     <div className={styles.shell}>
-      <EventoMeta evento="InitiateCheckout" umaVezPor={cartKey} dados={dadosProdutoPixel(cartKey, productName, totalCents, products.reduce((sum, item) => sum + item.quantity, 0))} />
+      <EventoMeta evento="InitiateCheckout" umaVezPor={productCartKey} dados={dadosProdutoPixel(productCartKey, productName, totalCents, products.reduce((sum, item) => sum + item.quantity, 0))} />
       <header className={styles.logoHeader}><Link href="/"><Image src={logo} alt="Café com Deus Pai" width={663} height={746} priority /></Link></header>
 
       <button className={styles.mobileSummaryToggle} type="button" onClick={() => setSummaryOpen(v => !v)} aria-expanded={summaryOpen}>
@@ -594,7 +703,7 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
               {error && <p className={styles.error}>{error}</p>}<button className={styles.continue} type="submit">Continuar para pagamento</button>
             </form>
           ) : (
-            <section className={styles.payment}>
+            <section ref={paymentSection} className={styles.payment}>
               <div className={styles.trackingNotice}>Depois que o pedido for despachado, o código de rastreamento será enviado ao e-mail informado na compra. Confira também as pastas de spam e lixeira.</div>
               <div className={styles.checkoutReview}>
                 <div className={styles.reviewRow}><Mail aria-hidden="true" /><span>{email}</span></div>
@@ -609,10 +718,15 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
               </div></> : <div className={styles.paymentDetail}>
                 <header><button type="button" aria-label="Voltar às formas de pagamento" onClick={() => { setPaymentExpanded(false); setPaymentError(""); }}><ArrowLeft /></button><span>{payment === "pix" ? <PixLogo /> : <CreditCard />}<b>{payment === "pix" ? "Pix" : "Cartão de crédito"}</b></span></header>
                 {payment === "pix" ? <>
-                  {!pixCharge && <div className={styles.pixInstructions}><PixLogo /><p>Ao gerar o Código Pix do pedido você pode pagar escaneando o <b>QR Code</b> ou <b>Copiar e Colar</b>.</p></div>}
+                  {!pixCharge && <><div className={styles.pixInstructions}><PixLogo /><p>Ao gerar o Código Pix do pedido você pode pagar escaneando o <b>QR Code</b> ou <b>Copiar e Colar</b>.</p></div><div className={styles.pixProcessor}><span>Pix processado por</span><Image src={stoneLogo} alt="Stone" width={440} height={117} sizes="72px" /></div></>}
                   {pixCharge && <div className={styles.pixResult} role="status"><h2>PIX gerado com sucesso</h2><p>Pedido <b>{pixCharge.pedido}</b> · valor <b>{money.format(pixCharge.total / 100)}</b></p>{pixCharge.qr_code_url && <Image className={styles.qr} src={pixCharge.qr_code_url} alt="QR Code PIX" width={220} height={220} unoptimized />}<label>Código PIX copia e cola<textarea readOnly value={pixCharge.qr_code} /></label><button className={styles.copyButton} type="button" onClick={copyPix}>{copied ? "Código copiado!" : "Copiar código PIX"}</button></div>}
                 </> : cartaoDisponivel && gatewayConfig?.publicKey
-                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={{ ...paymentPayload, produto: cartKey }} produtoNome={productName} onEnviado={() => { finalizado.current = true; abandonoPendente.current = null; }} onDocumentoRecusado={mensagem => {
+                  ? <CartaoAxxon publicKey={gatewayConfig.publicKey} parcelasMax={gatewayConfig.parcelas ?? 1} total={totalCents} payload={{ ...paymentPayload, produto: cartKey }} produtoNome={productName} classeBotao={styles.payButton} validarAntesDePagar={validarOrderBumps} seloProcessador={<div className={styles.cardProcessor}><span>Cartão processado pela</span><Image src={cieloLogo} alt="Cielo" width={92} height={32} unoptimized /></div>} antesDoBotao={<>
+                      <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
+                      <OrderBumps embrulhoPresente={embrulhoPresente} cartaAtiva={cartaAtiva} cartaTitulo={cartaTitulo} cartaTexto={cartaTexto} dedicatoriaJunior={dedicatoriaJunior} erro={orderBumpError} onEmbrulho={alterarEmbrulho} onCarta={ativo => { setCartaAtiva(ativo); setOrderBumpError(""); }} onTitulo={valor => { setCartaTitulo(valor); setOrderBumpError(""); }} onTexto={valor => { setCartaTexto(valor); setOrderBumpError(""); }} onDedicatoria={ativo => { setDedicatoriaJunior(ativo); setOrderBumpError(""); }} />
+                      <SavedPaymentData checked={savePaymentData} onChecked={changeSaveContact} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />
+                      {contactNotice && <p className={styles.saveTerms} role="status">{contactNotice}</p>}
+                    </>} onEnviado={() => { finalizado.current = true; abandonoPendente.current = null; }} onFalha={mostrarOfertaPix} onDocumentoRecusado={mensagem => {
                       setStep(2); setPaymentExpanded(false); setPaymentError(""); setError(mensagem);
                       window.setTimeout(() => {
                         documentInput.current?.focus({ preventScroll: true });
@@ -620,18 +734,33 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
                       }, 0);
                     }} />
                   : <p>Cartão indisponível no momento. Nenhum dado de cartão foi solicitado.</p>}
-                <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>
+                {payment === "pix" && <button className={styles.changePayment} type="button" onClick={() => setPaymentExpanded(false)}>Alterar forma de pagamento</button>}
               </div>}
-              <SavedPaymentData checked={savePaymentData} onChecked={changeSaveContact} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />
-              {contactNotice && <p className={styles.saveTerms} role="status">{contactNotice}</p>}
+              {paymentExpanded && payment === "pix" && <OrderBumps embrulhoPresente={embrulhoPresente} cartaAtiva={cartaAtiva} cartaTitulo={cartaTitulo} cartaTexto={cartaTexto} dedicatoriaJunior={dedicatoriaJunior} erro={orderBumpError} onEmbrulho={alterarEmbrulho} onCarta={ativo => { setCartaAtiva(ativo); setOrderBumpError(""); }} onTitulo={valor => { setCartaTitulo(valor); setOrderBumpError(""); }} onTexto={valor => { setCartaTexto(valor); setOrderBumpError(""); }} onDedicatoria={ativo => { setDedicatoriaJunior(ativo); setOrderBumpError(""); }} />}
+              {(!paymentExpanded || payment === "pix") && <SavedPaymentData checked={savePaymentData} onChecked={changeSaveContact} onAlter={() => { setStep(2); setPaymentExpanded(false); }} />}
+              {(!paymentExpanded || payment === "pix") && contactNotice && <p className={styles.saveTerms} role="status">{contactNotice}</p>}
               {!paymentExpanded ? <button className={`${styles.payButton} ${styles.payButtonInactive}`} type="button" disabled>Fazer pedido</button> : payment === "pix" ? !pixCharge && <button className={styles.payButton} type="button" disabled={generatingPix} onClick={generatePix}>{generatingPix ? "Gerando PIX..." : "Fazer pedido"}</button> : null}
               {paymentError && <p className={styles.paymentError} role="alert">{paymentError}</p>}
             </section>
           )}
         </main>
-        <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary products={products} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} descontos={descontos} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
+        <aside className={`${styles.summary} ${summaryOpen ? styles.summaryOpen : ""}`}><OrderSummary products={products} shippingMethod={shippingMethod} shippingFeeCents={shippingFeeCents} descontos={descontos} embrulhoPresente={embrulhoPresente} dedicatoriaJunior={dedicatoriaJunior} /><div className={styles.desktopCoupon}><Coupon couponOpen={couponOpen} setCouponOpen={setCouponOpen} coupon={coupon} setCoupon={setCoupon} applyCoupon={applyCoupon} message={couponMessage} /></div></aside>
       </div>
       {shippingModalOpen && <div className={styles.shippingModalBackdrop} role="presentation" onMouseDown={() => setShippingModalOpen(false)}><div className={styles.shippingModal} role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title" onMouseDown={event => event.stopPropagation()}><span className={styles.modalHandle} aria-hidden="true" /><header><div><h2 id="shipping-modal-title">Entrega</h2><p>Escolha como deseja receber seu pedido</p></div><button type="button" aria-label="Fechar" onClick={() => setShippingModalOpen(false)}><X /></button></header><div className={styles.shippingModalBody}><b><Truck aria-hidden="true" /> Envio em domicílio</b><label className={draftShipping === "pac" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "pac"} onChange={() => setDraftShipping("pac")} /><span><b>Correios - PAC</b><small>Chega em {deliveryDate(25)}</small></span><strong>Grátis<small>R$ 20,32</small></strong></label><label className={draftShipping === "sedex" ? styles.shippingModalSelected : ""}><input type="radio" name="modal-shipping" checked={draftShipping === "sedex"} onChange={() => setDraftShipping("sedex")} /><span><b>Correios - SEDEX</b><small>Chega em {deliveryDate(13)}</small></span><strong>R$ 20,32</strong></label></div><div className={styles.shippingModalActions}><button className={styles.shippingSave} type="button" onClick={() => { setShippingMethod(draftShipping); setShippingModalOpen(false); }}>Salvar forma de entrega</button><button className={styles.shippingCancel} type="button" onClick={() => setShippingModalOpen(false)}>Cancelar</button></div></div></div>}
+      {pixRecoveryOpen && <div className={styles.pixRecoveryBackdrop} role="presentation" onMouseDown={() => setPixRecoveryOpen(false)}>
+        <div className={styles.pixRecoveryModal} role="dialog" aria-modal="true" aria-labelledby="pix-recovery-title" aria-describedby="pix-recovery-description" onMouseDown={evento => evento.stopPropagation()}>
+          <button className={styles.pixRecoveryClose} type="button" aria-label="Fechar oferta do Pix" onClick={() => setPixRecoveryOpen(false)}><X /></button>
+          <div className={styles.pixRecoveryBrand}><Image src={logo} alt="Café com Deus Pai" width={42} height={48} /><span>UMA ALTERNATIVA PARA VOCÊ</span></div>
+          <span className={styles.pixRecoveryIcon} aria-hidden="true"><PixLogo /></span>
+          <em>{Math.round(DESCONTO_PIX * 100)}% DE DESCONTO</em>
+          <h2 id="pix-recovery-title">Não conseguiu finalizar no cartão?</h2>
+          <p id="pix-recovery-description">Continue sua compra pelo Pix com desconto aplicado automaticamente.</p>
+          <div className={styles.pixRecoveryPrice}><span><s>{money.format(totalCartaoRecuperacao / 100)}</s><strong>{money.format(totalPixRecuperacao / 100)} no Pix</strong></span><small>Você economiza {money.format(economiaPixRecuperacao / 100)}</small></div>
+          <button className={styles.pixRecoveryAction} type="button" onClick={escolherPixRecuperacao}>Continuar com Pix</button>
+          <button className={styles.pixRecoveryDismiss} type="button" onClick={() => setPixRecoveryOpen(false)}>Continuar com cartão</button>
+          <small className={styles.pixRecoverySafe}><LockKeyhole aria-hidden="true" /> Pagamento rápido e seguro</small>
+        </div>
+      </div>}
       {!cupomAplicado && cupomValidoCarrinho(CUPOM_SAIDA, products.map((item) => item.slug)) ? (
         <ExitOffer
           codigoDoCupom={CUPOM_SAIDA}
@@ -662,11 +791,14 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
   );
 }
 
-function OrderSummary({ products, shippingMethod, shippingFeeCents, descontos }: { products: CheckoutProduct[]; shippingMethod: "pac" | "sedex" | null; shippingFeeCents: number; descontos: Descontos }) {
-  const subtotalCents = products.reduce((sum, product) => sum + product.priceCents * product.quantity, 0);
+function OrderSummary({ products, shippingMethod, shippingFeeCents, descontos, embrulhoPresente, dedicatoriaJunior }: { products: CheckoutProduct[]; shippingMethod: "pac" | "sedex" | null; shippingFeeCents: number; descontos: Descontos; embrulhoPresente: boolean; dedicatoriaJunior: boolean }) {
+  const subtotalCents = products.reduce((sum, product) => sum + product.priceCents * product.quantity, 0) + (embrulhoPresente ? 990 : 0) + (dedicatoriaJunior ? 1490 : 0);
   const price = money.format(subtotalCents / 100);
   const total = money.format((subtotalCents - descontos.totalCentavos + shippingFeeCents) / 100);
-  return <div><div className={styles.orderItems}>{products.map((product) => <div className={styles.product} key={product.slug}><Image src={product.image} alt={product.name} width={128} height={128} /><div><b>{product.name} × {product.quantity}</b></div><div className={styles.productPrice}>{product.originalPrice && product.quantity === 1 && <span><s>{product.originalPrice}</s></span>}<strong>{money.format(product.priceCents * product.quantity / 100)}</strong></div></div>)}</div>
+  return <div><div className={styles.orderItems}>{products.map((product) => <div className={styles.product} key={product.slug}><Image src={product.image} alt={product.name} width={128} height={128} /><div><b>{product.name} × {product.quantity}</b></div><div className={styles.productPrice}>{product.originalPrice && product.quantity === 1 && <span><s>{product.originalPrice}</s></span>}<strong>{money.format(product.priceCents * product.quantity / 100)}</strong></div></div>)}
+    {embrulhoPresente && <div className={styles.summaryExtra}><Gift aria-hidden="true" /><span>Embrulho para presente</span><strong>R$ 9,90</strong></div>}
+    {dedicatoriaJunior && <div className={styles.summaryExtra}><PenLine aria-hidden="true" /><span>Dedicatória por Junior Rostirola</span><strong>R$ 14,90</strong></div>}
+  </div>
     <div className={styles.totals}>
       <p><span>Subtotal</span><strong>{price}</strong></p>
       {descontos.cupomAplicado && <p className={styles.descontoLinha}><span>Cupom {descontos.cupomAplicado}</span><strong>− {money.format(descontos.cupomCentavos / 100)}</strong></p>}
@@ -678,6 +810,40 @@ function OrderSummary({ products, shippingMethod, shippingFeeCents, descontos }:
 }
 
 function PixLogo() { return <svg className={styles.pixLogo} viewBox="0 0 50 50" aria-hidden="true"><path d="M25 .039c-2.16 0-4.2.841-5.73 2.371L9.68 12h3.25c1.6 0 3.11.62 4.24 1.76l6.77 6.769a1.505 1.505 0 0 0 2.12-.01l6.77-6.759A5.96 5.96 0 0 1 37.07 12h3.25l-9.59-9.59A8.06 8.06 0 0 0 25 .039ZM7.68 14l-5.27 5.27a8.113 8.113 0 0 0 0 11.46L7.68 36h5.25c1.07 0 2.07-.42 2.83-1.17l6.769-6.769a3.506 3.506 0 0 1 4.942 0l6.769 6.769A4.04 4.04 0 0 0 37.07 36h5.25l5.27-5.27a8.113 8.113 0 0 0 0-11.46L42.32 14h-5.25c-1.07 0-2.07.42-2.83 1.17l-6.769 6.769a3.47 3.47 0 0 1-4.942 0L15.76 15.17A4.04 4.04 0 0 0 12.93 14H7.68ZM25 29.037c-.385.001-.771.148-1.061.443l-6.769 6.76A5.96 5.96 0 0 1 12.93 38H9.68l9.59 9.59a8.113 8.113 0 0 0 11.46 0L40.32 38h-3.25a5.96 5.96 0 0 1-4.24-1.76l-6.769-6.769A1.494 1.494 0 0 0 25 29.037Z" /></svg> }
+
+type OrderBumpsProps = {
+  embrulhoPresente: boolean; cartaAtiva: boolean; cartaTitulo: string; cartaTexto: string;
+  dedicatoriaJunior: boolean; erro: string;
+  onEmbrulho: (ativo: boolean) => void; onCarta: (ativo: boolean) => void;
+  onTitulo: (valor: string) => void; onTexto: (valor: string) => void; onDedicatoria: (ativo: boolean) => void;
+};
+
+function OrderBumps({ embrulhoPresente, cartaAtiva, cartaTitulo, cartaTexto, dedicatoriaJunior, erro, onEmbrulho, onCarta, onTitulo, onTexto, onDedicatoria }: OrderBumpsProps) {
+  return <div className={styles.orderBumps} aria-labelledby="order-bumps-title">
+    <div className={styles.orderBumpsHeading}><span>Deixe seu pedido ainda mais especial</span><h2 id="order-bumps-title">Adicione ao pedido</h2></div>
+    <label className={`${styles.orderBumpCard} ${embrulhoPresente ? styles.orderBumpSelected : ""}`}>
+      <input type="checkbox" checked={embrulhoPresente} onChange={evento => onEmbrulho(evento.target.checked)} />
+      <span className={styles.orderBumpIcon}><Gift aria-hidden="true" /></span>
+      <span><b>Embrulhar para presente</b><small>Receba seu pedido preparado para presentear.</small></span>
+      <strong>+ R$ 9,90</strong>
+    </label>
+    {embrulhoPresente && <div className={styles.letterOptions}>
+      <label className={styles.letterToggle}><input type="checkbox" checked={cartaAtiva} onChange={evento => onCarta(evento.target.checked)} /><span><b>Adicionar uma carta</b><small>Incluída no embrulho para presente</small></span></label>
+      {cartaAtiva && <div className={styles.letterFields}>
+        <label>Título da carta<input value={cartaTitulo} onChange={evento => onTitulo(evento.target.value)} maxLength={80} placeholder="Ex.: Para alguém muito especial" /></label>
+        <label>Texto principal<textarea value={cartaTexto} onChange={evento => onTexto(evento.target.value)} maxLength={600} rows={4} placeholder="Escreva aqui a mensagem da sua cartinha" /></label>
+        <small>{cartaTexto.length}/600 caracteres</small>
+      </div>}
+    </div>}
+    <label className={`${styles.orderBumpCard} ${dedicatoriaJunior ? styles.orderBumpSelected : ""}`}>
+      <input type="checkbox" checked={dedicatoriaJunior} onChange={evento => onDedicatoria(evento.target.checked)} />
+      <span className={styles.orderBumpIcon}><PenLine aria-hidden="true" /></span>
+      <span><b>Dedicatória escrita por Junior Rostirola</b><small>Uma mensagem especial preparada para acompanhar seu pedido.</small></span>
+      <strong>+ R$ 14,90</strong>
+    </label>
+    {erro && <p className={styles.orderBumpError} role="alert">{erro}</p>}
+  </div>;
+}
 
 function SavedPaymentData({ checked, onChecked, onAlter }: { checked: boolean; onChecked: (value: boolean) => void; onAlter: () => void }) {
   return <><div className={styles.savePayment}><label><input type="checkbox" checked={checked} onChange={e => onChecked(e.target.checked)} /> Salvar dados para <b>comprar mais rápido</b></label><p>Ao informar o mesmo e-mail, serão preenchidos nome, sobrenome, telefone, CPF/CNPJ, CEP, endereço completo e forma de entrega neste navegador. Os dados ficam salvos por 90 dias; desmarque para apagá-los. Não use em dispositivos compartilhados. Dados de cartão nunca são salvos. <button type="button" onClick={onAlter}>Alterar dados</button></p><span><LockKeyhole /> Compra segura <small>Neste navegador</small></span></div><p className={styles.saveTerms}>Ao salvar, você aceita os <Link href="/termos-de-uso">Termos de uso</Link> e a <Link href="/politica-de-privacidade">Política de Privacidade</Link></p></>;

@@ -2,6 +2,7 @@
 
 import { getImageProps } from "next/image";
 import Link from "next/link";
+import { BadgeCheck, CreditCard, ShieldCheck } from "lucide-react";
 import { SiteHeader } from "@/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/HeaderFooter";
 import HomeVideoStories from "./HomeVideoStories";
 import styles from "./HomeHero.module.css";
@@ -65,6 +66,13 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
             </article>
         </div>
         <HomeVideoStories floating />
+      </section>
+      <section className={styles.trustBar} aria-label="Vantagens da loja">
+        <div className={styles.trustInner}>
+          <div className={styles.trustItem}><ShieldCheck aria-hidden="true" /><strong>Compra 100% segura</strong></div>
+          <div className={styles.trustItem}><BadgeCheck aria-hidden="true" /><strong>Loja oficial</strong></div>
+          <div className={styles.trustItem}><CreditCard aria-hidden="true" /><strong>Em até 4x sem juros no cartão</strong></div>
+        </div>
       </section>
     </>
   );

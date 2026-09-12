@@ -62,6 +62,11 @@ export type PedidoDetalhe = Pedido & {
   frete_tipo: string | null;
   cliente_documento: string | null; cliente_telefone: string | null;
   endereco: Endereco | null;
+  order_bumps?: {
+    embrulho_presente?: boolean;
+    carta?: { titulo?: string; texto_principal?: string };
+    dedicatoria_junior?: boolean;
+  } | null;
 };
 
 const VAZIO_RESUMO: Resumo = {
@@ -357,7 +362,7 @@ export const lerPedido = (id: string) =>
   ler<PedidoDetalhe | null>("pedido", null, async (db) => {
     // Lista explícita: os campos legados de cartão nunca saem do banco.
     const base = "id,referencia,status,metodo_pagamento,valor_centavos,kit,quantidade,cliente_nome,cliente_email,criado_em,pago_em,pix_id,subtotal_centavos,desconto_centavos,frete_centavos,frete_tipo,cliente_documento,cliente_telefone,endereco";
-    const opcionais = ["codigo_rastreio", "rastreio_atualizado", "pix_copia_cola", "pix_qr_url"];
+    const opcionais = ["codigo_rastreio", "rastreio_atualizado", "pix_copia_cola", "pix_qr_url", "order_bumps"];
     for (;;) {
       const resultado = await db.from("pedidos").select([base, ...opcionais].join(",")).eq("id", id).single();
       // Preserva compatibilidade com bancos sem as migrations opcionais,

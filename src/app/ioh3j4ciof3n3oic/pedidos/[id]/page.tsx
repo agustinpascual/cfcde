@@ -60,6 +60,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const acrescimoCartao = pedido.metodo_pagamento === "cartao"
     ? Math.max(0, pedido.valor_centavos - (pedido.subtotal_centavos - pedido.desconto_centavos + pedido.frete_centavos))
     : 0;
+  const orderBumps = pedido.order_bumps ?? {};
 
   const e = pedido.endereco;
   const linhaEndereco = e
@@ -122,6 +123,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </span>
             <span className={d.itemValor}>{moeda(pedido.subtotal_centavos)}</span>
           </div>
+
+          {(orderBumps.embrulho_presente || orderBumps.dedicatoria_junior) && <div className={d.orderBumps}>
+            <h3>Adicionais do pedido</h3>
+            {orderBumps.embrulho_presente && <div><b>Embrulho para presente</b><span>R$ 9,90</span></div>}
+            {orderBumps.carta && <article><b>Carta personalizada</b><strong>{orderBumps.carta.titulo}</strong><p>{orderBumps.carta.texto_principal}</p></article>}
+            {orderBumps.dedicatoria_junior && <div><b>Dedicatória escrita por Junior Rostirola</b><span>R$ 14,90</span></div>}
+          </div>}
 
           <dl className={d.valores}>
             <div><dt>Subtotal</dt><dd>{moeda(pedido.subtotal_centavos)}</dd></div>

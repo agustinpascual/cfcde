@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { validarTokenComprovante } from "@/lib/pix-comprovante-token";
-import { compararComprovante, LIMITE_COMPROVANTE, tipoComprovante } from "@/lib/pix-comprovante-validacao";
+import { LIMITE_COMPROVANTE, tipoComprovante } from "@/lib/pix-comprovante-validacao";
 import { excedeu, ipDe } from "@/lib/limite";
 import { mesmaOrigem } from "@/lib/mesma-origem";
 
@@ -78,14 +78,8 @@ export async function POST(req: Request, ctx: Context) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const mime = tipoComprovante(bytes);
   if (!mime || mime !== file.type) return json({ erro: "Formato inválido. Use JPG, PNG, WebP ou PDF." }, 415);
-  const nome = String(form.get("nome") ?? "").trim();
-  const valor = Number(form.get("valor_centavos"));
-  const horario = String(form.get("horario") ?? "");
   const copia = String(form.get("copiado_em") ?? "");
-  if (nome.length < 3 || nome.length > 200 || !Number.isSafeInteger(valor) || valor <= 0 || valor > 2147483647
-    || !/^\d{4}-\d{2}-\d{2}T/.test(horario) || !Number.isFinite(Date.parse(horario))) return json({ erro: "Confira nome, valor e horário informados." }, 422);
   const agora = Date.now();
-  const comparacao = compararComprovante({ nome, valor, horario }, pedido, agora);
   const id = randomUUID();
   const path = `${pedido.id}/${id}`; // Não usa o nome do arquivo fornecido pelo cliente.
   const { error: erroUpload } = await db.storage.from(BUCKET).upload(path, bytes, { contentType: mime, upsert: false });
@@ -93,9 +87,9 @@ export async function POST(req: Request, ctx: Context) {
   const { error: erroRegistro } = await db.from("pix_comprovantes").insert({
     id, pedido_id: pedido.id, arquivo_path: path, mime, tamanho: bytes.length,
     sha256: createHash("sha256").update(bytes).digest("hex"),
-    nome_informado: nome, valor_informado: valor, horario_informado: new Date(horario).toISOString(),
+    nome_informado: null, valor_informado: null, horario_informado: null,
     copiado_em: Number.isFinite(Date.parse(copia)) && Date.parse(copia) <= agora ? new Date(copia).toISOString() : null,
-    mesmo_ip: acesso.mesmoIp, ...comparacao,
+    mesmo_ip: acesso.mesmoIp, nome_compativel: null, valor_compativel: null, horario_compativel: null,
   });
   if (erroRegistro) {
     // Remove apenas este novo objeto órfão; nunca sobrescreve o comprovante existente.

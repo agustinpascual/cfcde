@@ -81,6 +81,15 @@ export function PromoBar() {
 export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [rolado, setRolado] = useState(false);
+
+  useEffect(() => {
+    if (!transparente) return;
+    const atualizar = () => setRolado(window.scrollY > 24);
+    atualizar();
+    window.addEventListener("scroll", atualizar, { passive: true });
+    return () => window.removeEventListener("scroll", atualizar);
+  }, [transparente]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -106,9 +115,11 @@ export function SiteHeader({ cartCount = 0, onCartClick, transparente = false }:
     /* No modo transparente a FAIXA e o cabeçalho sobem juntos como um bloco.
        Sobrepor só o cabeçalho fazia ele cobrir a faixa: no celular o logo
        ficava por cima do texto "FRETE GRÁTIS POR TEMPO LIMITADO". */
-    <div className={transparente ? styles.sobreposto : undefined}>
+    <div className={transparente
+      ? `${styles.sobreposto} ${rolado ? styles.sobrepostoRolado : ""}`
+      : undefined}>
       <PromoBar />
-      <header className={`${styles.header} ${transparente ? styles.headerTransparente : ""}`}>
+      <header className={`${styles.header} ${transparente ? styles.headerTransparente : ""} ${rolado ? styles.headerRolado : ""}`}>
         <div className={styles.headerInner}>
           <button
             className={`${styles.iconButton} ${styles.menuButton}`}

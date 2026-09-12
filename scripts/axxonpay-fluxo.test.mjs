@@ -11,7 +11,7 @@ import * as cartao from "../src/lib/cartao.ts";
 // Não usa credenciais, rede, pedidos reais ou cartões de clientes.
 function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva = false, erroUpdate = false, env = { NEXT_PUBLIC_SITE_URL: "https://loja.example" } } = {}) {
   const pedidos = new Map();
-  let chamadas = 0, consultas = 0, confirmacoes = 0;
+  let chamadas = 0, consultas = 0, confirmacoes = 0, atualizacoes = 0;
   let numerosSorteados = 0;
   const logs = [];
   const gateway = {
@@ -39,7 +39,7 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
       return this;
     }
     is(campo, valor) { this.filtros.push(p => (p[campo] ?? null) === valor); return this; }
-    update(payload) { this.payload = payload; return this; }
+    update(payload) { atualizacoes++; this.payload = payload; return this; }
     async insert(payload) {
       if (erroReserva) return { error: { code: "db_offline" } };
       if (pedidos.has(payload.referencia) || [...pedidos.values()].some(p => p.id === payload.id)) return { error: { code: "23505" } };
@@ -59,9 +59,20 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
     "./supabase/servidor": { supabaseAdmin: () => ({ from: () => new Consulta() }) },
     "./axxonpay": gateway, "./axxonpay-protocolo": protocolo, "./axxonpay-webhook": webhook, "./cartao": cartao,
     "./numero-pedido": { sortearNumeroPedido: () => numeros ? numeros[numerosSorteados++ % numeros.length] : String(100001 + numerosSorteados++) },
-    "./precos": { calcularCarrinhoCafe: () => ({ total: 2500, subtotal: 2500, desconto: 0,
-      frete: { centavos: 0, nome: "PAC" }, kit: { nome: "1x Produto teste" }, quantidadeTotal: 1,
-      itens: [{ slug: "teste", nome: "Produto teste", quantidade: 1, totalCentavos: 2500 }] }) },
+    "./precos": {
+      calcularCarrinhoCafe: () => ({ total: 2500, subtotal: 2500, desconto: 0,
+        frete: { centavos: 0, nome: "PAC" }, kit: { nome: "1x Produto teste" }, quantidadeTotal: 1,
+        itens: [{ slug: "teste", nome: "Produto teste", quantidade: 1, totalCentavos: 2500 }] }),
+      lerOrderBumpsCheckout: valor => {
+        const dados = valor ?? {};
+        if (dados.carta_ativa && (!dados.embrulho_presente || !dados.carta_titulo || !dados.carta_texto)) throw new Error("Complete o título e o texto da carta");
+        return { adicionais: [dados.embrulho_presente && "embrulho_presente", dados.dedicatoria_junior && "dedicatoria_junior"].filter(Boolean), registro: {
+          ...(dados.embrulho_presente ? { embrulho_presente: true } : {}),
+          ...(dados.carta_ativa ? { carta: { titulo: dados.carta_titulo, texto_principal: dados.carta_texto } } : {}),
+          ...(dados.dedicatoria_junior ? { dedicatoria_junior: true } : {}),
+        } };
+      },
+    },
     "./documento-br": { documentoBrasileiroValido: () => true },
     "./confirmar-pedido": { depois: () => {}, confirmarPorEmail: async () => { confirmacoes++; }, registrarCompraNoPixel: async () => {}, enviarPixPorEmail: async () => {} },
     "./entrega-app": { entregarAcessoApp: async () => {} },
@@ -73,7 +84,7 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
     if (!(id in dependencias)) throw new Error(`Dependência não simulada: ${id}`);
     return dependencias[id];
   }, Response, URL, AbortSignal, console: { error: (...args) => logs.push(JSON.stringify(args)), warn: (...args) => logs.push(JSON.stringify(args)) }, process: { env } });
-  return { ...exports, pedidos, pedido: (tentativa = body.tentativa) => [...pedidos.values()].find(p => p.id === tentativa), contadores: () => ({ chamadas, consultas, confirmacoes }), logs: () => logs };
+  return { ...exports, pedidos, pedido: (tentativa = body.tentativa) => [...pedidos.values()].find(p => p.id === tentativa), contadores: () => ({ chamadas, consultas, confirmacoes, atualizacoes }), logs: () => logs };
 }
 const body = {
   tentativa: "550e8400-e29b-41d4-a716-446655440000", loja: "cafecomdeuspai", produto: "teste", qtd: 1, frete: "pac",
@@ -97,6 +108,27 @@ test("reenvio mantém os mesmos seis dígitos e não cria outro pagamento", asyn
   assert.equal(segunda.id, primeira.id);
   assert.equal(a.contadores().chamadas, 1);
   assert.equal(a.pedidos.get(primeira.pedido).pix_copia_cola, "PIX-FICTICIO");
+});
+test("order bumps e carta ficam no pedido e não podem mudar após criar a cobrança", async () => {
+  const a = ambiente();
+  const comCarta = { ...body, order_bumps: {
+    embrulho_presente: true, carta_ativa: true, carta_titulo: "Com carinho", carta_texto: "Uma mensagem especial.",
+    dedicatoria_junior: true,
+  } };
+  assert.equal((await a.processarAxxon(comCarta, "pix")).status, 200);
+  assert.deepEqual(a.pedido().order_bumps, {
+    embrulho_presente: true,
+    carta: { titulo: "Com carinho", texto_principal: "Uma mensagem especial." },
+    dedicatoria_junior: true,
+  });
+  const alterada = await a.processarAxxon({ ...comCarta, order_bumps: { ...comCarta.order_bumps, carta_texto: "Mensagem trocada" } }, "pix");
+  assert.equal(alterada.status, 409);
+  assert.equal(a.contadores().chamadas, 1);
+
+  const invalida = ambiente();
+  const resposta = await invalida.processarAxxon({ ...body, order_bumps: { embrulho_presente: true, carta_ativa: true } }, "pix");
+  assert.equal(resposta.status, 422);
+  assert.equal(invalida.contadores().chamadas, 0);
 });
 test("colisão de número com outro gateway é resolvida antes da cobrança", async () => {
   const a = ambiente({ numeros: ["123456", "654321"] });
@@ -157,10 +189,14 @@ for (const metodo of ["pix", "cartao"]) {
     const dados = await resposta.json();
     assert.match(dados.pedido, /^[1-9]\d{5}$/);
     assert.equal(enviado.description, `Café com Deus Pai - 1x Produto teste - Pedido #${dados.pedido}`);
-    assert.deepEqual(JSON.parse(JSON.stringify(enviado.customer.address)), {
-      street: body.endereco.logradouro, number: body.endereco.numero,
-      neighborhood: body.endereco.bairro, city: body.endereco.localidade,
-      state: body.endereco.uf.toUpperCase(), zipCode: body.endereco.cep.replace(/\D/g, ""),
+    assert.deepEqual(JSON.parse(JSON.stringify(enviado.customer)), {
+      name: body.nome, email: body.email, phone: body.celular,
+      document: { number: body.documento, type: "cpf" },
+      address: {
+        street: body.endereco.logradouro, number: body.endereco.numero,
+        neighborhood: body.endereco.bairro, city: body.endereco.localidade,
+        state: body.endereco.uf.toUpperCase(), zipCode: body.endereco.cep.replace(/\D/g, ""),
+      },
     });
     assert.equal(enviado.metadata.external_reference, dados.pedido);
     assert.equal(enviado.metadata.payment_attempt, body.tentativa);
@@ -190,12 +226,27 @@ test("criação em reais não é comparada com centavos: confere GET canônico",
   assert.equal((await r.json()).total, 2500);
   assert.equal(a.contadores().chamadas, 1);
 });
+test("PIX completo na criação elimina GET e persiste ID + QR em uma escrita", async () => {
+  const a = ambiente();
+  const r = await a.processarAxxon(body, "pix");
+  const dados = await r.json();
+  assert.equal(r.status, 200);
+  assert.equal(dados.qr_code, "PIX-FICTICIO");
+  assert.equal(a.contadores().consultas, 0);
+  assert.equal(a.contadores().atualizacoes, 1);
+  assert.equal(a.pedido().pix_id, "axxon_payment_uuid");
+  assert.equal(a.pedido().pix_copia_cola, "PIX-FICTICIO");
+  assert.equal(a.pedido().pix_qr_url, "data:image/png;base64,TESTE");
+});
 test("timeout no GET preserva ID e reenvio recupera PIX sem nova cobrança", async () => {
-  const a = ambiente({ consultar: async (id, pedido, numero) => {
+  const a = ambiente({
+    criar: async dados => ({ id: "payment_uuid", amount: dados.amount, status: "PENDING", paymentMethod: "pix" }),
+    consultar: async (id, pedido, numero) => {
     assert.equal(pedido.pix_id, `axxon_${id}`, "ID já persistido antes do GET");
     if (numero === 1) throw new Error("timeout");
     return { id, amount: 2500, status: "PENDING", method: "pix", qrCode: "PIX-FICTICIO" };
-  } });
+    },
+  });
   assert.equal((await a.processarAxxon(body, "pix")).status, 503);
   assert.equal(a.pedido().pix_id, "axxon_payment_uuid");
   const recuperado = await a.processarAxxon(body, "pix");
@@ -205,7 +256,10 @@ test("timeout no GET preserva ID e reenvio recupera PIX sem nova cobrança", asy
   assert.equal(a.contadores().chamadas, 1);
 });
 test("valor divergente no GET nunca é aceito, mas preserva ID para conferência", async () => {
-  const a = ambiente({ consultar: async id => ({ id, amount: 25, status: "PAID", method: "pix" }) });
+  const a = ambiente({
+    criar: async dados => ({ id: "payment_uuid", amount: dados.amount, status: "PENDING", paymentMethod: "pix" }),
+    consultar: async id => ({ id, amount: 25, status: "PAID", method: "pix" }),
+  });
   assert.equal((await a.processarAxxon(body, "pix")).status, 503);
   assert.equal((await a.processarAxxon(body, "pix")).status, 503);
   assert.equal(a.pedido().pix_id, "axxon_payment_uuid");
@@ -214,7 +268,10 @@ test("valor divergente no GET nunca é aceito, mas preserva ID para conferência
   assert.equal(a.contadores().confirmacoes, 0);
 });
 test("PIX pendente sem QR não é apresentado como criação concluída", async () => {
-  const a = ambiente({ consultar: async id => ({ id, amount: 2500, status: "PENDING", method: "pix", qrCode: null }) });
+  const a = ambiente({
+    criar: async dados => ({ id: "payment_uuid", amount: dados.amount, status: "PENDING", paymentMethod: "pix", qrCode: null }),
+    consultar: async id => ({ id, amount: 2500, status: "PENDING", method: "pix", qrCode: null }),
+  });
   assert.equal((await a.processarAxxon(body, "pix")).status, 503);
   assert.equal((await a.processarAxxon(body, "pix")).status, 503);
   assert.equal(a.contadores().chamadas, 1);

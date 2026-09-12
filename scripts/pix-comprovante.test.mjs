@@ -61,10 +61,9 @@ function request({ auth = token, body, get = false } = {}) {
     ...(get ? {} : { body: body ?? form() }),
   });
 }
-function form({ type = "application/pdf", bytes = "%PDF-1.4\nconteudo ficticio", nome = "José Teste", valor = "1234", horario = new Date().toISOString() } = {}) {
+function form({ type = "application/pdf", bytes = "%PDF-1.4\nconteudo ficticio" } = {}) {
   const f = new FormData();
   f.set("arquivo", new File([bytes], "../../nao-usar-este-nome.pdf", { type }));
-  f.set("nome", nome); f.set("valor_centavos", valor); f.set("horario", horario);
   return f;
 }
 
@@ -97,7 +96,10 @@ test("upload guarda arquivo privado e comparação sem escrever em pedidos", asy
   const s = setup();
   assert.equal((await s.route.POST(request(), ctx)).status, 201);
   assert.equal(s.writes.length, 1); assert.equal(s.writes[0].mesmo_ip, true);
-  assert.equal(s.writes[0].nome_compativel, true); assert.equal(s.writes[0].status, undefined);
+  assert.equal(s.writes[0].nome_informado, null); assert.equal(s.writes[0].valor_informado, null);
+  assert.equal(s.writes[0].horario_informado, null); assert.equal(s.writes[0].nome_compativel, null);
+  assert.equal(s.writes[0].valor_compativel, null); assert.equal(s.writes[0].horario_compativel, null);
+  assert.equal(s.writes[0].status, undefined);
   assert.equal(s.writes[0].pago_em, undefined); assert.equal(s.uploads[0].opts.upsert, false);
   assert.ok(s.uploads[0].path.startsWith(pedido.id + "/"));
   assert.ok(!s.uploads[0].path.includes("nao-usar"));
@@ -133,9 +135,8 @@ test("corrida de envios remove somente o arquivo desta requisição", async () =
   assert.equal((await s.route.POST(request(), ctx)).status, 200);
   assert.equal(s.removals.length, 1); assert.equal(s.removals[0][0], s.uploads[0].path);
 });
-test("arquivo falso, tamanho excessivo e campos inválidos não chegam ao storage", async () => {
+test("arquivo falso e tamanho excessivo não chegam ao storage", async () => {
   for (const [body, status] of [[form({ bytes: "<html>fraude</html>" }), 415], [form({ type: "image/png" }), 415],
-    [form({ valor: "NaN" }), 422], [form({ horario: "ontem" }), 422],
     [new Uint8Array(validacao.LIMITE_COMPROVANTE + 100000), 413]]) {
     const s = setup();
     assert.equal((await s.route.POST(request({ body }), ctx)).status, status);

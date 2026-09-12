@@ -18,28 +18,6 @@ type Product = {
   imageZoom?: number;
 };
 
-const vol6Combos: Product[] = [
-  { image: "asset-006.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA", price: "R$99,90", installment: "4 de R$24,98", reviews: 1, href: "/produtos/cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa/" },
-  { image: "asset-007.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + CANECA", price: "R$219,90", installment: "4 de R$54,98", href: "/produtos/cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-caneca/" },
-  { image: "asset-008.webp", name: "2 CANECAS CAFÉ COM DEUS PAI (VOL.6)", price: "R$199,90", installment: "4 de R$49,98", href: "/produtos/2-canecas-cafe-com-deus-pai-vol-6/", imageZoom: 1.14 },
-  { image: "asset-009.webp", name: "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + LATA ALFAJOR VELUTTI COM 6 UN + MARCA-TEXTO", price: "R$149,90", installment: "4 de R$37,48", href: "/produtos/a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-lata-alfajor-velutti-com-6-un-marca-texto/", imageZoom: 1.11 },
-];
-
-const featured: Product[] = [
-  { image: "asset-012.webp", name: "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + PLANNER + MARCA-TEXTO", price: "R$129,90", installment: "4 de R$32,48", href: "/produtos/a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-planner-marca-texto/" },
-  { image: "asset-013.webp", name: "PLANNER CAFÉ COM DEUS PAI", price: "R$59,90", installment: "4 de R$14,98", href: "/produtos/planner-cafe-com-deus-pai-2025/", imageZoom: 1.12 },
-  { image: "asset-014.webp", name: "A VIDA QUE VOCÊ BUSCA ESTÁ NA CURA QUE VOCÊ PRECISA + CAFÉ COM DEUS PAI (BROCHURA) VOL.6 + PLANNER", price: "R$179,90", installment: "4 de R$44,98", href: "/produtos/a-vida-que-voce-busca-esta-na-cura-que-voce-precisa-cafe-com-deus-pai-brochura-vol-6-planner/" },
-  { image: "asset-015.webp", name: "2 LIVROS CAFÉ COM DEUS PAI VOL. 6 (BROCHURA) + 2 CANECAS", price: "R$289,90", installment: "4 de R$72,48", href: "/produtos/2-livros-cafe-com-deus-pai-vol-6-brochura-2-canecas/" },
-];
-
-const unmissableFixos: Product[] = [
-  { image: "asset-017.webp", name: "COMBO: CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + LATA DE CAFÉ GOURMET", price: "R$108,90", installment: "4 de R$27,23", href: "/produtos/combo-cafe-com-deus-pai-vol-6-brochura-lata-de-cafe-gourmet/" },
-  { image: "asset-018.webp", name: "COMBO CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + ECOBAG + COPO (250ML)", price: "R$99,90", installment: "4 de R$24,98", reviews: 3, href: "/produtos/combo-cafe-com-deus-pai-2026-brochura-ecobag-copo-250ml/", imageZoom: 1.1 },
-  { image: "asset-019.webp", name: "CAFÉ COM DEUS PAI VOL.6 (BROCHURA) + 10 FILTROS INDIVIDUAIS", price: "R$78,90", installment: "4 de R$19,73", reviews: 2, href: "/produtos/cafe-com-deus-pai-2026-brochura-10-filtros-individuais/", imageZoom: 1.1 },
-];
-
-const unmissable: Product[] = [...vol6Combos, ...unmissableFixos];
-
 function Chevron({ direction }: { direction: "left" | "right" }) {
   return <span aria-hidden="true">{direction === "left" ? "‹" : "›"}</span>;
 }
@@ -57,15 +35,17 @@ const doCatalogo: Product[] = PRODUCTS
     href: `/produtos/${p.slug}`,
   }));
 
-/* Só o catálogo: os itens do vol.6 saíram daqui para a esteira IMPERDÍVEL. */
 const lancamentos: Product[] = doCatalogo;
+/* Destaques mostra somente os kits novos: todo item parte de um livro e o
+   sinal de "+" identifica que há outro livro ou acessório no conjunto. */
+const featured: Product[] = doCatalogo.filter((product) => product.name.includes("+"));
 
-function ProductRail({ title, products, subdued = false }: { title: string; products: Product[]; subdued?: boolean }) {
+function ProductRail({ title, products }: { title: string; products: Product[] }) {
   const rail = useRef<HTMLDivElement>(null);
   const move = (direction: number) => rail.current?.scrollBy({ left: direction * Math.max(280, rail.current.clientWidth * 0.78), behavior: "smooth" });
 
   return (
-    <section className={`${styles.products} ${subdued ? styles.subdued : ""}`}>
+    <section className={styles.products}>
       <div className={styles.container}>
         <div className={styles.heading}>
           <h2>{title}</h2>
@@ -114,8 +94,6 @@ export default function HomeCommerce() {
         <Image className={styles.authorDesktop} src={`${assets}/sobre-autor-desktop-v2.webp`} alt="Sobre o autor Junior Rostirola" width={1580} height={600} sizes="100vw" />
         <Image className={styles.authorMobile} src={`${assets}/sobre-autor-mobile-v2.webp`} alt="Sobre o autor Junior Rostirola" width={625} height={1020} sizes="100vw" />
       </section>
-
-      <ProductRail title="IMPERDÍVEL" products={unmissable} subdued />
     </div>
   );
 }

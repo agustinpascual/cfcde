@@ -32,7 +32,7 @@ export default function HomeLower() {
       if (!entrada.isIntersecting) return;
       setCarregarVideos(true);
       observer.disconnect();
-    }, { rootMargin: "700px 0px" });
+    }, { rootMargin: "400px 0px" });
     observer.observe(alvo);
     return () => observer.disconnect();
   }, []);

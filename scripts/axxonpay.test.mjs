@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { conferirPagamentoAxxon, ehAxxon, idAxxon, idRemotoAxxon, lerPagamentoAxxon, lerCriacaoAxxon, lerConsultaPagamentoAxxon, statusAxxon } from "../src/lib/axxonpay-protocolo.ts";
+import { conferirPagamentoAxxon, ehAxxon, idAxxon, idRemotoAxxon, lerPagamentoAxxon, lerCriacaoAxxon, lerConsultaPagamentoAxxon, pixPendenteDaCriacaoAxxon, statusAxxon } from "../src/lib/axxonpay-protocolo.ts";
 import { tentativaPagamento, concluirTentativa, liberarTentativaEncerrada } from "../src/lib/tentativa-pagamento.ts";
 import { urlWebhookAxxon } from "../src/lib/axxonpay-webhook.ts";
 
@@ -22,11 +22,26 @@ test("consulta BRL em reais é convertida em centavos de forma explícita e exat
   }
   for (const currency of [undefined, "USD", "EUR"]) assert.throws(() => lerConsultaPagamentoAxxon({ ...p, currency }));
 });
-test("criação conserva ID mesmo quando amount da resposta tem outro formato", () => {
+test("criação conserva ID e só expõe campos opcionais com tipos estritos", () => {
   for (const amount of [undefined, 123, 12300, 19.99]) {
-    assert.equal(lerCriacaoAxxon({ data: { id: "payment_uuid", amount } }).id, "payment_uuid");
+    const criado = lerCriacaoAxxon({ data: { id: "payment_uuid", amount } });
+    assert.equal(criado.id, "payment_uuid");
+    assert.equal(criado.amount, Number.isSafeInteger(amount) && amount > 0 ? amount : undefined);
   }
   for (const id of [null, 123, "../invalido"]) assert.throws(() => lerCriacaoAxxon({ data: { id } }));
+});
+test("atalho do PIX exige criação pendente completa e valor exato em centavos", () => {
+  const criado = lerCriacaoAxxon({ data: {
+    id: "payment_uuid", amount: 2500, status: "PENDING", paymentMethod: "pix",
+    qrCode: "PIX-FICTICIO", expiresAt: "2026-09-12T12:00:00.000Z",
+  } });
+  assert.equal(pixPendenteDaCriacaoAxxon(criado, 2500)?.qrCode, "PIX-FICTICIO");
+  for (const alteracao of [
+    { amount: 25 }, { status: "PAID" }, { status: "PROCESSING" },
+    { paymentMethod: "credit_card" }, { qrCode: "" }, { qrCode: " ".repeat(10) },
+  ]) {
+    assert.equal(pixPendenteDaCriacaoAxxon({ ...criado, ...alteracao }, 2500), null);
+  }
 });
 test("metadata serializado preserva somente referência, sem dados pessoais", () => {
   const p = lerPagamentoAxxon({ id: "payment_uuid", amount: 2500, status: "PENDING", metadata: JSON.stringify({ external_reference: "AXX-teste", document: "ficticio", customer: { email: "teste@example.com" } }) });

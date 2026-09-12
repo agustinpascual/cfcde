@@ -7,7 +7,6 @@ import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89
 import { urlRastreio } from "@/lib/rastreio";
 import { acompanharPix } from "@/lib/acompanhar-pix";
 import { lerPagamentoDaTela, type PagamentoNavegacao } from "@/lib/pagamento-navegacao";
-import PurchaseNotifications from "@/components/sites/cafecomdeuspai-com-8456844d/shared/PurchaseNotifications";
 import { eventoGoogle } from "@/components/marketing/MetaPixel";
 import s from "./pagamento.module.css";
 import ComprovantePix from "./ComprovantePix";
@@ -360,13 +359,6 @@ export default function PagamentoPix() {
         )}
 
       </main>
-      {cobranca.metodo === "pix" && (
-        <PurchaseNotifications
-          imagem={cobranca.produto_imagem ?? PRODUTO_IMAGEM_PADRAO}
-          nome={cobranca.produto_nome ?? "Box Café com Deus Pai 2027"}
-          juntoAoRodape
-        />
-      )}
     </div>
   );
 }

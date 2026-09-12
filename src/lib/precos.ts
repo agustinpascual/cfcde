@@ -66,12 +66,53 @@ export function calcularTotalCafe(
 
 export type ItemCarrinhoCafe = { produto: string; qtd: number };
 
+export const ADICIONAIS_CHECKOUT = {
+  embrulho_presente: { nome: "Embrulho para presente", centavos: 990 },
+  dedicatoria_junior: { nome: "Dedicatória escrita por Junior Rostirola", centavos: 1490 },
+} as const;
+
+export type IdAdicionalCheckout = keyof typeof ADICIONAIS_CHECKOUT;
+
+export type OrderBumpsCheckout = {
+  adicionais: IdAdicionalCheckout[];
+  registro: {
+    embrulho_presente?: true;
+    carta?: { titulo: string; texto_principal: string };
+    dedicatoria_junior?: true;
+  };
+};
+
+/** Conteúdo e seleção são normalizados no servidor; preços nunca vêm do browser. */
+export function lerOrderBumpsCheckout(valor: unknown): OrderBumpsCheckout {
+  if (valor == null) return { adicionais: [], registro: {} };
+  if (typeof valor !== "object" || Array.isArray(valor)) throw new Error("Adicionais inválidos");
+  const dados = valor as Record<string, unknown>;
+  const embrulho = dados.embrulho_presente === true;
+  const dedicatoria = dados.dedicatoria_junior === true;
+  const cartaAtiva = dados.carta_ativa === true;
+  const titulo = typeof dados.carta_titulo === "string" ? dados.carta_titulo.trim().slice(0, 80) : "";
+  const textoPrincipal = typeof dados.carta_texto === "string" ? dados.carta_texto.trim().slice(0, 600) : "";
+  if (cartaAtiva && (!embrulho || !titulo || !textoPrincipal)) throw new Error("Complete o título e o texto da carta");
+  if (!cartaAtiva && (titulo || textoPrincipal)) throw new Error("Ative a carta antes de preencher a mensagem");
+  const adicionais: IdAdicionalCheckout[] = [];
+  if (embrulho) adicionais.push("embrulho_presente");
+  if (dedicatoria) adicionais.push("dedicatoria_junior");
+  return {
+    adicionais,
+    registro: {
+      ...(embrulho ? { embrulho_presente: true as const } : {}),
+      ...(cartaAtiva ? { carta: { titulo, texto_principal: textoPrincipal } } : {}),
+      ...(dedicatoria ? { dedicatoria_junior: true as const } : {}),
+    },
+  };
+}
+
 /** Calcula uma sacola inteira usando exclusivamente o catálogo do servidor.
  * Slugs repetidos são consolidados e nenhum preço vindo do navegador é aceito. */
 export function calcularCarrinhoCafe(
   itensBrutos: readonly ItemCarrinhoCafe[],
   frete: string,
-  opcoes: { cupom?: string; pagamento?: "pix" | "cartao" } = {},
+  opcoes: { cupom?: string; pagamento?: "pix" | "cartao"; adicionais?: readonly IdAdicionalCheckout[] } = {},
 ) {
   if (!Array.isArray(itensBrutos) || itensBrutos.length < 1 || itensBrutos.length > 20) throw new Error("Carrinho inválido");
   const quantidades = new Map<string, number>();
@@ -86,10 +127,17 @@ export function calcularCarrinhoCafe(
   const quantidadeTotal = [...quantidades.values()].reduce((total, qtd) => total + qtd, 0);
   if (quantidadeTotal > 40) throw new Error("Quantidade total inválida");
   if (frete !== "pac" && frete !== "sedex") throw new Error("Forma de envio inválida");
-  const itens = [...quantidades].map(([slug, quantidade]) => {
+  const itensProdutos = [...quantidades].map(([slug, quantidade]) => {
     const produto = PRODUTOS_CAFE[slug];
     return { slug, nome: produto.nome, quantidade, totalCentavos: produto.centavos * quantidade };
   });
+  const idsAdicionais = [...new Set(opcoes.adicionais ?? [])];
+  const itensAdicionais = idsAdicionais.map((slug) => {
+    const adicional = ADICIONAIS_CHECKOUT[slug];
+    if (!adicional) throw new Error("Adicional inválido");
+    return { slug, nome: adicional.nome, quantidade: 1, totalCentavos: adicional.centavos };
+  });
+  const itens = [...itensProdutos, ...itensAdicionais];
   const subtotal = itens.reduce((total, item) => total + item.totalCentavos, 0);
   const freteSelecionado = frete === "pac"
     ? { nome: "Correios - PAC", centavos: 0 }
@@ -100,7 +148,7 @@ export function calcularCarrinhoCafe(
     pagamento: opcoes.pagamento,
     freteCentavos: freteSelecionado.centavos,
   });
-  const nomeCarrinho = itens.map((item) => `${item.quantidade}x ${item.nome}`).join(" + ");
+  const nomeCarrinho = itensProdutos.map((item) => `${item.quantidade}x ${item.nome}`).join(" + ");
   return {
     kit: { nome: nomeCarrinho, centavos: subtotal },
     itens,

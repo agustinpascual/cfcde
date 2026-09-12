@@ -1,14 +1,13 @@
 .commerce { color: #26221f; background: #fff; font-family: var(--font-work-sans), "Work Sans", sans-serif; }
 .container { width: min(1186px, calc(100% - 48px)); margin: 0 auto; }
 .products { padding: 58px 0 64px; }
-.subdued { background: #f6f6f6; padding-top: 66px; padding-bottom: 74px; }
 .heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 29px; }
 .heading h2 { margin: 0; color:#6d6d6d; font-size: 14px; line-height: 14px; font-weight: 500; letter-spacing: -.7px; text-transform:uppercase; }
 .arrows { display: flex; gap: 9px; }
 .arrows button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid #dedbd8; border-radius: 50%; background: #fff; cursor: pointer; color: #6c6661; transition: border-color .2s, color .2s; }
 .arrows button:hover { border-color: #956738; color: #956738; }
 .arrows span { font: 300 29px/28px Georgia, serif; transform: translateY(-1px); }
-.rail { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 66px) / 4); gap: 22px; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-inline: none; touch-action: pan-y; }
+.rail { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 66px) / 4); gap: 22px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-x: contain; overscroll-behavior-y: auto; touch-action: auto; -webkit-overflow-scrolling: touch; }
 .rail::-webkit-scrollbar { display: none; }
 .card { min-width: 0; color: inherit; text-decoration: none; scroll-snap-align: start; }
 .imageWrap { position: relative; aspect-ratio: 1; overflow: hidden; background: #fafafa; }
@@ -39,7 +38,6 @@
 @media (max-width: 760px) {
   .container, .bannerGrid, .authorInner { width: min(100% - 30px, 560px); }
   .products { padding: 39px 0 46px; }
-  .subdued { padding-top: 46px; padding-bottom: 52px; }
   .heading { margin-bottom: 21px; }
   .heading h2 { font-size: 14px; }
   .arrows button { width: 34px; height: 34px; }
@@ -67,7 +65,7 @@
 .authorBanner img{display:block;width:100%;height:auto}
 .authorMobile{display:none!important}
 @media(max-width:760px){.authorDesktop{display:none!important}.authorMobile{display:block!important}}
-.subdued,.imageWrap{background:#fff}.imageWrap img{transform:scale(var(--product-zoom,1.06))}.card:hover .imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .025))}
+.imageWrap{background:#fff}.imageWrap img{transform:scale(var(--product-zoom,1.06))}.card:hover .imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .025))}
 @media(max-width:760px){.rail{grid-auto-columns:82%}.imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .02))}.card:hover .imageWrap img{transform:scale(calc(var(--product-zoom,1.06) + .035))}}
 
 /* As áreas abaixo da primeira vitrine só são pintadas quando se aproximam da
@@ -80,5 +78,4 @@
 
 @media (max-width: 760px) {
   .commerce > section:not(:first-child) { contain-intrinsic-size: auto 520px; }
-  .rail { touch-action: pan-y; }
 }

@@ -3,7 +3,7 @@ import Image from "next/image";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, LockKeyhole, ShieldCheck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { acompanharPix } from "@/lib/acompanhar-pix";
 import { calcularParcelamentoCartao, luhn } from "@/lib/cartao";
 import { concluirTentativa, liberarTentativaEncerrada, tentativaPagamento } from "@/lib/tentativa-pagamento";
@@ -128,9 +128,10 @@ const classificarErro3ds = (erro: unknown) => {
 const mascararValidade = (e: React.FormEvent<HTMLInputElement>) => { const d = digitos(e.currentTarget.value).slice(0, 4); e.currentTarget.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
 const somenteDigitos = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 4); };
 
-export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, produtoNome, onEnviado, onDocumentoRecusado }: {
+export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, produtoNome, onEnviado, onDocumentoRecusado, onFalha, seloProcessador, antesDoBotao, classeBotao, validarAntesDePagar }: {
   publicKey: string; parcelasMax: number; total: number; payload: PayloadCartao; produtoNome: string;
-  onEnviado?: () => void; onDocumentoRecusado?: (mensagem: string) => void;
+  onEnviado?: () => void; onDocumentoRecusado?: (mensagem: string) => void; onFalha?: () => void;
+  seloProcessador?: ReactNode; antesDoBotao?: ReactNode; classeBotao?: string; validarAntesDePagar?: () => boolean;
 }) {
   const [sdk, setSdk] = useState<"carregando" | "pronto" | "erro">("carregando");
   const [ocupado, setOcupado] = useState(false);
@@ -145,6 +146,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   const [podeRepetir, setPodeRepetir] = useState(false);
   const router = useRouter();
   const redirecionando = useRef(false);
+  const falhaFinalNotificada = useRef("");
   const inicializandoSdk = useRef(false);
   const form = useRef<HTMLFormElement>(null);
   const numero = useRef<HTMLInputElement>(null), titular = useRef<HTMLInputElement>(null);
@@ -201,6 +203,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       registrar("checkout_parcial", { etapa: "Pagamento", falha_cartao: "sdk_init", motivo });
       setSdk("erro");
       setMensagem("O ambiente seguro do cartão não terminou de carregar. Confira sua conexão e toque em “Tentar carregar novamente”.");
+      onFalha?.();
     } finally {
       inicializandoSdk.current = false;
     }
@@ -243,6 +246,17 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     });
   }, [cobranca, status, fase3ds, payload.produto, router]);
 
+  // Recusa ou expiração confirmada pelo servidor: a cobrança terminou e já é
+  // seguro apresentar outra forma de pagamento sem disputar com o cartão.
+  useEffect(() => {
+    if (!cobranca || (status !== "failed" && status !== "expired")) return;
+    const chave = `${cobranca.id}:${status}`;
+    if (falhaFinalNotificada.current === chave) return;
+    falhaFinalNotificada.current = chave;
+    concluirTentativa(payload.produto, "cartao");
+    onFalha?.();
+  }, [cobranca, status, payload.produto, onFalha]);
+
   // Depois de uma autenticação incompleta, dá tempo para a consulta revelar
   // uma aprovação tardia antes de oferecer nova tentativa (evita cobrar duas vezes).
   useEffect(() => {
@@ -254,6 +268,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   async function pagar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (ocupado || sdk !== "pronto" || !window.Axxon || cobranca) return;
+    if (validarAntesDePagar && !validarAntesDePagar()) return;
     const num = digitos(numero.current?.value);
     const nome = (titular.current?.value ?? "").trim().replace(/\s+/g, " ");
     const [mm, aa] = (validade.current?.value ?? "").split("/");
@@ -286,13 +301,15 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         ({ resposta: r, dados } = await enviar(tentativa));
       }
       if (!r.ok) {
-        liberarTentativaEncerrada(payload.produto, "cartao", tentativa, dados);
+        const encerradaSemCobranca = liberarTentativaEncerrada(payload.produto, "cartao", tentativa, dados);
         const mensagemErro = dados.erro || "Não foi possível processar o cartão.";
         if (typeof mensagemErro === "string" && /CPF|CNPJ|documento/i.test(mensagemErro)) {
           onDocumentoRecusado?.(mensagemErro);
           return;
         }
-        throw new Error(mensagemErro);
+        const erroPagamento = new Error(mensagemErro) as Error & { podeOferecerPix?: boolean };
+        erroPagamento.podeOferecerPix = encerradaSemCobranca;
+        throw erroPagamento;
       }
       criada = true;
       const statusInicial = dados.status === "paid" ? "approved" : dados.status;
@@ -338,6 +355,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         setMensagem(diagnostico.mensagem);
       } else {
         setMensagem(erro instanceof Error ? erro.message : "Não foi possível processar o cartão.");
+        if ((erro as { podeOferecerPix?: boolean })?.podeOferecerPix) onFalha?.();
       }
     } finally {
       form.current?.reset();   // o cartão sai do DOM assim que deixa de ser necessário
@@ -349,15 +367,16 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
 
   function novaTentativa() {
     concluirTentativa(payload.produto, "cartao");
+    falhaFinalNotificada.current = "";
     setCobranca(null); setStatus("idle"); setFase3ds("idle"); setMensagem(""); setAutenticacaoFalhou(false); setPodeRepetir(false);
   }
 
   const opcoes = Array.from({ length: Math.max(1, parcelasMax) }, (_, i) => i + 1);
-  const planoSelecionado = calcularParcelamentoCartao(total, parcelas);
   return <div className={s.bloco}>
     <Script src={SDK_URL} strategy="afterInteractive" onReady={() => void iniciar()}
-      onError={() => { setSdk("erro"); setMensagem("O serviço de cartão está indisponível. Tente novamente em instantes ou pague com Pix."); }} />
+      onError={() => { setSdk("erro"); setMensagem("O serviço de cartão está indisponível. Tente novamente em instantes ou pague com Pix."); onFalha?.(); }} />
     {!cobranca && <form ref={form} className={s.form} onSubmit={pagar} noValidate>
+      <div className={s.camposCartao}>
       <p className={s.aviso}><LockKeyhole aria-hidden="true" /><span>Os dados do cartão são transmitidos com criptografia e não ficam armazenados na loja.</span></p>
       <label>Número do cartão<div className={s.numeroCampo}><input ref={numero} className={s.input} inputMode="numeric" autoComplete="cc-number" placeholder="0000 0000 0000 0000" maxLength={23} onInput={atualizarNumero} disabled={ocupado} aria-describedby="bandeira-cartao" required />{bandeira && <span className={s.bandeiraLogo} title={NOMES_BANDEIRA[bandeira]} aria-hidden="true">{LOGOS_BANDEIRA[bandeira] ? <Image src={LOGOS_BANDEIRA[bandeira]} alt="" width={46} height={29} unoptimized /> : <b>{NOMES_BANDEIRA[bandeira]}</b>}</span>}</div><small id="bandeira-cartao" className={s.bandeiraNome} aria-live="polite">{bandeira ? `Bandeira identificada: ${NOMES_BANDEIRA[bandeira]}` : "A bandeira aparecerá automaticamente"}</small></label>
       <label>Nome impresso no cartão<input ref={titular} className={s.input} autoComplete="cc-name" maxLength={60} disabled={ocupado} required /></label>
@@ -372,15 +391,12 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
             {n}x de {money.format(plano.total / n / 100)}{plano.acrescimo === 0 ? " sem juros" : ""}
           </option>;
         })}
-      </select>
-        {planoSelecionado.acrescimo > 0 && (
-          <small className={s.resumoJuros}>
-            Total parcelado: <b>{money.format(planoSelecionado.total / 100)}</b>
-          </small>
-        )}
-      </label>
-      <button className={s.botao} type="submit" disabled={sdk !== "pronto" || ocupado}>
-        {sdk === "carregando" ? "Carregando pagamento seguro…" : sdk === "erro" ? "Cartão indisponível" : ocupado ? <span className={a.botaoCarregando}><LoaderCircle aria-hidden="true" /> Validando pagamento…</span> : `Pagar ${money.format(planoSelecionado.total / 100)}`}
+      </select></label>
+      {seloProcessador}
+      </div>
+      {antesDoBotao}
+      <button className={classeBotao ?? s.botao} type="submit" disabled={sdk !== "pronto" || ocupado}>
+        {sdk === "carregando" ? "Carregando pagamento seguro…" : sdk === "erro" ? "Cartão indisponível" : ocupado ? <span className={a.botaoCarregando}><LoaderCircle aria-hidden="true" /> Validando pagamento…</span> : "Finalizar compra"}
       </button>
       {ocupado && <div className={a.validacao} role="status" aria-live="polite"><span className={a.escudo}><ShieldCheck aria-hidden="true" /></span><div><strong>Protegendo sua compra</strong><p>Validando os dados e preparando a autenticação do banco.</p><span className={a.progresso}><i /></span></div></div>}
       <p className={s.aviso}><ShieldCheck aria-hidden="true" /><span>Pagamento processado em ambiente seguro.</span></p>

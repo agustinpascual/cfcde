@@ -12,16 +12,53 @@ export type PagamentoAxxon = {
   nextAction?: { type: string; provider?: string; payload: Record<string, unknown> } | null;
 };
 
-export type CriacaoAxxon = Pick<PagamentoAxxon, "id" | "nextAction">;
+export type CriacaoAxxon = Pick<PagamentoAxxon, "id" | "nextAction"> &
+  Partial<Pick<PagamentoAxxon, "amount" | "status" | "paymentMethod" | "qrCode" | "expiresAt">>;
 
-/** A criação fornece o ID; valor/status serão conferidos por GET canônico. */
+/**
+ * A criação sempre fornece o ID. Os demais campos são opcionais porque
+ * versões antigas da resposta não os traziam; quando presentes, conservamos
+ * somente tipos estritos para permitir o caminho rápido do PIX.
+ */
 export function lerCriacaoAxxon(valor: unknown): CriacaoAxxon {
   const envelope = valor as { data?: unknown } | null;
-  const p = (envelope?.data ?? valor) as CriacaoAxxon | null;
+  const p = (envelope?.data ?? valor) as Partial<PagamentoAxxon> | null;
   if (!p || typeof p.id !== "string" || !/^[a-zA-Z0-9_-]{4,58}$/.test(p.id)) {
     throw new Error("Resposta de criação AxxonPay sem ID válido");
   }
-  return { id: p.id, nextAction: p.nextAction ?? null };
+  const criado: CriacaoAxxon = { id: p.id, nextAction: p.nextAction ?? null };
+  if (typeof p.amount === "number" && Number.isSafeInteger(p.amount) && p.amount > 0) criado.amount = p.amount;
+  if (typeof p.status === "string" && p.status.length <= 64) criado.status = p.status;
+  if (typeof p.paymentMethod === "string" && p.paymentMethod.length <= 64) criado.paymentMethod = p.paymentMethod;
+  if (p.qrCode === null || (typeof p.qrCode === "string" && p.qrCode.length <= 4096)) criado.qrCode = p.qrCode;
+  if (p.expiresAt === null || (typeof p.expiresAt === "string" && p.expiresAt.length <= 100)) criado.expiresAt = p.expiresAt;
+  return criado;
+}
+
+/**
+ * O POST autenticado pode devolver o PIX completo. Só dispensamos o GET
+ * imediato quando todos os campos que ligam o QR ao pedido batem de forma
+ * inequívoca. Qualquer resposta antiga, ambígua ou divergente cai no fluxo de
+ * consulta canônica; este atalho jamais transforma a criação em aprovação.
+ */
+export function pixPendenteDaCriacaoAxxon(criado: CriacaoAxxon, totalCentavos: number): PagamentoAxxon | null {
+  if (!Number.isSafeInteger(totalCentavos) || totalCentavos <= 0
+      || criado.amount !== totalCentavos
+      || criado.paymentMethod?.toLowerCase() !== "pix"
+      || criado.status?.toUpperCase() !== "PENDING"
+      || typeof criado.qrCode !== "string"
+      || !criado.qrCode.trim()
+      || criado.qrCode.length > 4096) {
+    return null;
+  }
+  return {
+    id: criado.id,
+    amount: criado.amount,
+    status: criado.status,
+    paymentMethod: "pix",
+    qrCode: criado.qrCode,
+    expiresAt: criado.expiresAt ?? null,
+  };
 }
 
 /** GET /payments/:id retorna BRL em reais, observado na API real.

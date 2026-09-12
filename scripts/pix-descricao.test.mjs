@@ -20,7 +20,12 @@ test("PinPay recebe referência real, link oficial e todos os itens do pedido", 
     "@/lib/pagamentos-axxon": { processarAxxon: () => { throw new Error("Gateway incorreto"); } },
     "@/lib/pix-comprovante-token": { criarTokenComprovante: () => "token-ficticio" },
     "@/lib/limite": { excedeu: () => false, ipDe: () => "teste" },
-    "@/lib/precos": { calcularTotal: () => valores, calcularTotalCafe: () => valores, calcularCarrinhoCafe: () => valores },
+    "@/lib/precos": {
+      calcularTotal: () => valores, calcularTotalCafe: () => valores, calcularCarrinhoCafe: () => valores,
+      lerOrderBumpsCheckout: dados => dados?.dedicatoria_junior
+        ? { adicionais: ["dedicatoria_junior"], registro: { dedicatoria_junior: true } }
+        : { adicionais: [], registro: {} },
+    },
     "@/lib/config-integracoes": { ler: async () => "credencial-ficticia" },
     "@/lib/confirmar-pedido": { depois: () => {}, enviarPixPorEmail: async () => {} },
     "@/lib/numero-pedido": { novoNumeroPedido: async () => "34893" },
@@ -44,6 +49,7 @@ test("PinPay recebe referência real, link oficial e todos os itens do pedido", 
   } });
   const resposta = await exports.POST(new Request("https://loja.example/api/pix", { method: "POST", body: JSON.stringify({
     nome: "Cliente Ficticio", email: "teste@example.com", documento: "00000000000", loja: "cafecomdeuspai", produto: "teste", qtd: 1, frete: "pac",
+    order_bumps: { dedicatoria_junior: true },
   }) }));
   assert.equal(resposta.status, 200);
   assert.equal(enviado.description, "GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #34893");
@@ -52,4 +58,5 @@ test("PinPay recebe referência real, link oficial e todos os itens do pedido", 
   assert.equal((await resposta.json()).pedido, registrado.referencia);
   assert.equal(registrado.kit, "1x Produto A + 2x Produto B");
   assert.equal(registrado.quantidade, 3);
+  assert.deepEqual(registrado.order_bumps, { dedicatoria_junior: true });
 });

@@ -42,7 +42,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : "—";
 
   const qtd = pedido.quantidade ?? 1;
-  const unitario = qtd > 0 ? (pedido.subtotal_centavos || pedido.valor_centavos) / qtd : 0;
+  const orderBumps = pedido.order_bumps ?? {};
+  const adicionaisTotal = (orderBumps.embrulho_presente ? 990 : 0) + (orderBumps.dedicatoria_junior ? 1490 : 0);
+  const subtotalProdutos = Math.max(0, (pedido.subtotal_centavos || pedido.valor_centavos) - adicionaisTotal);
+  const unitario = qtd > 0 ? subtotalProdutos / qtd : 0;
   const acrescimoCartao = pedido.metodo_pagamento === "cartao"
     ? Math.max(0, pedido.valor_centavos - (pedido.subtotal_centavos - pedido.desconto_centavos + pedido.frete_centavos))
     : 0;
@@ -112,8 +115,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 <td>{pedido.kit || "Produto"}</td>
                 <td className={s.num}>{qtd}</td>
                 <td className={s.num}>{moeda(unitario)}</td>
-                <td className={s.num}>{moeda(pedido.subtotal_centavos || pedido.valor_centavos)}</td>
+                <td className={s.num}>{moeda(subtotalProdutos)}</td>
               </tr>
+              {orderBumps.embrulho_presente && <tr><td>Embrulho para presente{orderBumps.carta?.titulo ? ` · Carta: ${orderBumps.carta.titulo}` : ""}</td><td className={s.num}>1</td><td className={s.num}>{moeda(990)}</td><td className={s.num}>{moeda(990)}</td></tr>}
+              {orderBumps.dedicatoria_junior && <tr><td>Dedicatória escrita por Junior Rostirola</td><td className={s.num}>1</td><td className={s.num}>{moeda(1490)}</td><td className={s.num}>{moeda(1490)}</td></tr>}
             </tbody>
           </table>
 

@@ -2,8 +2,8 @@ import "server-only";
 import QRCode from "qrcode";
 import { supabaseAdmin } from "./supabase/servidor";
 import { criarPagamentoAxxon, consultarPagamentoAxxon, configuracaoAdquirenteAxxon } from "./axxonpay";
-import { conferirPagamentoAxxon, idAxxon, statusAxxon, type PagamentoAxxon } from "./axxonpay-protocolo";
-import { calcularCarrinhoCafe, type ItemCarrinhoCafe } from "./precos";
+import { conferirPagamentoAxxon, idAxxon, pixPendenteDaCriacaoAxxon, statusAxxon, type PagamentoAxxon } from "./axxonpay-protocolo";
+import { calcularCarrinhoCafe, lerOrderBumpsCheckout, type ItemCarrinhoCafe, type OrderBumpsCheckout } from "./precos";
 import { confirmarPorEmail, depois, registrarCompraNoPixel, enviarPixPorEmail } from "./confirmar-pedido";
 import { entregarAcessoApp } from "./entrega-app";
 import { urlWebhookAxxon } from "./axxonpay-webhook";
@@ -24,6 +24,16 @@ function itensDoCorpo(body: Record<string, unknown>): ItemCarrinhoCafe[] {
     const linha = item && typeof item === "object" && !Array.isArray(item) ? item as Record<string, unknown> : {};
     return { produto: texto(linha.produto), qtd: Number(linha.qtd) };
   });
+}
+
+function mesmosOrderBumps(a: unknown, b: OrderBumpsCheckout["registro"]) {
+  const atual = a && typeof a === "object" && !Array.isArray(a) ? a as Record<string, unknown> : {};
+  const cartaAtual = atual.carta && typeof atual.carta === "object" && !Array.isArray(atual.carta) ? atual.carta as Record<string, unknown> : null;
+  const cartaNova = "carta" in b ? b.carta : null;
+  return (atual.embrulho_presente === true) === ("embrulho_presente" in b)
+    && (atual.dedicatoria_junior === true) === ("dedicatoria_junior" in b)
+    && Boolean(cartaAtual) === Boolean(cartaNova)
+    && (!cartaAtual || !cartaNova || (cartaAtual.titulo === cartaNova.titulo && cartaAtual.texto_principal === cartaNova.texto_principal));
 }
 
 export async function respostaAxxon(p: PagamentoAxxon, referencia: string) {
@@ -148,8 +158,15 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   if (metodo === "cartao" && !cartao && (!hash || hash.length > 4096)) return respostaErro("Dados do cartão ausentes. Recarregue o checkout.", 400);
 
   let valores;
-  try { valores = calcularCarrinhoCafe(itensDoCorpo(body), texto(body.frete), { cupom: texto(body.cupom), pagamento: metodo }); }
-  catch { return respostaErro("Produto, quantidade ou frete inválido."); }
+  let orderBumps: OrderBumpsCheckout;
+  try {
+    orderBumps = lerOrderBumpsCheckout(body.order_bumps);
+    valores = calcularCarrinhoCafe(itensDoCorpo(body), texto(body.frete), {
+      cupom: texto(body.cupom), pagamento: metodo, adicionais: orderBumps.adicionais,
+    });
+  } catch (erro) {
+    return respostaErro(erro instanceof Error && /carta|Adicionais/i.test(erro.message) ? erro.message : "Produto, quantidade ou frete inválido.");
+  }
   const totalCobrado = metodo === "cartao"
     ? calcularParcelamentoCartao(valores.total, parcelas).total
     : valores.total;
@@ -172,11 +189,18 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     // O UUID ocupa a PK já existente; referencia passa a ser o número visível.
     // Reconhece também reservas antigas, sem renumerar pagamentos emitidos.
     const lerExistente = async () => {
-      const { data, error } = await db.from("pedidos")
-        .select("referencia,pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email")
-        .or(`id.eq.${tentativa},referencia.eq.${referenciaLegada}`).maybeSingle();
+      const resultado = orderBumps.adicionais.length
+        ? await db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email,order_bumps")
+          .or(`id.eq.${tentativa},referencia.eq.${referenciaLegada}`).maybeSingle()
+        : await db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email")
+          .or(`id.eq.${tentativa},referencia.eq.${referenciaLegada}`).maybeSingle();
+      const { error } = resultado;
       if (error) throw new Error("Reserva indisponível");
-      return data;
+      return resultado.data as null | {
+        referencia: string; pix_id: string | null; status: string; valor_centavos: number;
+        metodo_pagamento: string; cliente_documento: string | null; cliente_email: string | null;
+        order_bumps?: unknown;
+      };
     };
     let existente = await lerExistente();
     let reservou = false;
@@ -191,6 +215,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
         frete_centavos: valores.frete.centavos, frete_tipo: valores.frete.nome, kit: valores.kit.nome, quantidade: valores.quantidadeTotal,
         cliente_nome: nome, cliente_email: email, cliente_documento: documento, cliente_telefone: celular,
         endereco: Object.fromEntries(["logradouro", "numero", "complemento", "bairro", "localidade", "uf", "cep"].map(campo => [campo, texto(endereco[campo])])),
+        ...(orderBumps.adicionais.length ? { order_bumps: orderBumps.registro } : {}),
       });
       if (!reserva) { reservou = true; break; }
       if (reserva.code !== "23505") throw new Error("Reserva indisponível");
@@ -208,7 +233,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       if (!existente.pix_id && existente.status === "falhou") {
         return tentativaEncerrada("A tentativa anterior foi encerrada sem cobrança. Confira os dados e clique novamente para iniciar uma nova tentativa.");
       }
-      if (existente.valor_centavos !== totalCobrado || existente.metodo_pagamento !== metodo || existente.cliente_documento !== documento || existente.cliente_email !== email) {
+      if (existente.valor_centavos !== totalCobrado || existente.metodo_pagamento !== metodo || existente.cliente_documento !== documento || existente.cliente_email !== email || !mesmosOrderBumps(existente.order_bumps, orderBumps.registro)) {
         return respostaErro("CPF/CNPJ, e-mail, valor ou forma de pagamento foram alterados após iniciar esta tentativa. A cobrança anterior precisa ser conferida antes de gerar outra; contate o atendimento.", 409);
       }
       if (!existente.pix_id) return respostaErro("A tentativa anterior está em conferência. Não gere outra cobrança; aguarde ou contate o atendimento.", 409);
@@ -237,6 +262,30 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
           city: texto(endereco.localidade), state: texto(endereco.uf).toUpperCase(), zipCode: digitos(endereco.cep) } },
       metadata: { external_reference: referencia, payment_attempt: tentativa }, postbackUrl,
     });
+    const enviarEmailDoPix = (brcode: string) => depois(enviarPixPorEmail({
+      referencia, clienteNome: nome, clienteEmail: email,
+      itens: valores.itens.map((item) => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos })),
+      subtotalCentavos: valores.subtotal, descontoCentavos: valores.desconto, freteCentavos: valores.frete.centavos,
+      freteTipo: valores.frete.nome, totalCentavos: valores.total, brcode,
+    }));
+    /* O contrato 201 atual devolve o QR junto da criação. Se valor, método e
+       estado pendente batem estritamente, o POST autenticado já contém tudo
+       que a tela precisa: eliminamos o GET imediato e persistimos ID + QR em
+       uma única escrita. Respostas antigas ou divergentes seguem pelo GET
+       canônico abaixo. Aprovação continua exclusiva de polling/webhook. */
+    const pixCriado = metodo === "pix" ? pixPendenteDaCriacaoAxxon(criado, totalCobrado) : null;
+    if (pixCriado) {
+      etapa = "persistencia_pix_criado";
+      const resposta = await respostaAxxon(pixCriado, referencia);
+      const { error } = await db.from("pedidos").update({
+        pix_id: idAxxon(pixCriado.id),
+        pix_copia_cola: pixCriado.qrCode,
+        pix_qr_url: resposta.qr_code_url,
+      }).eq("referencia", referencia);
+      if (error) throw new Error("Cobrança criada, código Pix em conferência");
+      enviarEmailDoPix(pixCriado.qrCode!);
+      return Response.json(resposta);
+    }
     // No PIX, a persistência do ID e o GET que traz o QR não dependem um do
     // outro. Executá-los juntos corta uma espera de rede sem devolver o código
     // antes de o ID estar salvo, mantendo a recuperação e a idempotência.
@@ -251,12 +300,6 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       const { error } = await persistirId;
       if (error) throw new Error("Cobrança criada, registro em conferência");
     }
-    const enviarEmailDoPix = (brcode: string) => depois(enviarPixPorEmail({
-      referencia, clienteNome: nome, clienteEmail: email,
-      itens: valores.itens.map((item) => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos })),
-      subtotalCentavos: valores.subtotal, descontoCentavos: valores.desconto, freteCentavos: valores.frete.centavos,
-      freteTipo: valores.frete.nome, totalCentavos: valores.total, brcode,
-    }));
     // Cartão com nextAction precisa chegar ao navegador o quanto antes. Não
     // bloqueia a abertura do 3DS com um GET redundante: o ID já foi validado e
     // persistido, e a aprovação continuará vindo exclusivamente do polling ou
