@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type CSSProperties, useRef } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import styles from "./HomeCommerce.module.css";
 import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
 
@@ -20,6 +20,31 @@ type Product = {
 
 function Chevron({ direction }: { direction: "left" | "right" }) {
   return <span aria-hidden="true">{direction === "left" ? "‹" : "›"}</span>;
+}
+
+function ImagemProxima({ src, alt, sizes }: { src: string; alt: string; sizes: string }) {
+  const area = useRef<HTMLSpanElement>(null);
+  const [carregar, setCarregar] = useState(false);
+  useEffect(() => {
+    // O lazy nativo antecipa várias telas e muitos cards fora do carrossel.
+    // Preserva o espaço da imagem e só inicia o download perto da área visível.
+    if (!area.current) return;
+    if (typeof IntersectionObserver === "undefined") {
+      const timer = window.setTimeout(() => setCarregar(true), 0);
+      return () => window.clearTimeout(timer);
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        setCarregar(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "240px 80px" });
+    observer.observe(area.current);
+    return () => observer.disconnect();
+  }, []);
+  return <span ref={area} style={{ position: "absolute", inset: 0 }}>
+    {carregar && <Image src={src} alt={alt} fill sizes={sizes} loading="eager" />}
+  </span>;
 }
 
 /* A vitrine de Lançamento junta a lista curada da home com tudo que está no
@@ -58,7 +83,7 @@ function ProductRail({ title, products }: { title: string; products: Product[] }
           {products.map((product) => (
             <Link className={styles.card} href={product.href ?? "#"} key={product.image} prefetch={false}>
               <div className={styles.imageWrap} style={{ "--product-zoom": product.imageZoom ?? 1.06 } as CSSProperties}>
-                <Image src={product.image.startsWith("/") ? product.image : `${assets}/${product.image}`} alt={product.name} fill sizes="(max-width: 600px) 72vw, 25vw" />
+                <ImagemProxima src={product.image.startsWith("/") ? product.image : `${assets}/${product.image}`} alt={product.name} sizes="(max-width: 760px) 82vw, 25vw" />
               </div>
               <div className={styles.cardBody}>
                 <h3>{product.name}</h3>
@@ -83,8 +108,8 @@ export default function HomeCommerce() {
         <div className={styles.bannerGrid}>
           {/* O banner é o COMBO VOLUME 7; apontar para /combo-plus levava ao combo do
               vol.6 — quem clicasse caía num produto diferente do anunciado. */}
-          <Link href="/produto/box-plus2027" aria-label="Conheça o Combo Plus 2027"><Image src={`${assets}/asset-010-v3.webp`} alt="Combo Plus 2027 · Café com Deus Pai volume 7" fill sizes="(max-width: 720px) 100vw, 50vw" /></Link>
-          <Link href="/categoria/lancamento" aria-label="Ver todos os lançamentos"><Image src={`${assets}/asset-011-v3.webp`} alt="Lançamentos Café com Deus Pai" fill sizes="(max-width: 720px) 100vw, 50vw" /></Link>
+          <Link href="/produto/box-plus2027" aria-label="Conheça o Combo Plus 2027" prefetch={false}><ImagemProxima src={`${assets}/asset-010-v3.webp`} alt="Combo Plus 2027 · Café com Deus Pai volume 7" sizes="(max-width: 760px) 100vw, 50vw" /></Link>
+          <Link href="/categoria/lancamento" aria-label="Ver todos os lançamentos" prefetch={false}><ImagemProxima src={`${assets}/asset-011-v3.webp`} alt="Lançamentos Café com Deus Pai" sizes="(max-width: 760px) 100vw, 50vw" /></Link>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chromium, devices } from "playwright";
+import { chromium, webkit, devices } from "playwright";
 
 const base = process.env.HOME_TEST_BASE_URL;
 if (base && !["127.0.0.1", "localhost"].includes(new URL(base).hostname)) throw new Error("Use o build local.");
@@ -78,5 +78,63 @@ for (const [nome, aparelho, formato] of [["celular", "Pixel 7", "mobile"], ["tab
       await page.waitForURL("**/produto/box-plus2027");
       assert.deepEqual(erros, [], "sem erros na home ou navegação");
     } finally { await browser.close(); }
+  });
+}
+
+for (const [aparelho, motor] of [["Pixel 7", chromium], ["Galaxy Tab S4", chromium], ["iPhone 13", webkit]]) {
+  test(`vitrine ${aparelho}: baixa imagens próximas e carrega os demais produtos ao rolar`, { skip: !base && "defina HOME_TEST_BASE_URL" }, async () => {
+    const browser = await motor.launch();
+    let context;
+    try {
+      const origem = motor === webkit ? "https://vitrine-teste.invalid" : base;
+      context = await browser.newContext({ ...devices[aparelho], serviceWorkers: "block" });
+      await context.addInitScript(() => { navigator.sendBeacon = () => true; });
+      await context.route("**/*", async route => {
+        const req = route.request();
+        const url = new URL(req.url());
+        if (url.origin !== origem) return route.abort();
+        if (req.method() !== "GET") return route.fulfill({ json: { ok: true, permitido: true } });
+        if (origem !== base) return route.fulfill({ response: await route.fetch({
+          url: `${base}${url.pathname}${url.search}`,
+          headers: { ...req.headers(), host: url.host, "x-forwarded-host": url.host, "x-forwarded-proto": "https" },
+        }) });
+        return route.continue();
+      });
+      const page = await context.newPage();
+      const erros = [];
+      page.on("pageerror", erro => erros.push(erro.message));
+      await page.goto(origem, { waitUntil: "domcontentloaded" });
+      await page.getByRole("button", { name: /^Abrir stories em vídeo/ }).waitFor();
+      const vitrine = page.locator("section").filter({ has: page.getByRole("heading", { name: "LANÇAMENTO", exact: true }) });
+      const produtos = vitrine.locator("a");
+      assert.ok(await produtos.count() > 8, "catálogo inteiro continua acessível");
+      assert.equal(await produtos.last().locator("img").count(), 0, "não baixa o último card fora da tela");
+      const banner = page.getByRole("link", { name: "Conheça o Combo Plus 2027", exact: true });
+      // No tablet alto o banner já pode estar na primeira tela e deve carregar.
+      const posicao = await banner.boundingBox();
+      if (posicao.y > page.viewportSize().height + 240) {
+        assert.equal(await banner.locator("img").count(), 0, "banner longe da tela não disputa a abertura");
+      }
+      await produtos.first().scrollIntoViewIfNeeded();
+      await produtos.first().locator("img").waitFor();
+      await produtos.first().locator("img").evaluate(img => img.decode());
+      await produtos.last().evaluate(link => link.parentElement.scrollTo({ left: link.parentElement.scrollWidth, behavior: "instant" }));
+      await produtos.last().locator("img").waitFor();
+      await produtos.last().locator("img").evaluate(img => img.decode());
+      await banner.scrollIntoViewIfNeeded();
+      await banner.locator("img").waitFor();
+      await banner.locator("img").evaluate(img => img.decode());
+      assert.ok(await banner.locator("img").evaluate(img => img.naturalWidth > 0));
+      await banner.click();
+      await page.waitForURL("**/produto/box-plus2027");
+      await page.getByRole("button", { name: "Abrir sacola", exact: true }).waitFor();
+      // A página de destino pode continuar baixando imagens; a home e suas
+      // imagens já foram verificadas acima. Encerra o proxy antes do browser.
+      await context.unrouteAll({ behavior: "ignoreErrors" });
+      assert.deepEqual(erros, [], "imagens e navegação sem erros");
+    } finally {
+      await context?.unrouteAll({ behavior: "ignoreErrors" });
+      await browser.close();
+    }
   });
 }
