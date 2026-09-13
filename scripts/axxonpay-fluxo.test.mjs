@@ -10,9 +10,10 @@ import * as comprador from "../src/lib/axxonpay-comprador.ts";
 
 // Executa o serviço real transpilado, com banco/gateway/e-mails substituídos.
 // Não usa credenciais, rede, pedidos reais ou cartões de clientes.
-function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva = false, erroUpdate = false, env = { NEXT_PUBLIC_SITE_URL: "https://loja.example" } } = {}) {
+function ambiente({ criar, consultar, criarPinpay, consultarPinpay, numeros, provider = "stripe", erroReserva = false, erroUpdate = false, env = { NEXT_PUBLIC_SITE_URL: "https://loja.example" } } = {}) {
   const pedidos = new Map();
   let chamadas = 0, consultas = 0, confirmacoes = 0, atualizacoes = 0;
+  let chamadasPinpay = 0, consultasPinpay = 0;
   let numerosSorteados = 0;
   const logs = [];
   const gateway = {
@@ -59,6 +60,18 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
     "server-only": {}, "qrcode": { toDataURL: async () => "data:image/png;base64,TESTE" },
     "./supabase/servidor": { supabaseAdmin: () => ({ from: () => new Consulta() }) },
     "./axxonpay": gateway, "./axxonpay-protocolo": protocolo, "./axxonpay-webhook": webhook, "./cartao": cartao,
+    "./pinpay": {
+      criarPix: async dados => {
+        chamadasPinpay++;
+        return criarPinpay ? criarPinpay(dados) : { id: "pinpay_fallback", amount: dados.amount,
+          payment_method: "pix", status: "pending", external_reference: dados.metadata.external_reference,
+          pix: { qr_code: "PIX-PINPAY-FICTICIO", expires_at: "2030-01-01T00:00:00Z" } };
+      },
+      consultarPix: async id => {
+        consultasPinpay++;
+        return consultarPinpay ? consultarPinpay(id) : { id, amount: 2500, status: "pending" };
+      },
+    },
     "./axxonpay-comprador": comprador,
     "./numero-pedido": { sortearNumeroPedido: () => numeros ? numeros[numerosSorteados++ % numeros.length] : String(100001 + numerosSorteados++) },
     "./precos": {
@@ -85,14 +98,109 @@ function ambiente({ criar, consultar, numeros, provider = "stripe", erroReserva 
   vm.runInNewContext(js, { exports, require: id => {
     if (!(id in dependencias)) throw new Error(`Dependência não simulada: ${id}`);
     return dependencias[id];
-  }, Response, URL, AbortSignal, console: { error: (...args) => logs.push(JSON.stringify(args)), warn: (...args) => logs.push(JSON.stringify(args)) }, process: { env } });
-  return { ...exports, pedidos, pedido: (tentativa = body.tentativa) => [...pedidos.values()].find(p => p.id === tentativa), contadores: () => ({ chamadas, consultas, confirmacoes, atualizacoes }), logs: () => logs };
+  }, Response, URL, AbortSignal, console: { info: (...args) => logs.push(JSON.stringify(args)), error: (...args) => logs.push(JSON.stringify(args)), warn: (...args) => logs.push(JSON.stringify(args)) }, process: { env } });
+  return { ...exports, pedidos, pedido: (tentativa = body.tentativa) => [...pedidos.values()].find(p => p.id === tentativa), contadores: () => ({ chamadas, consultas, confirmacoes, atualizacoes, chamadasPinpay, consultasPinpay }), logs: () => logs };
 }
 const body = {
   tentativa: "550e8400-e29b-41d4-a716-446655440000", loja: "cafecomdeuspai", produto: "teste", qtd: 1, frete: "pac",
   nome: "Cliente Ficticio", email: "teste@example.com", documento: "00000000000", celular: "11999999999",
   endereco: { logradouro: "Rua Teste", numero: "1", bairro: "Centro", localidade: "Cidade", uf: "SP", cep: "12345678" },
 };
+
+const semCriacao = () => Object.assign(new Error("Credencial recusada"), { status: 401, pagamentoNaoCriado: true });
+
+test("recusa confirmada da Axxon emite um Pix PinPay no mesmo pedido e recupera no reenvio", async () => {
+  let enviado;
+  const a = ambiente({ criar: async () => { throw semCriacao(); }, criarPinpay: async dados => {
+    enviado = dados;
+    return { id: "pinpay_fallback", amount: dados.amount, payment_method: "pix", status: "pending",
+      external_reference: dados.metadata.external_reference, pix: { qr_code: "PIX-PINPAY", expires_at: null } };
+  } });
+  const r = await a.processarAxxon(body, "pix");
+  assert.equal(r.status, 200, a.logs().join(" "));
+  const p = await r.json();
+  assert.equal(p.id, "pinpay_fallback");
+  assert.equal(p.qr_code, "PIX-PINPAY");
+  assert.equal(enviado.amount, 2500);
+  assert.equal(enviado.metadata.external_reference, p.pedido);
+  assert.equal(enviado.customer.document.number, body.documento);
+  assert.equal(enviado.customer.email, body.email);
+  assert.equal(a.pedido().pix_id, p.id);
+  assert.equal(a.pedido().pix_copia_cola, p.qr_code);
+  assert.equal(a.pedidos.size, 1);
+  const recuperado = await a.processarAxxon(body, "pix");
+  assert.equal(recuperado.status, 200);
+  assert.equal((await recuperado.json()).id, p.id);
+  assert.equal(a.contadores().chamadas, 1);
+  assert.equal(a.contadores().chamadasPinpay, 1);
+});
+
+test("cliques concorrentes durante alternativa PinPay não duplicam cobrança", async () => {
+  let concluir, iniciou;
+  const iniciouPinpay = new Promise(resolve => { iniciou = resolve; });
+  const a = ambiente({ criar: async () => { throw semCriacao(); }, criarPinpay: async dados => {
+    iniciou();
+    await new Promise(resolve => { concluir = resolve; });
+    return { id: "pinpay_unico", amount: dados.amount, payment_method: "pix", status: "pending", pix: { qr_code: "PIX-UNICO" } };
+  } });
+  const primeira = a.processarAxxon(body, "pix");
+  await iniciouPinpay;
+  assert.equal((await a.processarAxxon(body, "pix")).status, 409);
+  concluir();
+  assert.equal((await primeira).status, 200);
+  assert.equal(a.contadores().chamadasPinpay, 1);
+  assert.equal(a.contadores().chamadas, 1);
+});
+
+for (const erro of [new Error("timeout"), Object.assign(new Error("Falha HTTP"), { status: 500 }),
+  Object.assign(new Error("Erro desconhecido"), { status: 400 }), Object.assign(new Error("CPF inválido"), { documentoInvalido: true })]) {
+  test(`não troca gateway em falha ambígua ou documento inválido: ${erro.message}`, async () => {
+    const a = ambiente({ criar: async () => { throw erro; } });
+    await a.processarAxxon(body, "pix");
+    assert.equal(a.contadores().chamadasPinpay, 0);
+  });
+}
+
+test("erro de persistência após criação Axxon nunca aciona PinPay", async () => {
+  const a = ambiente({ erroUpdate: true });
+  assert.equal((await a.processarAxxon(body, "pix")).status, 503);
+  assert.equal(a.contadores().chamadasPinpay, 0);
+});
+
+test("cartão não usa alternativa Pix mesmo com recusa confirmada", async () => {
+  const a = ambiente({ criar: async () => { throw semCriacao(); } });
+  await a.processarAxxon({ ...body, cardHash: "hash-ficticio" }, "cartao");
+  assert.equal(a.contadores().chamadasPinpay, 0);
+});
+
+test("timeout PinPay preserva reserva e reenvio não cria em nenhum gateway", async () => {
+  const a = ambiente({ criar: async () => { throw semCriacao(); }, criarPinpay: async () => { throw new Error("timeout com dado sensível oculto"); } });
+  assert.equal((await a.processarAxxon(body, "pix")).status, 503);
+  assert.equal((await a.processarAxxon(body, "pix")).status, 409);
+  assert.equal(a.contadores().chamadasPinpay, 1);
+  assert.equal(a.contadores().chamadas, 1);
+  assert.doesNotMatch(a.logs().join(" "), /dado sensível oculto/);
+});
+
+test("PinPay com valor divergente conserva ID e não entrega QR nem cria novamente", async () => {
+  const a = ambiente({ criar: async () => { throw semCriacao(); }, criarPinpay: async () => ({
+    id: "pinpay_divergente", amount: 1, payment_method: "pix", status: "pending", pix: { qr_code: "PIX-ERRADO" },
+  }), consultarPinpay: async id => ({ id, amount: 1, status: "pending" }) });
+  const r = await a.processarAxxon(body, "pix");
+  assert.equal(r.status, 503);
+  assert.equal(a.pedido().pix_id, "pinpay_divergente");
+  assert.equal(a.pedido().pix_copia_cola, undefined);
+  assert.equal((await a.processarAxxon(body, "pix")).status, 503);
+  assert.equal(a.contadores().chamadasPinpay, 1);
+});
+
+test("reenvio da alternativa com comprador ou valor alterado não consulta PinPay", async () => {
+  const a = ambiente({ criar: async () => { throw semCriacao(); } });
+  assert.equal((await a.processarAxxon(body, "pix")).status, 200);
+  assert.equal((await a.processarAxxon({ ...body, email: "outro@example.com" }, "pix")).status, 409);
+  assert.equal(a.contadores().consultasPinpay, 0);
+  assert.equal(a.contadores().chamadasPinpay, 1);
+});
 
 function pedidoFicticio(referencia, id, pix_id = null) {
   return { referencia, id, pix_id, status: "pendente", valor_centavos: 2500, metodo_pagamento: "pix",
@@ -159,12 +267,16 @@ test("pedido legado AXX continua recuperável sem renumeração", async () => {
   assert.equal(a.contadores().chamadas, 0);
   assert.equal(a.pedidos.size, 1);
 });
-test("UUID que pertence a outro gateway não consulta nem cria AxxonPay", async () => {
+test("Pix PinPay existente é recuperado sem consultar nem criar AxxonPay", async () => {
   const a = ambiente();
-  a.pedidos.set("123456", pedidoFicticio("123456", body.tentativa, "pinpay_antigo"));
-  assert.equal((await a.processarAxxon(body, "pix")).status, 409);
+  a.pedidos.set("123456", { ...pedidoFicticio("123456", body.tentativa, "pinpay_antigo"), pix_copia_cola: "PIX-ANTIGO" });
+  const r = await a.processarAxxon(body, "pix");
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).qr_code, "PIX-ANTIGO");
   assert.equal(a.contadores().chamadas, 0);
   assert.equal(a.contadores().consultas, 0);
+  assert.equal(a.contadores().consultasPinpay, 1);
+  assert.equal(a.contadores().chamadasPinpay, 0);
 });
 test("webhook de referência curta exige UUID interno quando falta ID salvo", async () => {
   const a = ambiente();

@@ -7,12 +7,20 @@ const BASE = "https://api.axxonpay.com.br/api/v1";
 
 export async function chamarAxxon(caminho: string, init: RequestInit & { cartao?: boolean } = {}) {
   const [publica, secreta] = await Promise.all([ler("AXXONPAY_PUBLIC_KEY"), ler("AXXONPAY_SECRET_KEY")]);
-  if (!publica || !secreta) throw new Error("Configure as chaves da AxxonPay em Integrações.");
+  if (!publica || !secreta) throw Object.assign(new Error("Configure as chaves da AxxonPay em Integrações."), { pagamentoNaoCriado: true });
   const resposta = await fetch(`${BASE}${caminho}`, {
     ...init, cache: "no-store", redirect: "manual",
     signal: init.signal ?? AbortSignal.timeout(20000),
     headers: { "content-type": "application/json", "accept": "application/json",
       "axxon-gateway-publickey": publica, "axxon-gateway-secretkey": secreta },
+  }).catch((erro: unknown) => {
+    const codigo = (erro as { cause?: { code?: string } } | null)?.cause?.code;
+    // Falha na resolução ou na abertura da conexão: nenhum POST chegou ao
+    // gateway. Conexão interrompida/resetada e timeout continuam ambíguos.
+    if (codigo && ["ENOTFOUND", "EAI_AGAIN", "ECONNREFUSED"].includes(codigo)) {
+      throw Object.assign(new Error("Não foi possível conectar à AxxonPay."), { pagamentoNaoCriado: true });
+    }
+    throw erro;
   });
   if (resposta.status >= 300 && resposta.status < 400) {
     throw new Error("AxxonPay tentou redirecionar a requisição.");
@@ -25,11 +33,14 @@ export async function chamarAxxon(caminho: string, init: RequestInit & { cartao?
     // a adquirente valida o cartão na própria criação, e prender o comprador
     // numa tentativa "em conferência" a cada recusa inviabilizaria a venda.
     const criacao = caminho === "/direct/payment" && init.method === "POST";
-    const erro = criacao && resposta.status === 400 ? await resposta.json().catch(() => null) : null;
-    const semId = criacao && resposta.status === 400 && !erro?.id && !erro?.data?.id;
-    const documentoInvalido = semId && erro?.errorMessage === "customer.document: O número do documento (CPF/CNPJ) é inválido.";
-    const cartaoRecusado = semId && init.cartao === true;
-    throw Object.assign(new Error(`AxxonPay respondeu HTTP ${resposta.status}.`), { status: resposta.status, documentoInvalido, cartaoRecusado });
+    const erro = criacao && [400, 401, 403].includes(resposta.status) ? await resposta.json().catch(() => null) : null;
+    const semId = criacao && !erro?.id && !erro?.data?.id;
+    const documentoInvalido = semId && resposta.status === 400 && erro?.errorMessage === "customer.document: O número do documento (CPF/CNPJ) é inválido.";
+    const cartaoRecusado = semId && resposta.status === 400 && init.cartao === true;
+    // Autenticação/autorização recusada: a criação não foi aceita. Erros
+    // desconhecidos, 5xx e timeout não autorizam emitir em outro gateway.
+    const pagamentoNaoCriado = semId && [401, 403].includes(resposta.status);
+    throw Object.assign(new Error(`AxxonPay respondeu HTTP ${resposta.status}.`), { status: resposta.status, documentoInvalido, cartaoRecusado, pagamentoNaoCriado });
   }
   return resposta.json() as Promise<unknown>;
 }

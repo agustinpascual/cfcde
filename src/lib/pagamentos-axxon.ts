@@ -11,6 +11,7 @@ import { sortearNumeroPedido } from "./numero-pedido";
 import { calcularParcelamentoCartao, PARCELAS_MAX, semCartao, validarCartao, type CartaoBruto } from "./cartao";
 import { documentoBrasileiroValido } from "./documento-br";
 import { clienteCriacaoAxxon, normalizarCompradorAxxon } from "./axxonpay-comprador";
+import { criarPix as criarPixPinpay, consultarPix as consultarPixPinpay } from "./pinpay";
 
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const texto = (valor: unknown) => typeof valor === "string" ? valor.trim().slice(0, 200) : "";
@@ -198,9 +199,9 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     // Reconhece também reservas antigas, sem renumerar pagamentos emitidos.
     const lerExistente = async () => {
       const resultado = orderBumps.adicionais.length
-        ? await db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email,order_bumps")
+        ? await db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email,order_bumps,pix_copia_cola,pix_qr_url")
           .or(`id.eq.${tentativa},referencia.eq.${referenciaLegada}`).maybeSingle()
-        : await db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email")
+        : await db.from("pedidos").select("referencia,pix_id,status,valor_centavos,metodo_pagamento,cliente_documento,cliente_email,pix_copia_cola,pix_qr_url")
           .or(`id.eq.${tentativa},referencia.eq.${referenciaLegada}`).maybeSingle();
       const { error } = resultado;
       if (error) throw new Error("Reserva indisponível");
@@ -208,6 +209,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
         referencia: string; pix_id: string | null; status: string; valor_centavos: number;
         metodo_pagamento: string; cliente_documento: string | null; cliente_email: string | null;
         order_bumps?: unknown;
+        pix_copia_cola?: string | null; pix_qr_url?: string | null;
       };
     };
     let existente = await lerExistente();
@@ -233,7 +235,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
     }
     if (existente) {
       referencia = existente.referencia;
-      if (existente.pix_id && !existente.pix_id.startsWith("axxon_")) {
+      if (metodo !== "pix" && existente.pix_id && !existente.pix_id.startsWith("axxon_")) {
         return respostaErro("Esta tentativa pertence a outro meio de pagamento. Confira o pedido anterior.", 409);
       }
       // Somente falha confirmada sem ID libera um identificador novo. Não
@@ -245,6 +247,28 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
         return respostaErro("CPF/CNPJ, e-mail, valor ou forma de pagamento foram alterados após iniciar esta tentativa. A cobrança anterior precisa ser conferida antes de gerar outra; contate o atendimento.", 409);
       }
       if (!existente.pix_id) return respostaErro("A tentativa anterior está em conferência. Não gere outra cobrança; aguarde ou contate o atendimento.", 409);
+      if (!existente.pix_id.startsWith("axxon_")) {
+        // O gateway gravado no pedido prevalece sobre a seleção atual.
+        // Recupera a alternativa já emitida, sem voltar a criar na Axxon.
+        etapa = "consulta_pinpay";
+        const p = await consultarPixPinpay(existente.pix_id, AbortSignal.timeout(8000));
+        const ref = p.external_reference ?? p.metadata?.external_reference;
+        if (p.id !== existente.pix_id || p.amount !== totalCobrado || (ref && ref !== referencia)) {
+          throw new Error("Transação PinPay divergente");
+        }
+        if (["failed", "refused", "expired", "refunded"].includes(p.status)) {
+          return tentativaEncerrada("O Pix anterior foi encerrado. Clique novamente para iniciar uma nova tentativa.");
+        }
+        if (!["pending", "approved", "paid"].includes(p.status) || !existente.pix_copia_cola) {
+          throw new Error("Pix PinPay em conferência");
+        }
+        return Response.json({ id: existente.pix_id, pedido: referencia, total: totalCobrado,
+          qr_code: existente.pix_copia_cola, qr_code_url: existente.pix_qr_url ?? null,
+          // A consulta compartilhada da página de pagamento confirma e
+          // persiste eventual aprovação, inclusive após recuperar o Pix.
+          status: "pending", expires_at: null,
+        });
+      }
       etapa = "consulta_existente";
       const p = await consultarPagamentoAxxon(existente.pix_id.slice(6));
       await sincronizarAxxon(p);
@@ -350,6 +374,50 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       ...(nomeErro === "TimeoutError" ? { motivo: "tempo_esgotado" } : {}),
       ...(typeof http === "number" && Number.isInteger(http) && http >= 400 && http <= 599 ? { http } : {}) });
     const recusa = erro as { documentoInvalido?: boolean; cartaoRecusado?: boolean } | null;
+    if (metodo === "pix" && etapa === "criacao"
+        && (erro as { pagamentoNaoCriado?: unknown } | null)?.pagamentoNaoCriado === true) {
+      // Só a requisição que venceu a reserva chega a esta etapa. Reenvios
+      // encontram o mesmo UUID pendente e nunca disparam outra criação.
+      // Se a PinPay perder a resposta, essa reserva continua bloqueada.
+      try {
+        const restante = Math.min(25000, 48000 - (Date.now() - inicio));
+        if (restante < 5000) throw new Error("Tempo insuficiente para alternativa");
+        const pix = await criarPixPinpay({ amount: totalCobrado,
+          description: `Escova Modeladora de Cabelo Bivolt - Pedido #${referencia}`.slice(0, 200),
+          customer: { name: nome, email, document: { number: documento } },
+          metadata: { external_reference: referencia,
+            checkout_url: `${new URL(process.env.NEXT_PUBLIC_SITE_URL || postbackUrl).origin}/checkout` },
+        }, AbortSignal.timeout(restante));
+        if (typeof pix.id !== "string" || !/^[A-Za-z0-9_-]{4,64}$/.test(pix.id) || pix.id.startsWith("axxon_")) {
+          throw new Error("Resposta PinPay sem ID válido");
+        }
+        const completo = pix.amount === totalCobrado && pix.payment_method === "pix"
+          && (!pix.external_reference || pix.external_reference === referencia)
+          && ["pending", "approved", "paid"].includes(pix.status)
+          && typeof pix.pix?.qr_code === "string" && pix.pix.qr_code.length > 0;
+        const qr = completo ? pix.pix.qr_code : null;
+        const imagem = qr ? await QRCode.toDataURL(qr, { width: 420, margin: 1 }).catch(() => null) : null;
+        const { data: salvo, error: falha } = await db.from("pedidos").update({
+          pix_id: pix.id, ...(qr ? { pix_copia_cola: qr, pix_qr_url: imagem } : {}),
+        }).eq("id", tentativa).eq("referencia", referencia).eq("status", "pendente").is("pix_id", null)
+          .select("referencia").maybeSingle();
+        if (falha || !salvo || !completo) throw new Error("Cobrança PinPay em conferência");
+        console.info("[pix] alternativa_pinpay", { referencia });
+        depois(enviarPixPorEmail({ referencia, clienteNome: nome, clienteEmail: email,
+          itens: valores.itens.map(item => ({ descricao: item.nome, quantidade: item.quantidade, totalCentavos: item.totalCentavos })),
+          subtotalCentavos: valores.subtotal, descontoCentavos: valores.desconto,
+          freteCentavos: valores.frete.centavos, freteTipo: valores.frete.nome,
+          totalCentavos: totalCobrado, brcode: qr!,
+        }));
+        return Response.json({ id: pix.id, pedido: referencia, total: totalCobrado,
+          qr_code: qr, qr_code_url: imagem, expires_at: pix.pix.expires_at ?? null, status: "pending" });
+      } catch (falha) {
+        const codigo = (falha as { status?: unknown } | null)?.status;
+        console.error("[pix] alternativa_em_conferencia", { referencia,
+          ...(typeof codigo === "number" && codigo >= 400 && codigo <= 599 ? { http: codigo } : {}) });
+        return respostaErro("Não foi possível concluir agora. A tentativa foi preservada para conferência; não inicie outra tentativa neste momento.", 503);
+      }
+    }
     if (recusa?.documentoInvalido === true || recusa?.cartaoRecusado === true) {
       const { data: encerrado, error } = await db.from("pedidos").update({ status: "falhou" })
         .eq("referencia", referencia).eq("status", "pendente").is("pix_id", null).select("referencia").maybeSingle();

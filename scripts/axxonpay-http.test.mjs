@@ -6,8 +6,8 @@ import ts from "typescript";
 import * as protocolo from "../src/lib/axxonpay-protocolo.ts";
 
 const rejeicao = "customer.document: O número do documento (CPF/CNPJ) é inválido.";
-function clienteSimulado(fetch, signal = AbortSignal) {
-  const deps = { "server-only": {}, "./config-integracoes": { ler: async () => "credencial-ficticia" }, "./axxonpay-protocolo": protocolo };
+function clienteSimulado(fetch, signal = AbortSignal, ler = async () => "credencial-ficticia") {
+  const deps = { "server-only": {}, "./config-integracoes": { ler }, "./axxonpay-protocolo": protocolo };
   const fonte = readFileSync(new URL("../src/lib/axxonpay.ts", import.meta.url), "utf8");
   const js = ts.transpileModule(fonte, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const exports = {};
@@ -17,6 +17,36 @@ function clienteSimulado(fetch, signal = AbortSignal) {
   } });
   return exports;
 }
+
+for (const [status, body, permite] of [
+  [401, {}, true], [403, {}, true], [401, { data: { id: "ja_criado" } }, false],
+  [400, { errorMessage: "Erro desconhecido" }, false], [429, {}, false], [500, {}, false],
+]) test(`alternativa só com criação recusada: HTTP ${status}, permite=${permite}`, async () => {
+  const api = clienteSimulado(async () => Response.json(body, { status }));
+  await assert.rejects(api.criarPagamentoAxxon({ paymentMethod: "pix", amount: 1000 }), erro => {
+    assert.equal(erro.pagamentoNaoCriado, permite);
+    return true;
+  });
+});
+
+for (const [code, permite] of [["ENOTFOUND", true], ["EAI_AGAIN", true], ["ECONNREFUSED", true], ["ECONNRESET", false], ["UND_ERR_SOCKET", false]]) {
+  test(`erro de rede ${code}: permite alternativa=${permite}`, async () => {
+    let chamadas = 0;
+    const api = clienteSimulado(async () => { chamadas++; throw Object.assign(new Error("fetch failed"), { cause: { code } }); });
+    await assert.rejects(api.criarPagamentoAxxon({ paymentMethod: "pix", amount: 1000 }), erro => {
+      assert.equal(erro.pagamentoNaoCriado === true, permite);
+      return true;
+    });
+    assert.equal(chamadas, 1);
+  });
+}
+
+test("credencial ausente permite alternativa sem enviar criação à Axxon", async () => {
+  let chamadas = 0;
+  const api = clienteSimulado(async () => { chamadas++; }, AbortSignal, async () => undefined);
+  await assert.rejects(api.criarPagamentoAxxon({ paymentMethod: "pix", amount: 1000 }), erro => erro.pagamentoNaoCriado === true);
+  assert.equal(chamadas, 0);
+});
 
 for (const [atraso, conclui] of [[25000, true], [46000, false]]) {
   test(`Pix com resposta em ${atraso}ms: preserva o POST único, conclui=${conclui}`, async () => {

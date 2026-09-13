@@ -84,8 +84,8 @@ export function criarPix(dados: {
   description?: string;
   customer: { name: string; email: string; document: { number: string } };
   metadata: { external_reference: string; checkout_url: string };
-}) {
-  return chamar<PixCriado>("/pix", { method: "POST", body: JSON.stringify(dados) });
+}, signal?: AbortSignal) {
+  return chamar<PixCriado>("/pix", { method: "POST", body: JSON.stringify(dados), ...(signal ? { signal } : {}) });
 }
 
 export async function consultarPix(id: string, signal?: AbortSignal): Promise<PixStatus> {

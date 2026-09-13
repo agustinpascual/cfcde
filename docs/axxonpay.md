@@ -108,6 +108,26 @@ Testes locais: `node --test scripts/cartao-axxon.test.mjs scripts/axxonpay-fluxo
 
 ## Confirmação e repetição
 
+### Alternativa Pix pela PinPay
+
+Com Pix selecionado como AxxonPay, a PinPay pode assumir a emissão no mesmo
+pedido quando a criação não foi aceita: chaves Axxon ausentes, HTTP 401/403
+sem ID na resposta, falha de DNS ou conexão recusada antes do envio. A chave
+PinPay é lida da integração já configurada. Cartão não usa essa alternativa.
+
+Timeout, conexão interrompida, HTTP 5xx/429, recusa de documento e resposta
+ambígua não autorizam emitir outro Pix. Uma cobrança pode existir mesmo sem
+resposta: nesses casos a reserva fica em conferência, sem repetição automática.
+
+A requisição que venceu a reserva é a única que pode criar na PinPay. O UUID,
+referência, comprador e total do pedido permanecem iguais. O ID e QR PinPay
+são salvos antes da resposta; reenvios consultam esse gateway e recuperam o
+mesmo código. Se a PinPay também perder a resposta, a tentativa permanece
+bloqueada para conferência. O polling e o webhook PinPay existentes continuam
+responsáveis pela confirmação autenticada. Não depende de migração de banco.
+
+### Endereço de notificações da AxxonPay
+
 Configure o webhook **normalizado** da AxxonPay para `https://webhook.bellablue.fit/api/webhooks/axxonpay`. A criação envia a variável `AXXONPAY_WEBHOOK_URL` em `postbackUrl`.
 
 No localhost, mantenha `NEXT_PUBLIC_SITE_URL=http://localhost:3000` e configure separadamente `AXXONPAY_WEBHOOK_URL=https://webhook.bellablue.fit/api/webhooks/axxonpay`. O receptor público precisa usar a mesma conta AxxonPay e o mesmo banco. Isso não é sandbox: as cobranças continuam reais. A URL é validada antes de reservar o pedido, evitando pendências causadas por configuração local.
