@@ -33,7 +33,6 @@ const NOTAS: Record<ChaveConfig, string> = {
   ZAPI_INSTANCIA: "ID da instância na Z-API",
   ZAPI_TOKEN: "Token da instância",
   ZAPI_CLIENT_TOKEN: "Token de segurança da conta Z-API",
-  ZAPI_WEBHOOK_SECRET: "Segredo exclusivo que protege a URL de recebimento — use pelo menos 32 caracteres aleatórios",
   WHATSAPP_MSG_PIX_PENDENTE: "Modelo de recuperação de Pix, editado na aba WhatsApp",
   WHATSAPP_MSG_CARRINHO_ABANDONADO: "Modelo de recuperação de carrinho, editado na aba WhatsApp",
   WHATSAPP_RECUPERACAO_PIX_MINUTOS: "Tempo da recuperação automática de Pix, editado na aba WhatsApp",
@@ -127,11 +126,10 @@ const SERVICOS: Servico[] = [
   {
     nome: "Z-API (WhatsApp)", papel: "Atendimento e disparos pelo WhatsApp",
     icone: MessageCircle,
-    chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN", "ZAPI_WEBHOOK_SECRET"],
+    chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN"],
     passos: [
       "Conectar o número na Z-API e ativar o Client-Token na área Segurança",
-      "Cadastrar o webhook Ao receber como https://cafecomdeusepai.com/api/webhooks/zapi?chave=SEU_SEGREDO_DO_WEBHOOK",
-      "O segredo do webhook deve ser diferente do token da instância e do Client-Token",
+      "Cadastrar o webhook Ao receber como https://cafecomdeusepai.com/api/webhooks/zapi",
     ],
   },
 ];

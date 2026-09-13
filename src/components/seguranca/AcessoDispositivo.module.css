@@ -1,0 +1,33 @@
+.tela {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 24px;
+  background: #faf8f5;
+  color: #223b36;
+  text-align: center;
+  font-family: var(--font-work-sans), sans-serif;
+}
+
+.mensagem {
+  display: grid;
+  gap: 20px;
+  max-width: 460px;
+}
+
+.marca {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mensagem h1 {
+  font-size: clamp(26px, 5vw, 36px);
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.mensagem p:not(.marca), .mensagem noscript {
+  font-size: 16px;
+  line-height: 1.6;
+}

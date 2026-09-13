@@ -52,7 +52,7 @@ test("PinPay recebe referência real, link oficial e todos os itens do pedido", 
     order_bumps: { dedicatoria_junior: true },
   }) }));
   assert.equal(resposta.status, 200);
-  assert.equal(enviado.description, "GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #34893");
+  assert.equal(enviado.description, "Escova Modeladora de Cabelo Bivolt - Pedido #34893");
   assert.equal(enviado.metadata.checkout_url, "https://loja.example/checkout");
   assert.equal(enviado.metadata.external_reference, registrado.referencia);
   assert.equal((await resposta.json()).pedido, registrado.referencia);

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import { chromium, devices } from "playwright";
 
 // Executar com o Next dev já aberto. Isola APIs e bloqueia todas as escritas:
 // não cria pedidos, cobranças, eventos analíticos nem carrinhos abandonados.
@@ -19,7 +19,7 @@ test("checkout: CEP completo, parcial e indisponível no celular", async t => {
       { nome: "falha da consulta permite preenchimento manual", cep: "33333333", dados: { error: "Serviço indisponível" }, status: 502 },
     ]) {
       await t.test(caso.nome, async () => {
-        const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
+        const context = await browser.newContext({ ...devices["Pixel 7"], viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
         let cobrancas = 0;
         await context.route("**/*", async route => {
           const req = route.request(), url = new URL(req.url());

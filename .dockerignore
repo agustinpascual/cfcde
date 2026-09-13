@@ -1,0 +1,16 @@
+.git
+.next
+.open-next
+.wrangler
+node_modules
+.env*
+.dev.vars*
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+.claude
+.codex
+coverage
+docs/research
+docs/design-references
+npm-debug.log*

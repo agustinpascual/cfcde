@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { agruparDispositivo, contarDispositivos, detectarDispositivo, GRUPOS_DISPOSITIVOS, TIPOS_DISPOSITIVOS } from "../src/lib/dispositivos.ts";
+import { agruparDispositivo, contarDispositivos, detectarDispositivo, dispositivoPodeAbrirLoja, GRUPOS_DISPOSITIVOS, TIPOS_DISPOSITIVOS } from "../src/lib/dispositivos.ts";
 
 test("identifica sistemas e diferencia celulares de tablets", () => {
   const casos = [
@@ -15,10 +15,19 @@ test("identifica sistemas e diferencia celulares de tablets", () => {
     ["Mozilla/5.0 (X11; CrOS x86_64)", null, 0, "linux"],
     ["Tablet", null, 0, "tablet"],
     ["Mobile", null, 0, "mobile"],
+    ["Mozilla/5.0 (X11; Linux x86_64) Silk/128", null, 5, "tablet"],
+    ["Mozilla/5.0 (Windows Phone 10.0) Mobile", null, 5, "mobile"],
+    ["Mozilla/5.0 (X11; Linux x86_64) Chrome/128", "Android", 5, "android_tablet"],
   ];
   for (const [ua, plataforma, toques, esperado] of casos) {
     assert.equal(detectarDispositivo(ua, plataforma, toques), esperado, ua);
+    assert.equal(dispositivoPodeAbrirLoja(ua, plataforma, toques), ["celular", "tablet"].includes(agruparDispositivo(esperado)), ua);
   }
+});
+
+test("toque sozinho não libera notebooks Windows e dispositivos desconhecidos não liberam a loja", () => {
+  assert.equal(dispositivoPodeAbrirLoja("Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Win32", 10), false);
+  assert.equal(dispositivoPodeAbrirLoja("", null, 0), false);
 });
 
 test("preserva registros genéricos e agrupa cada tipo exatamente uma vez", () => {

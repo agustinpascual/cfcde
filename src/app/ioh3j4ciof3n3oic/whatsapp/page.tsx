@@ -56,7 +56,7 @@ export default async function Page() {
           <p>
             Preencha as credenciais em <Link href="/ioh3j4ciof3n3oic/integracoes" style={{ textDecoration: "underline" }}>Integrações</Link>{" "}
             e aponte o webhook de mensagens recebidas para{" "}
-            <code>https://cafecomdeusepai.com/api/webhooks/zapi?chave=SEU_SEGREDO_DO_WEBHOOK</code>.
+            <code>https://cafecomdeusepai.com/api/webhooks/zapi</code>.
           </p>
         </div>
       )}

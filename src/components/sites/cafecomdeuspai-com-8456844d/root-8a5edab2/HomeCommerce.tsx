@@ -56,7 +56,7 @@ function ProductRail({ title, products }: { title: string; products: Product[] }
         </div>
         <div className={styles.rail} ref={rail}>
           {products.map((product) => (
-            <Link className={styles.card} href={product.href ?? "#"} key={product.image}>
+            <Link className={styles.card} href={product.href ?? "#"} key={product.image} prefetch={false}>
               <div className={styles.imageWrap} style={{ "--product-zoom": product.imageZoom ?? 1.06 } as CSSProperties}>
                 <Image src={product.image.startsWith("/") ? product.image : `${assets}/${product.image}`} alt={product.name} fill sizes="(max-width: 600px) 72vw, 25vw" />
               </div>

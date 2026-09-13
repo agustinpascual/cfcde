@@ -28,6 +28,8 @@ const ALIASES_BOX_PLUS_2027 = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  // O Docker leva apenas o runtime rastreado; Next start/OpenNext mantêm seu fluxo.
+  output: process.env.BUILD_VPS_STANDALONE === "1" ? "standalone" : undefined,
   /* IDs públicos do Meta Pixel. O fallback mantém o rastreamento ativo também
      nos builds do Cloudflare que não importam arquivos .env.local. Tokens da
      API de Conversões continuam somente cifrados no banco. */
@@ -41,14 +43,15 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   images: {
-    // AVIF primeiro (menor), WebP como fallback
-    formats: ["image/avif", "image/webp"],
+    // AVIF da primeira dobra já vem pronto em /public. Nas demais imagens,
+    // WebP evita duas cópias em disco e a codificação AVIF a cada cache frio.
+    formats: ["image/webp"],
     qualities: [70, 75],
     // larguras usadas pela página (evita gerar variantes inúteis)
     deviceSizes: [390, 640, 768, 1024, 1280, 1440, 1920],
     imageSizes: [16, 18, 26, 32, 50, 55, 60, 72, 98, 114, 130, 133, 341, 712],
     // Mantém as variantes mais acessadas rápidas sem deixar o cache crescer sem limite.
-    maximumDiskCacheSize: 500_000_000,
+    maximumDiskCacheSize: 250_000_000,
     minimumCacheTTL: 60 * 60 * 24 * 365,
   },
   experimental: {

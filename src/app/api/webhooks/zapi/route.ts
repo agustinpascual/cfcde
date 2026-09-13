@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { enviarWhatsApp, lerTreinamento, responder, type Historico } from "@/lib/robo";
 import { registrarDuvida } from "@/lib/aprendizado";
@@ -22,21 +21,6 @@ export const maxDuration = 60;
    mensagens seguidas quer UMA resposta que entenda as três, não três
    respostas soltas. */
 const ESPERA_MS = 9000;
-
-function igualSeguro(a: string, b: string) {
-  const x = crypto.createHash("sha256").update(a).digest();
-  const y = crypto.createHash("sha256").update(b).digest();
-  return crypto.timingSafeEqual(x, y);
-}
-
-function segredoRecebido(req: Request) {
-  const auth = req.headers.get("authorization") ?? "";
-  const bearer = auth.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
-  return req.headers.get("x-webhook-secret")?.trim()
-    || bearer
-    || new URL(req.url).searchParams.get("chave")?.trim()
-    || "";
-}
 
 /* Webhook de mensagens recebidas da Z-API.
    Grava a mensagem, decide se o robô responde e devolve 200 rápido —
@@ -73,16 +57,6 @@ export async function POST(req: Request) {
     return new NextResponse(null, { status: 429, headers: { "Retry-After": "60" } });
   }
 
-  let segredoEsperado: string;
-  try { segredoEsperado = (await ler("ZAPI_WEBHOOK_SECRET"))?.trim() ?? ""; }
-  catch { return NextResponse.json({ erro: "Webhook indisponível." }, { status: 503 }); }
-  if (segredoEsperado.length < 32) {
-    return NextResponse.json({ erro: "Webhook indisponível." }, { status: 503 });
-  }
-  if (!igualSeguro(segredoRecebido(req), segredoEsperado)) {
-    return new NextResponse(null, { status: 401, headers: { "Cache-Control": "no-store" } });
-  }
-
   const db = supabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, motivo: "sem_supabase" }, { status: 202 });
 
@@ -93,7 +67,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
   }
 
-  const instanciaEsperada = (await ler("ZAPI_INSTANCIA"))?.trim();
+  // O webhook usa a URL simples cadastrada na Z-API, sem segredo adicional.
+  let instanciaEsperada: string | undefined;
+  try { instanciaEsperada = (await ler("ZAPI_INSTANCIA"))?.trim(); }
+  catch { return NextResponse.json({ erro: "Webhook indisponível." }, { status: 503 }); }
   if (instanciaEsperada && corpo.instanceId !== instanciaEsperada) {
     return new NextResponse(null, { status: 401 });
   }

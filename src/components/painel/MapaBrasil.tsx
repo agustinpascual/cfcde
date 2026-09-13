@@ -6,7 +6,7 @@ import m from "./mapa.module.css";
 
 /* Mapa do Brasil com a malha real do IBGE por estado.
    Sem biblioteca de mapas e sem chave de API — as coordenadas das sessões
-   vêm dos headers de geolocalização do Vercel. */
+   vêm da localização aproximada por IP. */
 
 const cosLat = Math.cos((MAPA.latMedia * Math.PI) / 180);
 const escala = MAPA.largura / (MAPA.leste - MAPA.oeste);
@@ -23,6 +23,9 @@ export default function MapaBrasil({ sessoes }: { sessoes: Sessao[] }) {
     const mapa = new Map<string, Grupo>();
     for (const s of sessoes) {
       if (s.latitude == null || s.longitude == null) continue;
+      if (!Number.isFinite(s.latitude) || !Number.isFinite(s.longitude) ||
+        s.latitude < MAPA.sul || s.latitude > MAPA.norte ||
+        s.longitude < MAPA.oeste || s.longitude > MAPA.leste) continue;
       const chave = `${s.latitude.toFixed(2)},${s.longitude.toFixed(2)}`;
       const g = mapa.get(chave);
       if (g) g.sessoes.push(s);
@@ -105,8 +108,8 @@ export default function MapaBrasil({ sessoes }: { sessoes: Sessao[] }) {
 
       {grupos.length === 0 && (
         <p className={m.vazio}>
-          Nenhuma sessão com localização. A geolocalização vem dos headers do Vercel —
-          em <code>localhost</code> ela não existe.
+          Nenhuma sessão com localização disponível no mapa do Brasil.
+          A localização é aproximada, por IP, e pode levar alguns segundos para aparecer.
         </p>
       )}
     </div>

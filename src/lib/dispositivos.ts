@@ -25,12 +25,17 @@ export function detectarDispositivo(ua: string, plataforma: string | null = null
   if (/iPad/i.test(base) || (/Macintosh|MacIntel/i.test(base) && toques > 1)) return "ipad";
   if (/iPhone|iPod/i.test(base)) return "iphone";
   if (/Android/i.test(base)) return /Mobile/i.test(ua) ? "android" : "android_tablet";
+  if (/Tablet|Silk|Kindle|PlayBook/i.test(base)) return "tablet";
+  if (/Mobi/i.test(base)) return "mobile";
   if (/Macintosh|Mac OS|MacIntel/i.test(base)) return "mac";
   if (/Windows/i.test(base)) return "windows";
   if (/Linux|CrOS/i.test(base)) return "linux";
-  if (/Tablet/i.test(base)) return "tablet";
-  if (/Mobi/i.test(base)) return "mobile";
   return "desktop";
+}
+
+export function dispositivoPodeAbrirLoja(ua: string, plataforma: string | null = null, toques = 0) {
+  const grupo = agruparDispositivo(detectarDispositivo(ua, plataforma, toques));
+  return grupo === "celular" || grupo === "tablet";
 }
 
 export function agruparDispositivo(valor: string | null | undefined): GrupoDispositivo {

@@ -35,6 +35,14 @@ function rotaTrack(erroEvento = null) {
       };
       if (id === "@/lib/supabase/servidor") return { supabaseAdmin: () => db };
       if (id === "@/lib/dispositivos") return { detectarDispositivo: () => "desktop" };
+      if (id === "@/lib/geolocalizacao") return {
+        localizacaoDosHeaders: () => ({ cidade: null, uf: null }),
+        localizacaoEmCache: () => undefined,
+        complementarLocalizacao: geo => geo,
+        camposLocalizacao: () => ({}),
+        localizacaoCompleta: () => false,
+        ipPublico: () => false,
+      };
       throw new Error(`Dependência externa não autorizada: ${id}`);
     },
   });

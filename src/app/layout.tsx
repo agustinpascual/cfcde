@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import MetaPixel from "@/components/marketing/MetaPixel";
 import Rastreador from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import AntiClone from "@/components/seguranca/AntiClone";
+import AcessoDispositivo from "@/components/seguranca/AcessoDispositivo";
+import PreloadHome from "@/components/seguranca/PreloadHome";
 import { marca } from "@/components/storefront/brand";
 import { SITE } from "@/lib/seo";
 import "./globals.css";
@@ -56,12 +58,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <body className={`${instrumentSans.variable} ${workSans.variable}`}>
-        {children}
-        <AntiClone />
-        <Suspense fallback={null}><Rastreador /></Suspense>
-        {/* Suspense obrigatório: o pixel usa useSearchParams, que sem ele
-            forçaria toda a árvore a virar renderização dinâmica. */}
-        <Suspense fallback={null}><MetaPixel /></Suspense>
+        <PreloadHome />
+        <AcessoDispositivo>
+          {children}
+          <AntiClone />
+          <Suspense fallback={null}><Rastreador /></Suspense>
+          {/* Suspense obrigatório: o pixel usa useSearchParams, que sem ele
+              forçaria toda a árvore a virar renderização dinâmica. */}
+          <Suspense fallback={null}><MetaPixel /></Suspense>
+        </AcessoDispositivo>
       </body>
     </html>
   );

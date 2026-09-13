@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { autenticado } from "@/lib/painel-auth";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { ipDe } from "@/lib/limite";
+import { complementarLocalizacao, localizacaoCompleta, localizacaoDosHeaders, localizarIp } from "@/lib/geolocalizacao";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,16 +13,9 @@ export async function GET(req: Request) {
   if (!(await autenticado())) return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
 
   const h = req.headers;
-  const dec = (v: string | null) => { try { return v ? decodeURIComponent(v) : null; } catch { return v; } };
-
-  const geo = {
-    cidade: dec(h.get("x-vercel-ip-city")),
-    uf: h.get("x-vercel-ip-country-region"),
-    pais: h.get("x-vercel-ip-country"),
-    latitude: h.get("x-vercel-ip-latitude"),
-    longitude: h.get("x-vercel-ip-longitude"),
-    fuso: h.get("x-vercel-ip-timezone"),
-  };
+  const ip = ipDe(req);
+  const geoHeaders = localizacaoDosHeaders(h);
+  const geo = complementarLocalizacao(geoHeaders, localizacaoCompleta(geoHeaders) ? null : await localizarIp(ip));
 
   const tabelas: Record<string, string> = {};
   const db = supabaseAdmin();
@@ -41,10 +36,10 @@ export async function GET(req: Request) {
   return NextResponse.json({
     pronto: faltando.length === 0,
     tabelasFaltando: faltando,
-    geolocalizacao: geo,
-    geoDisponivel: Boolean(geo.latitude && geo.longitude),
-    // o IP em si não é guardado — só cidade/UF e a coordenada aproximada
-    ipVisto: Boolean(h.get("x-forwarded-for")),
+    geolocalizacao: { ...geo, fuso: h.get("cf-timezone") ?? h.get("x-vercel-ip-timezone") },
+    geoDisponivel: geo.latitude !== null && geo.longitude !== null,
+    geoHeadersDisponiveis: localizacaoCompleta(geoHeaders),
+    ipVisto: ip !== "desconhecido",
     supabaseConfigurado: Boolean(db),
     chaveMestraConfigurada: Boolean(process.env.CHAVE_MESTRA && process.env.CHAVE_MESTRA.length >= 32),
     anthropicConfigurada: Boolean(process.env.ANTHROPIC_API_KEY),

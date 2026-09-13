@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { excedeu, ipDe } from "@/lib/limite";
 import { supabaseAdmin } from "@/lib/supabase/servidor";
 import { detectarDispositivo } from "@/lib/dispositivos";
 import { ErroCorpo, lerJsonObjeto } from "@/lib/corpo-json";
+import { camposLocalizacao, complementarLocalizacao, ipPublico, localizacaoCompleta, localizacaoDosHeaders, localizacaoEmCache, localizarIp } from "@/lib/geolocalizacao";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/* Recebe os pings do rastreador do site. A produção roda na Cloudflare, mas
-   o fallback dos headers da Vercel mantém o mesmo código utilizável nos dois
-   ambientes. O IP só é gravado quando a migration 0025 está instalada. */
+/* Recebe os pings do site. Usa os headers de localização quando disponíveis;
+   no VPS, completa por IP após responder. O IP requer a migration 0025. */
 
 const TIPOS = new Set(["pageview", "secao", "comprar", "checkout", "checkout_parcial", "pix_gerado", "pix_copiado", "voltou", "compra", "saida"]);
 
@@ -44,9 +44,10 @@ export async function POST(req: Request) {
   }
 
   const h = req.headers;
-  const decodifica = (v: string | null) => { try { return v ? decodeURIComponent(v) : null; } catch { return v; } };
-  const lat = Number(h.get("cf-iplatitude") ?? h.get("x-vercel-ip-latitude"));
-  const lng = Number(h.get("cf-iplongitude") ?? h.get("x-vercel-ip-longitude"));
+  const ip = ipDe(req);
+  const geoHeaders = localizacaoDosHeaders(h);
+  const geoCache = localizacaoEmCache(ip);
+  const geo = complementarLocalizacao(geoHeaders, geoCache);
   const toques = Number(corpo.toques);
   const plataforma = txt(corpo.plataforma, 50);
 
@@ -54,13 +55,9 @@ export async function POST(req: Request) {
     sessao,
     pagina: txt(corpo.pagina, 160),
     secao: txt(corpo.secao, 80),
-    cidade: decodifica(h.get("cf-ipcity") ?? h.get("x-vercel-ip-city")),
-    uf: h.get("cf-region-code") ?? h.get("x-vercel-ip-country-region"),
-    pais: h.get("cf-ipcountry") ?? h.get("cf-country") ?? h.get("x-vercel-ip-country") ?? "BR",
-    latitude: Number.isFinite(lat) ? lat : null,
-    longitude: Number.isFinite(lng) ? lng : null,
+    ...camposLocalizacao(geo),
     dispositivo: detectarDispositivo(h.get("user-agent") ?? "", plataforma, Number.isFinite(toques) ? toques : 0),
-    ip: (() => { const v = ipDe(req); return v === "desconhecido" ? null : v; })(),
+    ip: ip === "desconhecido" ? null : ip,
     referencia: txt(corpo.referencia, 200),
     visto_em: new Date().toISOString(),
     ...(corpo.tipo === "pix_copiado" ? { copiou_pix: true } : {}),
@@ -68,6 +65,7 @@ export async function POST(req: Request) {
   };
 
   try {
+    let gravouIp = true;
     /* O supabase-js devolve o erro no objeto, não lança. Sem checar,
        a rota respondia ok:true mesmo com a tabela inexistente. */
     let { error: erroSessao } = await db
@@ -76,6 +74,7 @@ export async function POST(req: Request) {
        principal não deve parar por causa desse recurso opcional: repete sem
        o IP, enquanto o painel de instalação aponta exatamente a migration. */
     if (erroSessao && ["42703", "PGRST204"].includes(erroSessao.code) && erroSessao.message.includes("ip")) {
+      gravouIp = false;
       const semIp = { ...sessaoLinha } as Partial<typeof sessaoLinha>;
       delete semIp.ip;
       ({ error: erroSessao } = await db.from("sessoes").upsert(semIp, { onConflict: "sessao" }));
@@ -83,6 +82,22 @@ export async function POST(req: Request) {
     if (erroSessao) {
       console.error("[track] sessoes:", erroSessao.message);
       return NextResponse.json({ ok: false, motivo: "sessao_nao_registrada" }, { status: 202 });
+    }
+
+    if (!localizacaoCompleta(geo) && geoCache === undefined && ipPublico(ip)) {
+      after(async () => {
+        try {
+          const localizada = await localizarIp(ip);
+          if (!localizada) return;
+          const campos = camposLocalizacao(complementarLocalizacao(geoHeaders, localizada));
+          if (!Object.keys(campos).length) return;
+          let atualizacao = db.from("sessoes").update(campos).eq("sessao", sessao);
+          // Não aplica uma consulta antiga se a sessão já trocou de rede.
+          atualizacao = gravouIp ? atualizacao.eq("ip", ip) : atualizacao.eq("visto_em", sessaoLinha.visto_em);
+          const { error } = await atualizacao;
+          if (error) console.error("[track] localização:", error.message);
+        } catch { console.error("[track] localização temporariamente indisponível"); }
+      });
     }
 
     const tipo = txt(corpo.tipo, 20);
@@ -104,5 +119,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 202 });
   }
 
-  return NextResponse.json({ ok: true, cidade: sessaoLinha.cidade, uf: sessaoLinha.uf });
+  return NextResponse.json({ ok: true, cidade: geo.cidade, uf: geo.uf });
 }

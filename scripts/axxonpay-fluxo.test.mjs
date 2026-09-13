@@ -190,7 +190,7 @@ for (const metodo of ["pix", "cartao"]) {
     assert.equal(resposta.status, 200);
     const dados = await resposta.json();
     assert.match(dados.pedido, /^[1-9]\d{5}$/);
-    assert.equal(enviado.description, `GOKOCO Escova Modeladora de Cabelo Bivolt - Pedido #${dados.pedido}`);
+    assert.equal(enviado.description, `Escova Modeladora de Cabelo Bivolt - Pedido #${dados.pedido}`);
     assert.deepEqual(JSON.parse(JSON.stringify(enviado.customer)), {
       name: body.nome, email: body.email, phone: body.celular,
       document: { number: body.documento, type: "cpf" },

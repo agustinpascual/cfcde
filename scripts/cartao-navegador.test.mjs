@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chromium, webkit } from "playwright";
+import { chromium, webkit, devices } from "playwright";
 import { cliente3dsAxxon, normalizarCompradorAxxon } from "../src/lib/axxonpay-comprador.ts";
 
 // Executar com o Next dev já aberto e AXXONPAY_PUBLIC_KEY (pública) no ambiente.
@@ -27,7 +27,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
   }
   const browser = await motor.launch({ headless: true });
   try {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
+    const context = await browser.newContext({ ...devices[usandoWebkit ? "iPhone 13" : "Pixel 7"], viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
     const violacoes = [], erros = [], externos = new Set(), falhasRede = [], respostasExternas = [];
     const postsCartao = [], eventosTrack = [], leiturasBloopi = [];
     let aliasConfirmado = false;
