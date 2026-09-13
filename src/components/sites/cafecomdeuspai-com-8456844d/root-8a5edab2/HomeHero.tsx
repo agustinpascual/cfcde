@@ -3,7 +3,7 @@
 import { getImageProps } from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { BadgeCheck, CreditCard, ShieldCheck } from "lucide-react";
 import { SiteHeader } from "@/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/HeaderFooter";
 import styles from "./HomeHero.module.css";
@@ -29,6 +29,10 @@ type HomeHeroProps = {
 
 export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) {
   const [heroPronto, setHeroPronto] = useState(false);
+  // O preload pode terminar antes da hidratação e do registro de onLoad.
+  const registrarImagem = useCallback((img: HTMLImageElement | null) => {
+    if (img?.complete) setHeroPronto(true);
+  }, []);
   const slide = slides[0];
   const comum = { alt: slide.alt, sizes: "100vw", fetchPriority: "high" as const, loading: "eager" as const };
   // Arquivos já comprimidos: sem processamento nem novas variantes no VPS.
@@ -46,7 +50,7 @@ export default function HomeHero({ cartCount = 0, onCartClick }: HomeHeroProps) 
                 <source media="(min-width: 641px)" type="image/avif" srcSet={`${assetRoot}/hero-desktop-v4.avif`} width={1580} height={600} />
                 <source media="(max-width: 640px)" type="image/avif" srcSet={`${assetRoot}/hero-mobile-v4.avif`} width={375} height={611} />
                 <source media="(min-width: 641px)" type="image/webp" srcSet={slide.desktopImage} width={1580} height={600} />
-                <img {...imagem} alt={slide.alt} className={styles.image} onLoad={() => setHeroPronto(true)} onError={() => setHeroPronto(true)} />
+                <img {...imagem} ref={registrarImagem} alt={slide.alt} className={styles.image} onLoad={() => setHeroPronto(true)} onError={() => setHeroPronto(true)} />
               </picture>
               {/* Camada escura + texto. O véu não é enfeite: sem ele o texto
                   branco fica ilegível sobre as áreas claras da foto, e a

@@ -8,6 +8,7 @@ import AcessoDispositivo from "@/components/seguranca/AcessoDispositivo";
 import PreloadHome from "@/components/seguranca/PreloadHome";
 import { marca } from "@/components/storefront/brand";
 import { SITE } from "@/lib/seo";
+import { SCRIPT_ACESSO_INICIAL } from "@/lib/acesso-inicial";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -15,9 +16,10 @@ const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   style: "normal",
   display: "swap",
+  preload: false,
 });
 
-const workSans = Work_Sans({ variable: "--font-work-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
+const workSans = Work_Sans({ variable: "--font-work-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap", preload: false });
 
 
 /* Preencha com os dados da marca antes de publicar.
@@ -56,16 +58,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head><script id="cdp-acesso-inicial" dangerouslySetInnerHTML={{ __html: SCRIPT_ACESSO_INICIAL }} /></head>
       <body className={`${instrumentSans.variable} ${workSans.variable}`}>
         <PreloadHome />
-        <AcessoDispositivo>
-          {children}
+        <AcessoDispositivo recursos={<>
           <AntiClone />
           <Suspense fallback={null}><Rastreador /></Suspense>
           {/* Suspense obrigatório: o pixel usa useSearchParams, que sem ele
               forçaria toda a árvore a virar renderização dinâmica. */}
           <Suspense fallback={null}><MetaPixel /></Suspense>
+        </>}>
+          {children}
         </AcessoDispositivo>
       </body>
     </html>

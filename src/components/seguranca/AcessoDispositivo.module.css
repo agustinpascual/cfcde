@@ -1,3 +1,16 @@
+.homeInicial {
+  display: none;
+}
+
+:global(html[data-cdp-acesso="liberado"]) .homeInicial {
+  display: contents;
+}
+
+.semJavascript {
+  padding: 32px;
+  text-align: center;
+}
+
 .tela {
   min-height: 100vh;
   min-height: 100dvh;

@@ -5,28 +5,58 @@ import { chromium, devices } from "playwright";
 const base = process.env.HOME_TEST_BASE_URL;
 if (base && !["127.0.0.1", "localhost"].includes(new URL(base).hostname)) throw new Error("Use o build local.");
 
+test("home já mostra o banner no celular antes de baixar o JavaScript do React", { skip: !base && "defina HOME_TEST_BASE_URL" }, async () => {
+  const browser = await chromium.launch();
+  try {
+    const context = await browser.newContext({ ...devices["Pixel 7"], serviceWorkers: "block" });
+    let escritas = 0;
+    await context.route("**/*", route => {
+      const req = route.request();
+      if (new URL(req.url()).origin !== base) return route.abort();
+      if (req.method() !== "GET") { escritas++; return route.abort(); }
+      if (new URL(req.url()).pathname.endsWith(".js")) return route.abort();
+      return route.continue();
+    });
+    const page = await context.newPage();
+    await page.goto(base, { waitUntil: "domcontentloaded" });
+    await page.getByRole("img", { name: /^Você faz parte desta história/ }).waitFor({ state: "visible" });
+    await page.waitForFunction(() => {
+      const img = document.querySelector('img[alt^="Você faz parte"]');
+      return img?.complete && img.naturalWidth > 0;
+    });
+    assert.equal(escritas, 0, "exibir HTML não dispara rastreamento antes da liberação");
+    assert.equal(await page.locator('html[data-cdp-acesso="liberado"]').count(), 1);
+  } finally { await browser.close(); }
+});
+
 for (const [nome, aparelho, formato] of [["celular", "Pixel 7", "mobile"], ["tablet", "Galaxy Tab S4", "desktop"]]) {
   test(`home ${nome}: banner antecipado, vídeo adiado e navegação preservada`, { skip: !base && "defina HOME_TEST_BASE_URL" }, async () => {
     const browser = await chromium.launch();
     try {
       const context = await browser.newContext({ ...devices[aparelho], serviceWorkers: "block" });
+      let liberarScripts;
+      const scriptsLiberados = new Promise(resolve => { liberarScripts = resolve; });
       await context.addInitScript(() => { navigator.sendBeacon = () => true; });
-      await context.route("**/*", route => {
+      await context.route("**/*", async route => {
         const req = route.request();
         if (new URL(req.url()).origin !== base) return route.abort();
         if (req.method() !== "GET") return route.fulfill({ json: { ok: true } });
+        if (new URL(req.url()).pathname.endsWith(".js")) await scriptsLiberados;
         return route.continue();
       });
       const page = await context.newPage();
       const erros = [];
       page.on("pageerror", erro => erros.push(erro.message));
-      await page.goto(base, { waitUntil: "networkidle" });
+      await page.goto(base, { waitUntil: "commit" });
       const hero = page.getByRole("img", { name: /^Você faz parte desta história/ });
       await hero.waitFor();
       await page.waitForFunction(() => {
         const img = [...document.images].find(i => i.alt.startsWith("Você faz parte"));
         return img?.complete && img.naturalWidth > 0;
       });
+      // Reproduz cache quente/JS lento: o onLoad já passou quando React monta.
+      liberarScripts();
+      await page.getByRole("button", { name: /^Abrir stories em vídeo/ }).waitFor();
       const src = await hero.evaluate(img => img.currentSrc);
       assert.match(src, new RegExp(`/hero-${formato}-v4\\.avif$`));
       const recursos = await page.evaluate(() => performance.getEntriesByType("resource").map(r => ({
