@@ -32,6 +32,9 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     const postsCartao = [], eventosTrack = [], leiturasBloopi = [];
     let aliasConfirmado = false;
     let cobrancas = 0, postsAcs = 0, liberarAprovacao = false;
+    let iniciarBloopi;
+    let downloadsBloopi = 0;
+    const bloopiIniciado = new Promise(resolve => { iniciarBloopi = resolve; });
     await context.addInitScript(() => document.addEventListener("securitypolicyviolation", e => console.log(`CSPVIOLATION ${e.violatedDirective} ${e.blockedURI}`)));
     if (usandoWebkit) await context.addInitScript(() => { navigator.sendBeacon = () => true; });
     await context.route("**/*", async route => {
@@ -51,9 +54,23 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
       }
       if (url.origin !== base) {
         externos.add(url.host);
+        if (url.href === "https://app.axxonpay.com.br/v1/js/sdk.js") {
+          // A resposta do SDK principal só chega depois de iniciar o segundo
+          // download. O carregamento sequencial antigo falha neste cenário.
+          let timer;
+          try {
+            await Promise.race([bloopiIniciado, new Promise((_, reject) => {
+              timer = setTimeout(() => reject(new Error("Bloopi não começou em paralelo ao SDK principal")), 10000);
+            })]);
+          } finally { clearTimeout(timer); }
+        }
         // Só scripts/configurações públicas são necessários. Nenhum POST
         // externo de pagamento ou telemetria pode sair deste teste.
         return req.method() === "GET" ? route.continue() : route.abort();
+      }
+      if (url.pathname === "/api/pagamentos/sdk/bloopi") {
+        downloadsBloopi++;
+        iniciarBloopi();
       }
       if (url.pathname.startsWith("/api/pagamentos/bloopi-leitura/")) leiturasBloopi.push(url.pathname);
       if (proxyLocal && url.pathname === "/api/seguranca/origem") return servidorLocal();
@@ -154,6 +171,7 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     });
     assert.equal(await botao.innerText(), "Finalizar compra");
     assert.ok(await botao.isEnabled());
+    assert.equal(downloadsBloopi, 1, "antecipação e inicialização usam um único download local");
     // globals.css zera background/borda/padding/fonte de todo <button> fora de
     // .sf-root; o botão precisa vencer essa regra ou vira texto solto.
     const estilo = await botao.evaluate(b => { const cs = getComputedStyle(b); return { bg: cs.backgroundColor, cor: cs.color, fonte: parseFloat(cs.fontSize), altura: b.getBoundingClientRect().height }; });

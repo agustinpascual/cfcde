@@ -7,6 +7,7 @@ const ORIGENS = [
 ];
 
 let cache: { codigo: string; atualizadoEm: number } | null = null;
+let download: Promise<string> | null = null;
 const UMA_HORA = 60 * 60 * 1000;
 
 async function baixar() {
@@ -159,9 +160,14 @@ async function baixar() {
 
 export async function GET() {
   try {
+    // Checkouts simultâneos compartilham o download do SDK público no cache
+    // frio. A promessa é liberada inclusive em falhas, permitindo nova tentativa.
+    if ((!cache || Date.now() - cache.atualizadoEm >= UMA_HORA) && !download) {
+      download = baixar().finally(() => { download = null; });
+    }
     const codigo = cache && Date.now() - cache.atualizadoEm < UMA_HORA
       ? cache.codigo
-      : await baixar();
+      : await download!;
     return new NextResponse(codigo, {
       headers: {
         "Content-Type": "application/javascript; charset=utf-8",

@@ -281,6 +281,28 @@ test("proxy do SDK Bloopi usa somente a origem pública ativa", () => {
   assert.doesNotMatch(envio, /for \(let tentativa|await esperar|while \(/, "POST mutável nunca é repetido automaticamente");
 });
 
+test("cache frio do SDK compartilha download e permite nova tentativa após falha", async () => {
+  let chamadas = 0, liberar;
+  const rota = modulo("../src/app/api/pagamentos/sdk/bloopi/route.ts", {
+    "next/server": { NextResponse: Response },
+    $fetch: () => {
+      chamadas++;
+      return new Promise((_, reject) => { liberar = () => reject(new Error("rede de teste")); });
+    },
+  });
+  const respostas = [rota.GET(), rota.GET(), rota.GET()];
+  assert.equal(chamadas, 1);
+  liberar();
+  for (const resposta of await Promise.all(respostas)) {
+    assert.equal(resposta.status, 503);
+    assert.equal(resposta.headers.get("cache-control"), "no-store");
+  }
+  const nova = rota.GET();
+  assert.equal(chamadas, 2);
+  liberar();
+  assert.equal((await nova).status, 503);
+});
+
 test("origem pública do 3DS é preservada também nos GETs same-origin", () => {
   assert.equal(origemParaRepasse(new Request("https://loja.example/api/pagamentos/bloopi-leitura/checkout-config")), "https://loja.example");
   assert.equal(origemParaRepasse(new Request("http://10.0.0.2:3000/api/pagamentos/bloopi-leitura/checkout-config", {

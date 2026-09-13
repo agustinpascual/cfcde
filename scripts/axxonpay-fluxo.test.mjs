@@ -294,14 +294,15 @@ test("URL local sem webhook HTTPS falha antes de reservar ou chamar gateway", as
   assert.equal(a.pedidos.size, 0);
   assert.equal(a.contadores().chamadas, 0);
 });
-test("checkout local usa webhook HTTPS separado", async () => {
+for (const metodo of ["pix", "cartao"]) test(`${metodo} envia o postback Bellablue mesmo com outra URL da loja`, async () => {
   let enviado;
-  const destino = "https://loja.example/api/webhooks/axxonpay";
+  const destino = "https://webhooks.bellablue.fit/api/webhooks/axxonpay";
   const a = ambiente({ env: { NEXT_PUBLIC_SITE_URL: "http://localhost:3000", AXXONPAY_WEBHOOK_URL: destino }, criar: async p => {
     enviado = p;
     return { id: "payment_uuid", amount: p.amount, status: "PENDING" };
   } });
-  assert.equal((await a.processarAxxon(body, "pix")).status, 200);
+  const entrada = metodo === "cartao" ? { ...body, cardHash: "tok_ficticio" } : body;
+  assert.equal((await a.processarAxxon(entrada, metodo)).status, 200);
   assert.equal(enviado.postbackUrl, destino);
 });
 test("documento rejeitado encerra reserva; dados corrigidos usam nova referência", async () => {

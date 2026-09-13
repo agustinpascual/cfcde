@@ -8,6 +8,7 @@ import { acompanharPix } from "@/lib/acompanhar-pix";
 import { calcularParcelamentoCartao, luhn } from "@/lib/cartao";
 import { cliente3dsAxxon, normalizarCompradorAxxon } from "@/lib/axxonpay-comprador";
 import { acompanharViewport3ds } from "@/lib/viewport-3ds";
+import { carregarBloopiPeloSite } from "@/lib/carregar-bloopi";
 import { concluirTentativa, liberarTentativaEncerrada, tentativaPagamento } from "@/lib/tentativa-pagamento";
 import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
@@ -53,47 +54,10 @@ export type PayloadCartao = {
 } & Record<string, unknown>;
 
 const SDK_URL = "https://app.axxonpay.com.br/v1/js/sdk.js";
-/* Versão explícita evita que uma tentativa após deploy reutilize por até cinco
-   minutos o SDK anterior guardado pelo navegador/CDN. */
-const BLOOPI_FALLBACK_URL = "/api/pagamentos/sdk/bloopi?v=3ds-contexto-20260912";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const digitos = (valor: unknown) => String(valor ?? "").replace(/\D/g, "");
 const FINAIS = ["approved", "failed", "expired", "refunded"];
 const esperar = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms));
-let carregamentoBloopiLocal: Promise<void> | null = null;
-
-function carregarBloopiPeloSite() {
-  if (typeof window.Bloopi === "function") return Promise.resolve();
-  if (carregamentoBloopiLocal) return carregamentoBloopiLocal;
-
-  carregamentoBloopiLocal = new Promise<void>((resolve, reject) => {
-    const anterior = document.querySelector<HTMLScriptElement>(`script[src="${BLOOPI_FALLBACK_URL}"]`);
-    const script = anterior ?? document.createElement("script");
-    const timeout = window.setTimeout(() => reject(new Error("Tempo esgotado ao carregar o ambiente seguro.")), 15000);
-    const concluir = () => {
-      window.clearTimeout(timeout);
-      if (typeof window.Bloopi === "function") resolve();
-      else reject(new Error("O ambiente seguro carregou sem ficar disponível."));
-    };
-    const falhar = () => {
-      window.clearTimeout(timeout);
-      script.remove();
-      reject(new Error("Não foi possível carregar o ambiente seguro pelo site."));
-    };
-    script.addEventListener("load", concluir, { once: true });
-    script.addEventListener("error", falhar, { once: true });
-    if (!anterior) {
-      script.src = BLOOPI_FALLBACK_URL;
-      script.async = true;
-      script.dataset.pagamentoSeguro = "bloopi";
-      document.head.appendChild(script);
-    } else if (typeof window.Bloopi === "function") concluir();
-  }).catch(erro => {
-    carregamentoBloopiLocal = null;
-    throw erro;
-  });
-  return carregamentoBloopiLocal;
-}
 
 const classificarErroSdk = (erro: unknown) => {
   const texto = erro instanceof Error ? erro.message : String(erro ?? "");
@@ -226,6 +190,9 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   const validade = useRef<HTMLInputElement>(null), cvv = useRef<HTMLInputElement>(null);
 
   useEffect(() => acompanharViewport3ds(), []);
+  // Os dois scripts públicos baixam juntos ao escolher cartão. A inicialização
+  // ainda aguarda a mesma promessa; nenhuma sessão ou cobrança é antecipada.
+  useEffect(() => { void carregarBloopiPeloSite().catch(() => {}); }, []);
 
   function atualizarNumero(evento: React.FormEvent<HTMLInputElement>) {
     const valor = digitos(evento.currentTarget.value).slice(0, 19);

@@ -14,6 +14,22 @@ A seleção só é salva após validar as credenciais. O cache de configuração
 - `sandbox`: simulador local, identificado como teste, somente no painel; não recebe cartão, não cria cobranças, não conta como venda. Não é o sandbox do provedor.
 - `axxonpay`: cartão no checkout da loja via AxxonPay, com a adquirente vinculada à Public Key. Salvar essa seleção no painel valida as credenciais **e** a adquirente; se a adquirente não for homologada aqui, nada é salvo.
 
+### Carregamento do 3DS — 13/09/2026
+
+Ao selecionar cartão, o SDK principal e o SDK público Bloopi começam a baixar
+em paralelo. A inicialização aguarda a mesma promessa compartilhada, sem criar
+sessão ou cobrança antecipada. Timeout, erro de rede e script sem a API esperada
+removem a tag incompleta e seus listeners, permitindo uma nova tentativa. No VPS,
+requisições simultâneas ao SDK com cache frio compartilham um único download.
+Os tempos e o desafio do emissor, os POSTs de confirmação e a consulta financeira
+permanecem inalterados.
+
+`scripts/carregar-bloopi.test.mjs` cobre compartilhamento e recuperação após
+falhas. O teste de navegador segura a resposta do SDK principal até o download
+Bloopi começar, verificando o paralelismo com os scripts públicos reais em
+Chromium mobile e WebKit/iPhone. Criação de cobrança e aprovação são interceptadas;
+esses testes não representam uma transação bancária aprovada.
+
 ### Centralização móvel do 3DS — 12/09/2026
 
 O CSS anterior colocava `#Cardinal-Modal` em `inset: 0`, mas mantinha o
