@@ -16,11 +16,16 @@ export async function GET(req: Request) {
     });
   }
 
+  const desde = new URL(req.url).searchParams.get("desde") ?? undefined;
+  if (desde && !Number.isFinite(Date.parse(desde))) {
+    return NextResponse.json({ erro: "Data inicial inválida." }, { status: 400 });
+  }
+
   try {
     /* Primeiro atualiza o estado real no gateway. Assim um Pix pago segundos
        antes do ciclo nunca recebe mensagem de cobrança pendente. */
     const pagamentos = await reconciliarPendentes(30);
-    const recuperacoes = await processarRecuperacoesWhatsApp();
+    const recuperacoes = await processarRecuperacoesWhatsApp(desde);
     return NextResponse.json({ ok: true, pagamentos, recuperacoes }, {
       headers: { "Cache-Control": "no-store" },
     });

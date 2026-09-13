@@ -7,6 +7,7 @@ import {
 } from "./mensagens-recuperacao";
 import { enviarWhatsApp, enviarWhatsAppComBotaoCopiar } from "./robo";
 import { supabaseAdmin } from "./supabase/servidor";
+import { pixAindaPendente } from "./recuperacao-pix-status";
 
 const ATRASOS_VALIDOS = new Set([0, 5, 10, 15, 30, 60, 120, 360, 1440]);
 const LIMITE_POR_TIPO = 30;
@@ -29,16 +30,18 @@ type ResultadoTipo = { encontrados: number; enviados: number; ignorados: number;
 export type ResultadoRecuperacoes = { pix: ResultadoTipo; carrinho: ResultadoTipo };
 const vazio = (): ResultadoTipo => ({ encontrados: 0, enviados: 0, ignorados: 0, erros: 0 });
 
-async function recuperarPix(atraso: number, modelos: readonly string[], botaoCopiar: boolean): Promise<ResultadoTipo> {
+async function recuperarPix(atraso: number, modelos: readonly string[], botaoCopiar: boolean, desde?: string): Promise<ResultadoTipo> {
   const resultado = vazio();
   const db = supabaseAdmin();
   if (!db || atraso === 0) return resultado;
   const limite = new Date(Date.now() - atraso * 60_000).toISOString();
-  const { data, error } = await db.from("pedidos")
-    .select("id,referencia,status,cliente_nome,cliente_telefone,valor_centavos,pix_copia_cola,recuperacao_pix_tentativas")
+  let consulta = db.from("pedidos")
+    .select("id,referencia,status,pix_id,cliente_nome,cliente_telefone,valor_centavos,pix_copia_cola,recuperacao_pix_tentativas")
     .eq("status", "pendente").eq("metodo_pagamento", "pix")
     .is("recuperacao_pix_em", null).lte("criado_em", limite)
     .order("criado_em", { ascending: true }).limit(LIMITE_POR_TIPO);
+  if (desde) consulta = consulta.gte("criado_em", desde);
+  const { data, error } = await consulta;
   if (error) throw new Error(error.message);
   resultado.encontrados = data?.length ?? 0;
 
@@ -63,6 +66,16 @@ async function recuperarPix(atraso: number, modelos: readonly string[], botaoCop
         recuperacao_pix_tentativas: Number(pedido.recuperacao_pix_tentativas ?? 0) + 1,
       }).eq("id", pedido.id).is("recuperacao_pix_em", null);
       resultado.ignorados++;
+      continue;
+    }
+    try {
+      if (!(await pixAindaPendente(pedido))) { resultado.ignorados++; continue; }
+    } catch {
+      resultado.erros++;
+      await db.from("pedidos").update({
+        recuperacao_pix_erro: "Não foi possível confirmar que o Pix continua pendente no gateway.",
+        recuperacao_pix_tentativas: Number(pedido.recuperacao_pix_tentativas ?? 0) + 1,
+      }).eq("id", pedido.id).is("recuperacao_pix_em", null);
       continue;
     }
     const agora = new Date().toISOString();
@@ -105,14 +118,16 @@ async function recuperarPix(atraso: number, modelos: readonly string[], botaoCop
 type EventoCarrinho = { sessao: string; dados: Record<string, unknown> | null; criado_em: string };
 const texto = (valor: unknown) => typeof valor === "string" && valor.trim() ? valor.trim() : null;
 
-async function recuperarCarrinhos(atraso: number, modelos: readonly string[]): Promise<ResultadoTipo> {
+async function recuperarCarrinhos(atraso: number, modelos: readonly string[], desde?: string): Promise<ResultadoTipo> {
   const resultado = vazio();
   const db = supabaseAdmin();
   if (!db || atraso === 0) return resultado;
   const limite = new Date(Date.now() - atraso * 60_000).toISOString();
-  const { data: eventos, error } = await db.from("eventos")
+  let consulta = db.from("eventos")
     .select("sessao,dados,criado_em").eq("tipo", "checkout_parcial").lte("criado_em", limite)
     .order("criado_em", { ascending: false }).limit(500);
+  if (desde) consulta = consulta.gte("criado_em", desde);
+  const { data: eventos, error } = await consulta;
   if (error) throw new Error(error.message);
 
   const ultimos = new Map<string, EventoCarrinho>();
@@ -121,10 +136,12 @@ async function recuperarCarrinhos(atraso: number, modelos: readonly string[]): P
   }
   const ids = [...ultimos.keys()];
   if (!ids.length) return resultado;
-  const { data: sessoes, error: erroSessoes } = await db.from("sessoes")
+  let consultaSessoes = db.from("sessoes")
     .select("sessao,pedido_ref,recuperacao_carrinho_em,recuperacao_carrinho_tentativas")
     .in("sessao", ids).is("pedido_ref", null).is("recuperacao_carrinho_em", null)
-    .limit(LIMITE_POR_TIPO);
+    .lte("visto_em", limite).limit(LIMITE_POR_TIPO);
+  if (desde) consultaSessoes = consultaSessoes.gte("criado_em", desde);
+  const { data: sessoes, error: erroSessoes } = await consultaSessoes;
   if (erroSessoes) throw new Error(erroSessoes.message);
   resultado.encontrados = sessoes?.length ?? 0;
 
@@ -150,6 +167,8 @@ async function recuperarCarrinhos(atraso: number, modelos: readonly string[]): P
       }
     }
 
+    const token = criarTokenRecuperacaoCarrinho(sessao.sessao);
+    if (!telefone || !token) { resultado.ignorados++; continue; }
     const agora = new Date().toISOString();
     const { data: reservado } = await db.from("sessoes")
       .update({ recuperacao_carrinho_em: agora, recuperacao_carrinho_erro: null })
@@ -157,8 +176,6 @@ async function recuperarCarrinhos(atraso: number, modelos: readonly string[]): P
       .select("sessao").maybeSingle();
     if (!reservado) { resultado.ignorados++; continue; }
     try {
-      const token = criarTokenRecuperacaoCarrinho(sessao.sessao);
-      if (!telefone || !token) { resultado.ignorados++; continue; }
       const origem = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeusepai.com").replace(/\/$/, "");
       const link = `${origem}/checkout/recuperar/${encodeURIComponent(token)}`;
       const valor = typeof dados.valor === "number" ? moeda(dados.valor) : "a confirmar";
@@ -181,7 +198,7 @@ async function recuperarCarrinhos(atraso: number, modelos: readonly string[]): P
   return resultado;
 }
 
-export async function processarRecuperacoesWhatsApp(): Promise<ResultadoRecuperacoes> {
+export async function processarRecuperacoesWhatsApp(desde?: string): Promise<ResultadoRecuperacoes> {
   const [atrasoPixBruto, atrasoCarrinhoBruto, modeloPix, modeloCarrinho, botaoPixBruto] = await Promise.all([
     ler("WHATSAPP_RECUPERACAO_PIX_MINUTOS"), ler("WHATSAPP_RECUPERACAO_CARRINHO_MINUTOS"),
     ler("WHATSAPP_MSG_PIX_PENDENTE"), ler("WHATSAPP_MSG_CARRINHO_ABANDONADO"),
@@ -194,7 +211,7 @@ export async function processarRecuperacoesWhatsApp(): Promise<ResultadoRecupera
      por pedido_ref e pela conferência adicional de telefone. */
   const modelosPix = modelosRecuperacao(modeloPix, MENSAGEM_PIX_PADRAO);
   const modelosCarrinho = modelosRecuperacao(modeloCarrinho, MENSAGEM_CARRINHO_PADRAO);
-  const pix = await recuperarPix(atrasoPix, modelosPix, botaoPixBruto !== "0");
-  const carrinho = await recuperarCarrinhos(atrasoCarrinho, modelosCarrinho);
+  const pix = await recuperarPix(atrasoPix, modelosPix, botaoPixBruto !== "0", desde);
+  const carrinho = await recuperarCarrinhos(atrasoCarrinho, modelosCarrinho, desde);
   return { pix, carrinho };
 }
