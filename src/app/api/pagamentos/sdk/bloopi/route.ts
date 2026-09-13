@@ -67,11 +67,21 @@ async function baixar() {
         mpi.Init(safe2PayConfigForSession(session, self.config), amount / 100);`,
         )
         .replace(
-          `if (matchingPreparation) return matchingPreparation;
+          `var paymentPromise = initPromise
+      .then(function () {
+        self._marlimDfpLoad = loadMarlimDfpTag(self._marlimDfpId, !!self.config.is_sandbox);
+        if (matchingPreparation) return matchingPreparation;
         return self._getPaymentIntentContext(params);`,
-          `if (matchingPreparation) return matchingPreparation;
-        emit3dsState("context_started");
-        return self._getPaymentIntentContext(params);`,
+          // Contexto usa somente publicKey, intent e segredo; não depende da
+          // configuração nem do download do MPI. As duas leituras começam
+          // juntas, mas iniciar sessão continua aguardando AMBAS. Não repete
+          // preparação existente, não antecipa POST nem troca o PSP escolhido.
+          `if (!matchingPreparation) emit3dsState("context_started");
+    var contextPromise = matchingPreparation || self._getPaymentIntentContext(params);
+    var paymentPromise = Promise.all([initPromise, contextPromise])
+      .then(function (prepared) {
+        self._marlimDfpLoad = loadMarlimDfpTag(self._marlimDfpId, !!self.config.is_sandbox);
+        return prepared[1];`,
         )
         .replace(
           `if (context && context.psp === "paytime") {
@@ -143,6 +153,7 @@ async function baixar() {
           || !codigo.includes('var safe2PayReady = !!(window.Safe2Pay && window.Safe2Pay.Mpi)')
           || !codigo.includes("function safe2PayConfigForSession")
           || !codigo.includes('emit3dsState("context_started")')
+          || !codigo.includes("Promise.all([initPromise, contextPromise])")
           || !codigo.includes('emit3dsState("session_started")')
           || !codigo.includes('emit3dsState("session_ready")')
           || !codigo.includes('emit3dsState("provider_" + event)')) {

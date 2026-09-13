@@ -20,6 +20,41 @@ function modulo(caminho, deps) {
   return exports;
 }
 const fonte = caminho => readFileSync(new URL(caminho, import.meta.url), "utf8");
+
+test("contexto 3DS corre junto do init, mas sessão espera as duas leituras", async () => {
+  const arquivo = ts.createSourceFile("bloopi-route.ts", fonte("../src/app/api/pagamentos/sdk/bloopi/route.ts"), ts.ScriptTarget.Latest, true);
+  let substituicao;
+  const visitar = no => {
+    if (ts.isCallExpression(no) && ts.isPropertyAccessExpression(no.expression) && no.expression.name.text === "replace"
+        && no.arguments[0]?.text?.startsWith("var paymentPromise = initPromise")) substituicao = no.arguments[1].text;
+    ts.forEachChild(no, visitar);
+  };
+  visitar(arquivo);
+  assert.ok(substituicao, "patch de preparação paralela presente");
+  for (const primeiro of ["init", "contexto"]) {
+    let liberarInit, liberarContexto, consultas = 0, sessoes = 0;
+    const initPromise = new Promise(resolve => { liberarInit = resolve; });
+    const contexto = new Promise(resolve => { liberarContexto = resolve; });
+    const self = { config: { is_sandbox: true }, _getPaymentIntentContext: () => { consultas++; return contexto; } };
+    const sessao = vm.runInNewContext(`${substituicao}\n}).then(abrirSessao); paymentPromise;`, {
+      initPromise, matchingPreparation: null, self, params: {}, emit3dsState: () => {},
+      loadMarlimDfpTag: () => null, abrirSessao: context => { sessoes++; return context; },
+    });
+    assert.equal(consultas, 1, "contexto começa antes do init terminar");
+    if (primeiro === "init") liberarInit(); else liberarContexto("contexto-validado");
+    await Promise.resolve(); await Promise.resolve();
+    assert.equal(sessoes, 0, "uma leitura isolada não pode iniciar a sessão");
+    if (primeiro === "init") liberarContexto("contexto-validado"); else liberarInit();
+    assert.equal(await sessao, "contexto-validado");
+    assert.equal(sessoes, 1);
+  }
+  const pronto = { config: {}, _getPaymentIntentContext: () => { throw new Error("não repetir preparação"); } };
+  const reaproveitada = vm.runInNewContext(`${substituicao}\n}); paymentPromise;`, {
+    initPromise: Promise.resolve(), matchingPreparation: Promise.resolve("preparada"), self: pronto,
+    params: {}, emit3dsState: () => {}, loadMarlimDfpTag: () => null,
+  });
+  assert.equal(await reaproveitada, "preparada");
+});
 const cartaoTeste = { numero: "4111 1111 1111 1111", titular: "Cliente Ficticio", mes: 12, ano: 2035, cvv: "123" };
 
 test("navegação Pix preserva autorização de comprovante sem guardar dados do cliente", () => {

@@ -35,6 +35,8 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
     let iniciarBloopi;
     let downloadsBloopi = 0;
     const bloopiIniciado = new Promise(resolve => { iniciarBloopi = resolve; });
+    let iniciarContexto;
+    const contextoIniciado = new Promise(resolve => { iniciarContexto = resolve; });
     await context.addInitScript(() => document.addEventListener("securitypolicyviolation", e => console.log(`CSPVIOLATION ${e.violatedDirective} ${e.blockedURI}`)));
     if (usandoWebkit) await context.addInitScript(() => { navigator.sendBeacon = () => true; });
     await context.route("**/*", async route => {
@@ -73,6 +75,17 @@ test("checkout: cartão AxxonPay/Bloopi no navegador sem criar cobrança", { ski
         iniciarBloopi();
       }
       if (url.pathname.startsWith("/api/pagamentos/bloopi-leitura/")) leiturasBloopi.push(url.pathname);
+      if (url.pathname.startsWith("/api/pagamentos/bloopi-leitura/get-checkout-info/")) iniciarContexto();
+      if (url.pathname === "/api/pagamentos/bloopi-leitura/checkout-config") {
+        // Segura a configuração até o contexto começar. O SDK sequencial
+        // anterior falha; o novo precisa iniciar ambas as leituras juntas.
+        let timer;
+        try {
+          await Promise.race([contextoIniciado, new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error("Contexto 3DS não começou em paralelo à configuração")), 10000);
+          })]);
+        } finally { clearTimeout(timer); }
+      }
       if (proxyLocal && url.pathname === "/api/seguranca/origem") return servidorLocal();
       if (req.method() !== "GET") {
         if (url.pathname === "/api/track") {

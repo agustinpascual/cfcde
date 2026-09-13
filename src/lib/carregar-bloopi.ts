@@ -1,5 +1,5 @@
 // Somente JavaScript público, sem dados de cartão ou criação de sessão 3DS.
-const BLOOPI_URL = "/api/pagamentos/sdk/bloopi?v=3ds-contexto-20260912";
+const BLOOPI_URL = "/api/pagamentos/sdk/bloopi?v=3ds-paralelo-20260913";
 let carregamento: Promise<void> | null = null;
 
 export function carregarBloopiPeloSite(): Promise<void> {

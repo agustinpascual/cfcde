@@ -24,11 +24,19 @@ requisições simultâneas ao SDK com cache frio compartilham um único download
 Os tempos e o desafio do emissor, os POSTs de confirmação e a consulta financeira
 permanecem inalterados.
 
+Na abertura do 3DS, a consulta do contexto do pagamento também começa junto da
+configuração e do carregamento do MPI. O contexto depende apenas da chave pública,
+do intent e do segredo do checkout. A criação da sessão aguarda as duas leituras;
+uma preparação já existente é reaproveitada. Isso elimina uma espera sequencial,
+sem antecipar ou repetir POSTs financeiros.
+
 `scripts/carregar-bloopi.test.mjs` cobre compartilhamento e recuperação após
 falhas. O teste de navegador segura a resposta do SDK principal até o download
 Bloopi começar, verificando o paralelismo com os scripts públicos reais em
 Chromium mobile e WebKit/iPhone. Criação de cobrança e aprovação são interceptadas;
 esses testes não representam uma transação bancária aprovada.
+O mesmo teste segura a configuração até a consulta de contexto começar, e o
+teste unitário verifica que nenhuma sessão inicia antes das duas leituras.
 
 ### Centralização móvel do 3DS — 12/09/2026
 
