@@ -184,6 +184,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   const db = supabaseAdmin();
   if (!db) return respostaErro("Pagamento temporariamente indisponível.", 503);
   let etapa = "reserva";
+  const inicio = Date.now();
   try {
     if (metodo === "cartao") {
       // A adquirente atual decide o formato aceito. Um formato que não bate
@@ -344,7 +345,9 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
   } catch (erro) {
     const http = (erro as { status?: unknown } | null)?.status;
     // Diagnóstico sem corpo, credenciais, CPF, cartão ou resposta do provedor.
-    console.error("[axxonpay] falha", { referencia, etapa,
+    const nomeErro = (erro as { name?: unknown } | null)?.name;
+    console.error("[axxonpay] falha", { referencia, etapa, tempo_ms: Date.now() - inicio,
+      ...(nomeErro === "TimeoutError" ? { motivo: "tempo_esgotado" } : {}),
       ...(typeof http === "number" && Number.isInteger(http) && http >= 400 && http <= 599 ? { http } : {}) });
     const recusa = erro as { documentoInvalido?: boolean; cartaoRecusado?: boolean } | null;
     if (recusa?.documentoInvalido === true || recusa?.cartaoRecusado === true) {

@@ -604,7 +604,9 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     setGeneratingPix(true); setPixStage("criando"); setPaymentError(""); setPixCharge(null);
     try {
       const tentativa = tentativaPagamento(cartKey, "pix");
-      const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, tentativa }), signal: AbortSignal.timeout(35000) });
+      // O servidor pode aguardar 45s pela emissão Pix. Dá margem para salvar
+      // o ID e o QR antes de encerrar a espera no navegador.
+      const response = await fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...paymentPayload, tentativa }), signal: AbortSignal.timeout(55000) });
       const data = await response.json();
       if (!response.ok) {
         liberarTentativaEncerrada(cartKey, "pix", tentativa, data);

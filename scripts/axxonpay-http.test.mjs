@@ -6,16 +6,48 @@ import ts from "typescript";
 import * as protocolo from "../src/lib/axxonpay-protocolo.ts";
 
 const rejeicao = "customer.document: O número do documento (CPF/CNPJ) é inválido.";
-function clienteSimulado(fetch) {
+function clienteSimulado(fetch, signal = AbortSignal) {
   const deps = { "server-only": {}, "./config-integracoes": { ler: async () => "credencial-ficticia" }, "./axxonpay-protocolo": protocolo };
   const fonte = readFileSync(new URL("../src/lib/axxonpay.ts", import.meta.url), "utf8");
   const js = ts.transpileModule(fonte, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const exports = {};
-  vm.runInNewContext(js, { exports, AbortSignal, fetch, require: id => {
+  vm.runInNewContext(js, { exports, AbortSignal: signal, fetch, require: id => {
     if (!(id in deps)) throw new Error(`Dependência não simulada: ${id}`);
     return deps[id];
   } });
   return exports;
+}
+
+for (const [atraso, conclui] of [[25000, true], [46000, false]]) {
+  test(`Pix com resposta em ${atraso}ms: preserva o POST único, conclui=${conclui}`, async () => {
+    // Relógio virtual: reproduz a resposta após o antigo limite de 20s sem
+    // esperar tempo real nem acessar a adquirente.
+    const agenda = [];
+    let chamadas = 0, iniciou;
+    const inicio = new Promise(resolve => { iniciou = resolve; });
+    const signal = { timeout(ms) {
+      const controller = new AbortController();
+      agenda.push({ ms, executar: () => controller.abort(new DOMException("Tempo esgotado", "TimeoutError")) });
+      return controller.signal;
+    } };
+    const api = clienteSimulado(async (_url, init) => {
+      chamadas++;
+      iniciou();
+      return new Promise((resolve, reject) => {
+        init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true });
+        agenda.push({ ms: atraso, executar: () => resolve(Response.json({
+          id: "pix_lento", amount: 1000, paymentMethod: "pix", status: "PENDING", qrCode: "PIX-FICTICIO",
+        }, { status: 201 })) });
+      });
+    }, signal);
+    const pagamento = api.criarPagamentoAxxon({ amount: 1000, paymentMethod: "pix" });
+    const resultado = conclui ? pagamento : assert.rejects(pagamento, { name: "TimeoutError" });
+    await inicio;
+    for (const evento of agenda.sort((a, b) => a.ms - b.ms)) evento.executar();
+    const criado = await resultado;
+    if (conclui) assert.equal(criado.qrCode, "PIX-FICTICIO");
+    assert.equal(chamadas, 1, "timeout não repete uma criação financeira");
+  });
 }
 
 test("contrato HTTP: envia centavos e webhook, consulta converte reais para centavos", async () => {

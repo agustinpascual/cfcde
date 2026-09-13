@@ -80,6 +80,10 @@ export type CriarAxxon = {
 export async function criarPagamentoAxxon(dados: CriarAxxon) {
   return lerCriacaoAxxon(await chamarAxxon("/direct/payment", {
     method: "POST", body: JSON.stringify(dados), cartao: dados.paymentMethod === "credit_card",
+    // A emissão Pix pode passar de 20s mesmo com a cobrança já criada na
+    // adquirente. Aguarda a resposta original, sem repetir o POST nem perder
+    // seu ID. Consultas e cartão conservam os limites próprios.
+    ...(dados.paymentMethod === "pix" ? { signal: AbortSignal.timeout(45000) } : {}),
   }));
 }
 export async function consultarPagamentoAxxon(id: string, signal?: AbortSignal) {
