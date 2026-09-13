@@ -108,9 +108,9 @@ Testes locais: `node --test scripts/cartao-axxon.test.mjs scripts/axxonpay-fluxo
 
 ## Confirmação e repetição
 
-Configure o webhook **normalizado** da AxxonPay para `https://webhooks.bellablue.fit/api/webhooks/axxonpay`. A criação envia a variável `AXXONPAY_WEBHOOK_URL` em `postbackUrl`.
+Configure o webhook **normalizado** da AxxonPay para `https://webhook.bellablue.fit/api/webhooks/axxonpay`. A criação envia a variável `AXXONPAY_WEBHOOK_URL` em `postbackUrl`.
 
-No localhost, mantenha `NEXT_PUBLIC_SITE_URL=http://localhost:3000` e configure separadamente `AXXONPAY_WEBHOOK_URL=https://webhooks.bellablue.fit/api/webhooks/axxonpay`. O receptor público precisa usar a mesma conta AxxonPay e o mesmo banco. Isso não é sandbox: as cobranças continuam reais. A URL é validada antes de reservar o pedido, evitando pendências causadas por configuração local.
+No localhost, mantenha `NEXT_PUBLIC_SITE_URL=http://localhost:3000` e configure separadamente `AXXONPAY_WEBHOOK_URL=https://webhook.bellablue.fit/api/webhooks/axxonpay`. O receptor público precisa usar a mesma conta AxxonPay e o mesmo banco. Isso não é sandbox: as cobranças continuam reais. A URL é validada antes de reservar o pedido, evitando pendências causadas por configuração local.
 
 ### Unidade monetária e recuperação
 

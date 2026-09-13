@@ -296,7 +296,7 @@ test("URL local sem webhook HTTPS falha antes de reservar ou chamar gateway", as
 });
 for (const metodo of ["pix", "cartao"]) test(`${metodo} envia o postback Bellablue mesmo com outra URL da loja`, async () => {
   let enviado;
-  const destino = "https://webhooks.bellablue.fit/api/webhooks/axxonpay";
+  const destino = "https://webhook.bellablue.fit/api/webhooks/axxonpay";
   const a = ambiente({ env: { NEXT_PUBLIC_SITE_URL: "http://localhost:3000", AXXONPAY_WEBHOOK_URL: destino }, criar: async p => {
     enviado = p;
     return { id: "payment_uuid", amount: p.amount, status: "PENDING" };
