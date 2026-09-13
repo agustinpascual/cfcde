@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
@@ -20,6 +21,10 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
   if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
+
+  const h = await headers();
+  const host = h.get("x-forwarded-host")?.split(",")[0]?.trim() || h.get("host") || "SEU_DOMINIO";
+  const webhookZapi = `https://${host}/api/webhooks/zapi`;
 
   const [vivos, treinamento, instancia, mensagemPix, mensagemCarrinho, atrasoPix, atrasoCarrinho, botaoPix] = await Promise.all([
     lerAoVivo(), lerTreinamento(), ler("ZAPI_INSTANCIA"),
@@ -56,7 +61,7 @@ export default async function Page() {
           <p>
             Preencha as credenciais em <Link href="/ioh3j4ciof3n3oic/integracoes" style={{ textDecoration: "underline" }}>Integrações</Link>{" "}
             e aponte o webhook de mensagens recebidas para{" "}
-            <code>https://cafecomdeusepai.com/api/webhooks/zapi</code>.
+            <code>{webhookZapi}</code>.
           </p>
         </div>
       )}

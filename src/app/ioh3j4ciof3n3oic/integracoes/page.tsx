@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   BarChart3, Building2, CreditCard, Mail, MessageCircle, Target, Truck,
@@ -63,7 +64,7 @@ type Servico = {
   icone: LucideIcon;
 };
 
-const SERVICOS: Servico[] = [
+const servicosComWebhook = (webhookZapi: string): Servico[] => [
   {
     nome: "AxxonPay", papel: "PIX e cartão tokenizado pelo SDK oficial",
     icone: CreditCard,
@@ -129,7 +130,7 @@ const SERVICOS: Servico[] = [
     chaves: ["ZAPI_INSTANCIA", "ZAPI_TOKEN", "ZAPI_CLIENT_TOKEN"],
     passos: [
       "Conectar o número na Z-API e ativar o Client-Token na área Segurança",
-      "Cadastrar o webhook Ao receber como https://cafecomdeusepai.com/api/webhooks/zapi",
+      `Cadastrar o webhook Ao receber como ${webhookZapi}`,
     ],
   },
 ];
@@ -156,6 +157,10 @@ export default async function Page() {
   if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
   if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
+  const h = await headers();
+  const host = h.get("x-forwarded-host")?.split(",")[0]?.trim() || h.get("host") || "SEU_DOMINIO";
+  const servicos = servicosComWebhook(`https://${host}/api/webhooks/zapi`);
+
   const [vivos, chaves, pixelsMeta, tagsGoogle] = await Promise.all([
     lerAoVivo(), estadoDasChaves(), pixelsMetaParaPainel(), lerTagsGoogle(),
   ]);
@@ -175,7 +180,7 @@ export default async function Page() {
     const estado = preenchidas === 0 ? "faltando" : preenchidas === estados.length ? "ok" : "parcial";
     return { estados, estado } as const;
   };
-  const totais = SERVICOS.reduce((acc, serv) => {
+  const totais = servicos.reduce((acc, serv) => {
     const { estado } = estadoServico(serv);
     acc[estado] += 1;
     return acc;
@@ -229,7 +234,7 @@ export default async function Page() {
             </header>
 
             <div className={i.grade}>
-              {SERVICOS.filter((serv) => grupo.servicos.some((nome) => nome === serv.nome)).map((serv) => {
+              {servicos.filter((serv) => grupo.servicos.some((nome) => nome === serv.nome)).map((serv) => {
                 const { estados, estado } = estadoServico(serv);
                 const rotulo = { ok: "Conectado", parcial: "Parcial", faltando: "Não configurado" }[estado];
                 const Icone = serv.icone;
