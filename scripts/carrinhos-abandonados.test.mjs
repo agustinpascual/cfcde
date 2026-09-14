@@ -81,9 +81,31 @@ test("checkout reenvia abandono e painel diferencia vazio de erro", () => {
   assert.match(checkout, /document\.addEventListener\("visibilitychange", aoMudarVisibilidade\)/);
 
   const painel = fonte("../src/app/ioh3j4ciof3n3oic/pedidos/abandonados/page.tsx");
-  assert.match(painel, /lerCarrinhosComEstado/);
+  assert.match(painel, /lerPaginaCarrinhos/);
+  assert.match(painel, /<FiltroCarrinhos/);
+  assert.match(painel, /<Paginacao/);
+  assert.match(painel, /POR_PAGINA/);
   assert.match(painel, /role="alert"/);
   assert.match(painel, /!erro && carrinhos\.length === 0/);
+});
+
+test("carrinhos usam hoje por padrão, filtro de etapa e páginas de dez", () => {
+  const painel = fonte("../src/app/ioh3j4ciof3n3oic/pedidos/abandonados/page.tsx");
+  const filtro = fonte("../src/components/painel/FiltroCarrinhos.tsx");
+  const dados = fonte("../src/components/painel/dados.ts");
+
+  assert.match(painel, /resolverPeriodo\(\{ de: sp\.de, ate: sp\.ate \}\)/);
+  assert.match(painel, /query=\{\{ de: periodo\.de, ate: periodo\.ate, etapa \}\}/);
+  assert.match(filtro, /name="de"/);
+  assert.match(filtro, /name="ate"/);
+  assert.match(filtro, /name="etapa"/);
+  assert.match(filtro, /value="contato"/);
+  assert.match(filtro, /value="entrega"/);
+  assert.match(filtro, /value="pagamento"/);
+  assert.match(dados, /export const POR_PAGINA = 10/);
+  assert.match(dados, /slice\(inicio, inicio \+ POR_PAGINA\)/);
+  assert.match(dados, /gte\("criado_em", inicioDoDia\(filtros\.de\)\)/);
+  assert.match(dados, /lte\("criado_em", fimDoDia\(filtros\.ate\)\)/);
 });
 
 test("link de recuperação é assinado, expira e não carrega dados pessoais na URL", () => {

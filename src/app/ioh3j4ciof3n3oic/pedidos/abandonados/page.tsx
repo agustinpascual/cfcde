@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Casca from "@/components/painel/Casca";
+import FiltroCarrinhos from "@/components/painel/FiltroCarrinhos";
+import Paginacao from "@/components/painel/Paginacao";
 import Recarrega from "@/components/painel/Recarrega";
 import SubAbasPedidos from "@/components/painel/SubAbasPedidos";
-import { lerAoVivo, lerCarrinhosComEstado, moeda, rotuloDispositivo } from "@/components/painel/dados";
+import { hojeNoPainel, lerAoVivo, lerPaginaCarrinhos, moeda, POR_PAGINA, resolverPeriodo, rotuloDispositivo } from "@/components/painel/dados";
 import { autenticado, painelConfigurado } from "@/lib/painel-auth";
 import { formatarDataHoraBrasilia } from "@/lib/data-brasilia";
 import s from "@/components/painel/painel.module.css";
@@ -21,21 +23,33 @@ const tel = (v: string | null) => {
   return n.length >= 10 ? n.replace(/^(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3") : v;
 };
 
-export default async function Page() {
+type Busca = { p?: string; de?: string; ate?: string; etapa?: string };
+
+export default async function Page({ searchParams }: { searchParams: Promise<Busca> }) {
   if (!painelConfigurado()) redirect("/ioh3j4ciof3n3oic");
   if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
-  const [resultado, vivos] = await Promise.all([lerCarrinhosComEstado(), lerAoVivo()]);
-  const { carrinhos, erro } = resultado;
+  const sp = await searchParams;
+  const pagina = Math.max(1, Number(sp.p) || 1);
+  const periodo = resolverPeriodo({ de: sp.de, ate: sp.ate });
+  const etapa = ["contato", "entrega", "pagamento"].includes(sp.etapa ?? "") ? sp.etapa : undefined;
+  const [resultado, vivos] = await Promise.all([
+    lerPaginaCarrinhos(pagina, { de: periodo.de, ate: periodo.ate, etapa }),
+    lerAoVivo(),
+  ]);
+  const { carrinhos, total, erro } = resultado;
+  const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   return (
     <Casca atual="/ioh3j4ciof3n3oic/pedidos" titulo="Pedidos"
       subtitulo={erro ? "Não foi possível consultar os carrinhos"
-        : carrinhos.length === 0 ? "Nenhum carrinho abandonado"
-        : `${carrinhos.length} ${carrinhos.length === 1 ? "carrinho abandonado" : "carrinhos abandonados"} · quem preencheu dados e não pagou`}
+        : total === 0 ? `Nenhum carrinho abandonado em ${periodo.rotulo.toLocaleLowerCase("pt-BR")}`
+        : `${total} ${total === 1 ? "carrinho abandonado" : "carrinhos abandonados"}${paginas > 1 ? ` · página ${pagina} de ${paginas}` : ""} · ${periodo.rotulo}`}
       aoVivo={vivos.length}>
       <Recarrega segundos={15} />
-      <SubAbasPedidos atual="abandonados" abandonados={carrinhos.length} />
+      <SubAbasPedidos atual="abandonados" abandonados={total} />
+
+      <FiltroCarrinhos de={periodo.de} ate={periodo.ate} hoje={hojeNoPainel()} etapa={etapa} />
 
       {erro && (
         <div className={s.aviso} role="alert">
@@ -47,9 +61,9 @@ export default async function Page() {
       <section className={`${s.cartao} ${s.cartaoTabela}`}>
         {!erro && carrinhos.length === 0 ? (
           <p className={s.vazio}>
-            Nenhum carrinho abandonado por aqui. Quando alguém preencher os dados
-            no checkout e sair sem pagar, o contato aparece aqui para você recuperar
-            a venda.
+            {total > 0
+              ? "Esta página não existe mais. Volte para a primeira página."
+              : "Nenhum carrinho abandonado encontrado com esses filtros. Altere a data ou a etapa em que o cliente parou."}
           </p>
         ) : carrinhos.length > 0 ? (
           <div className={s.tabelaWrap}>
@@ -95,6 +109,10 @@ export default async function Page() {
           </div>
         ) : null}
       </section>
+
+      <Paginacao pagina={pagina} total={total} porPagina={POR_PAGINA}
+        base="/ioh3j4ciof3n3oic/pedidos/abandonados"
+        query={{ de: periodo.de, ate: periodo.ate, etapa }} rotulo="carrinhos abandonados" />
     </Casca>
   );
 }

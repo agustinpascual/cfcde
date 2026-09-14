@@ -3,9 +3,10 @@ import s from "./painel.module.css";
 
 /* Paginação por link — funciona sem JavaScript e mantém a página na URL,
    então dá para recarregar ou compartilhar sem perder o lugar. */
-export default function Paginacao({ pagina, total, porPagina, base, query }: {
+export default function Paginacao({ pagina, total, porPagina, base, query, rotulo = "pedidos" }: {
   pagina: number; total: number; porPagina: number; base: string;
   query?: Record<string, string | undefined>;
+  rotulo?: string;
 }) {
   const paginas = Math.ceil(total / porPagina);
   if (paginas <= 1) return null;
@@ -27,7 +28,7 @@ export default function Paginacao({ pagina, total, porPagina, base, query }: {
   const numeros = Array.from({ length: Math.min(5, paginas) }, (_, i) => inicio + i);
 
   return (
-    <nav className={s.paginacao} aria-label="Paginação dos pedidos">
+    <nav className={s.paginacao} aria-label={`Paginação dos ${rotulo}`}>
       <p className={s.paginacaoInfo}>
         {primeiro}–{ultimo} de {total}
       </p>

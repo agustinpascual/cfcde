@@ -390,6 +390,14 @@ export type ResultadoCarrinhos = {
   erro: string | null;
 };
 
+export type FiltroCarrinhos = {
+  de?: string;
+  ate?: string;
+  etapa?: string;
+};
+
+export type PaginaCarrinhos = ResultadoCarrinhos & { total: number };
+
 export type ItemCarrinhoAbandonado = { slug: string; quantidade: number };
 
 export type CarrinhoAbandonadoDetalhe = CarrinhoAbandonado & {
@@ -445,13 +453,22 @@ function itensCarrinho(dados: Record<string, unknown>): ItemCarrinhoAbandonado[]
    pedido_ref saiu do abandono (virou pedido pendente, aparece na aba Pedidos).
    Junta o último `checkout_parcial` de cada sessão sem pedido. Sem contato não
    entra — não há o que recuperar. */
-export async function lerCarrinhosComEstado(limite = 100): Promise<ResultadoCarrinhos> {
+export async function lerCarrinhosComEstado(
+  limite = 100, filtros: FiltroCarrinhos = {},
+): Promise<ResultadoCarrinhos> {
   const db = supabaseAdmin();
   if (!db) return { carrinhos: [], erro: "O banco de dados não está configurado neste ambiente." };
   try {
-    const { data: evs, error } = await db.from("eventos")
+    let consulta = db.from("eventos")
       .select("sessao,dados,criado_em").eq("tipo", "checkout_parcial")
-      .order("criado_em", { ascending: false }).limit(600);
+      .order("criado_em", { ascending: false });
+    if (filtros.de && /^\d{4}-\d{2}-\d{2}$/.test(filtros.de)) {
+      consulta = consulta.gte("criado_em", inicioDoDia(filtros.de));
+    }
+    if (filtros.ate && /^\d{4}-\d{2}-\d{2}$/.test(filtros.ate)) {
+      consulta = consulta.lte("criado_em", fimDoDia(filtros.ate));
+    }
+    const { data: evs, error } = await consulta.limit(600);
     if (error) {
       console.error("[painel] carrinhos/eventos:", error.message);
       return { carrinhos: [], erro: "Não foi possível consultar os eventos de checkout." };
@@ -490,7 +507,11 @@ export async function lerCarrinhosComEstado(limite = 100): Promise<ResultadoCarr
         atualizado_em: e.criado_em,
       });
     }
-    return { carrinhos: lista.slice(0, limite), erro: null };
+    const etapa = filtros.etapa?.trim().toLocaleLowerCase("pt-BR");
+    const filtrada = etapa && ["contato", "entrega", "pagamento"].includes(etapa)
+      ? lista.filter((c) => c.etapa.trim().toLocaleLowerCase("pt-BR") === etapa)
+      : lista;
+    return { carrinhos: filtrada.slice(0, limite), erro: null };
   } catch (e) {
     console.error("[painel] carrinhos:", (e as Error).message);
     return { carrinhos: [], erro: "A consulta dos carrinhos falhou temporariamente." };
@@ -499,6 +520,21 @@ export async function lerCarrinhosComEstado(limite = 100): Promise<ResultadoCarr
 
 export async function lerCarrinhos(limite = 100): Promise<CarrinhoAbandonado[]> {
   return (await lerCarrinhosComEstado(limite)).carrinhos;
+}
+
+/** Lista paginada do painel. Os eventos precisam ser consolidados por sessão
+    antes do recorte, para um mesmo cliente nunca ocupar duas linhas. */
+export async function lerPaginaCarrinhos(
+  pagina: number, filtros: FiltroCarrinhos = {},
+): Promise<PaginaCarrinhos> {
+  const resultado = await lerCarrinhosComEstado(600, filtros);
+  const total = resultado.carrinhos.length;
+  const inicio = (Math.max(1, pagina) - 1) * POR_PAGINA;
+  return {
+    carrinhos: resultado.carrinhos.slice(inicio, inicio + POR_PAGINA),
+    total,
+    erro: resultado.erro,
+  };
 }
 
 /** Lê somente os campos úteis à recuperação. Nunca devolve dados de cartão e

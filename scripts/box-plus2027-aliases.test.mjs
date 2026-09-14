@@ -29,15 +29,39 @@ const ESPERADOS = [
   "/kit2027",
   "/kit-2027",
   "/kit-cafe-com-deus-pai",
+  "/box-cafe-com-deus-pai-volume-7",
+  "/combo-cafe-com-deus-pai-volume-7",
+  "/kit-cafe-com-deus-pai-2027",
+  "/colecao-cafe-com-deus-pai-2027",
+  "/box-devocional-2027",
+  "/combo-devocional-2027",
+  "/kit-devocional-2027",
+  "/colecao-devocional-2027",
+  "/box-livro-caneca-2027",
+  "/combo-livro-caneca-2027",
+  "/kit-livro-caneca-2027",
+  "/box-cafe-com-deus-pai-vol-7",
+  "/combo-cafe-com-deus-pai-vol-7",
+  "/kit-cafe-com-deus-pai-vol-7",
+  "/cafe-com-deus-pai-volume-7",
+  "/devocional-cafe-com-deus-pai-2027",
+  "/lancamento-cafe-com-deus-pai-2027",
+  "/novo-box-cafe-com-deus-pai",
+  "/novo-combo-cafe-com-deus-pai",
+  "/box-plus-volume-7",
+  "/combo-plus-volume-7",
+  "/box-especial-2027",
+  "/combo-especial-2027",
+  "/kit-especial-2027",
 ];
 
-test("expõe exatamente 24 aliases únicos para o Box Plus 2027", async () => {
+test("expõe exatamente 48 aliases únicos para o Box Plus 2027", async () => {
   const rewrites = await config.rewrites();
   const aliases = rewrites.filter((rewrite) => rewrite.destination === DESTINO);
 
-  assert.equal(aliases.length, 24);
+  assert.equal(aliases.length, 48);
   assert.deepEqual(aliases.map((rewrite) => rewrite.source), ESPERADOS);
-  assert.equal(new Set(aliases.map((rewrite) => rewrite.source)).size, 24);
+  assert.equal(new Set(aliases.map((rewrite) => rewrite.source)).size, 48);
 
   for (const { source } of aliases) {
     assert.match(source, /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/);
