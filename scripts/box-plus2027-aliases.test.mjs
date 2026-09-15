@@ -53,15 +53,39 @@ const ESPERADOS = [
   "/box-especial-2027",
   "/combo-especial-2027",
   "/kit-especial-2027",
+  "/fuyxoos3z8",
+  "/r4gka2ygkr",
+  "/ici7k8tpli",
+  "/hnz4lhi2lo",
+  "/vyyylsb08u",
+  "/1lfuvycfse",
+  "/tzlmtutwgr",
+  "/cvpmznojca",
+  "/5hhrkmzbf4",
+  "/nylq9zntjh",
+  "/bmumfnxdbh",
+  "/7e8r0jqjtq",
+  "/seuaxcrprw",
+  "/ypoq8rfp87",
+  "/vju59zy5q3",
+  "/un2qj6piqw",
+  "/f9grppnv30",
+  "/3pdjhtdbd4",
+  "/odkmtsdjih",
+  "/tbykius5ku",
+  "/e4u9axlpa9",
+  "/wkahdgor3a",
+  "/qc54wdncep",
+  "/uoypdr9fb8",
 ];
 
-test("expõe exatamente 48 aliases únicos para o Box Plus 2027", async () => {
+test("expõe exatamente 72 aliases únicos para o Box Plus 2027", async () => {
   const rewrites = await config.rewrites();
   const aliases = rewrites.filter((rewrite) => rewrite.destination === DESTINO);
 
-  assert.equal(aliases.length, 48);
+  assert.equal(aliases.length, 72);
   assert.deepEqual(aliases.map((rewrite) => rewrite.source), ESPERADOS);
-  assert.equal(new Set(aliases.map((rewrite) => rewrite.source)).size, 48);
+  assert.equal(new Set(aliases.map((rewrite) => rewrite.source)).size, 72);
 
   for (const { source } of aliases) {
     assert.match(source, /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/);
