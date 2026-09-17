@@ -35,6 +35,13 @@ test("story pequeno continua tocando e acompanha a rolagem", () => {
   assert.match(storiesCss, /\.launcherFollowing\{position:fixed/);
 });
 
+test("story pequeno não baixa a prévia antes de rolagem ou interação", () => {
+  assert.match(stories, /useState\(false\)/, "a mídia começa desativada");
+  assert.match(stories, /if \(rolou\) setMediaAtiva\(true\)/, "a rolagem libera a prévia");
+  assert.match(stories, /src=\{mediaAtiva \? launcherPreview : undefined\}/, "sem intenção não existe URL para baixar");
+  assert.match(stories, /preload=\{mediaAtiva \? "metadata" : "none"\}/, "o navegador não antecipa o vídeo");
+});
+
 test("story flutuante pode ser arrastado e mantém somente o anel verde estático", () => {
   for (const evento of ["onPointerDown", "onPointerMove", "onPointerUp", "setPointerCapture"]) {
     assert.match(stories, new RegExp(evento));

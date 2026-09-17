@@ -36,7 +36,9 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
   const sectionRef = useRef<HTMLElement>(null);
   const [center, setCenter] = useState(0);
   const [story, setStory] = useState<number | null>(null);
-  const [mediaAtiva, setMediaAtiva] = useState(floating);
+  /* O pôster mantém o launcher visível na primeira dobra. O vídeo de prévia
+     só recebe uma URL depois que o visitante começa a rolar a página. */
+  const [mediaAtiva, setMediaAtiva] = useState(false);
   const [muted, setMuted] = useState(true);
   const [liked, setLiked] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -76,17 +78,23 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
 
   useEffect(() => {
     if (!floating) return;
-    const atualizar = () => setPageScrolled(window.scrollY > 80);
-    const reproduzir = () => launcherVideo.current?.play().catch(() => undefined);
-    atualizar();
-    reproduzir();
-    window.addEventListener("scroll", atualizar, { passive: true });
-    document.addEventListener("visibilitychange", reproduzir);
-    return () => {
-      window.removeEventListener("scroll", atualizar);
-      document.removeEventListener("visibilitychange", reproduzir);
+    const atualizar = () => {
+      const rolou = window.scrollY > 80;
+      setPageScrolled(rolou);
+      if (rolou) setMediaAtiva(true);
     };
+    atualizar();
+    window.addEventListener("scroll", atualizar, { passive: true });
+    return () => window.removeEventListener("scroll", atualizar);
   }, [floating]);
+
+  useEffect(() => {
+    if (!floating || !mediaAtiva) return;
+    const reproduzir = () => launcherVideo.current?.play().catch(() => undefined);
+    reproduzir();
+    document.addEventListener("visibilitychange", reproduzir);
+    return () => document.removeEventListener("visibilitychange", reproduzir);
+  }, [floating, mediaAtiva]);
 
   useEffect(() => {
     if (!floating) return;
@@ -196,7 +204,7 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
   const launcher = floating ? (
     <button ref={launcherButton} className={`${styles.launcher} ${pageScrolled ? styles.launcherFollowing : ""} ${launcherDragging ? styles.launcherDragging : ""}`} style={launcherStyle} type="button" onClick={clicarLauncher} onPointerDown={iniciarArraste} onPointerMove={moverLauncher} onPointerUp={terminarArraste} onPointerCancel={terminarArraste} aria-label="Abrir stories em vídeo. Mantenha pressionado e arraste para mover">
       <span className={styles.launcherMedia}>
-        <video ref={launcherVideo} src={launcherPreview} poster={videos[0].poster} muted autoPlay loop playsInline preload="metadata" draggable={false} onCanPlay={(event) => event.currentTarget.play().catch(() => undefined)} aria-hidden="true" />
+        <video ref={launcherVideo} src={mediaAtiva ? launcherPreview : undefined} poster={videos[0].poster} muted autoPlay loop playsInline preload={mediaAtiva ? "metadata" : "none"} draggable={false} onCanPlay={(event) => event.currentTarget.play().catch(() => undefined)} aria-hidden="true" />
         <span className={styles.launcherShade} aria-hidden="true" />
       </span>
     </button>
