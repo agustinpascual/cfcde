@@ -104,6 +104,12 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: [],
+    // O proxy Xcdn recusa o antigo pacote CSS de ~119 KB. Forçar cortes
+    // menores mantém a ordem dos estilos e evita um único arquivo bloqueado.
+    cssChunking: {
+      type: "graph",
+      requestCost: 0,
+    },
   },
   // não anuncia a stack
   productionBrowserSourceMaps: false,
