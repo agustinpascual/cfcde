@@ -44,7 +44,7 @@ for (const perfil of perfis) {
       await context.route("**/*", async route => {
         const req = route.request();
         const url = new URL(req.url());
-        if (url.origin === "https://www.google.com" && req.isNavigationRequest()) {
+        if (url.origin === "https://cafecomdeus.blog.br" && req.isNavigationRequest()) {
           redirecionamentos++;
           return route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Destino de teste</title>" });
         }
@@ -66,8 +66,8 @@ for (const perfil of perfis) {
         // utilizável; a checagem espera a interface, não silêncio na rede.
         await page.goto(origem + caminho, { waitUntil: "domcontentloaded" });
         if (!perfil.permitido) {
-          await page.waitForURL("https://www.google.com/");
-          assert.equal(redirecionamentos, antes + 1, "computador redirecionado ao Google");
+          await page.waitForURL("https://cafecomdeus.blog.br/");
+          assert.equal(redirecionamentos, antes + 1, "computador redirecionado ao blog");
           assert.equal(await page.getByRole("button", { name: "Abrir sacola", exact: true }).count(), 0);
           assert.equal(await page.locator("input").count(), 0, "nenhum formulário da loja montado");
         } else {
@@ -98,7 +98,7 @@ for (const perfil of perfis) {
       const antesDoPainel = redirecionamentos;
       await page.goto(origem + "/ioh3j4ciof3n3oic/entrar", { waitUntil: "domcontentloaded" });
       await page.getByLabel("Senha", { exact: true }).waitFor();
-      assert.equal(redirecionamentos, antesDoPainel, "painel não redireciona ao Google");
+      assert.equal(redirecionamentos, antesDoPainel, "painel não redireciona ao blog");
       assert.equal(await page.getByRole("heading", { name: bloqueio }).count(), 0, "login administrativo liberado");
       assert.deepEqual(erros, [], "sem erros de renderização ou hidratação");
       await context.unrouteAll({ behavior: "wait" });

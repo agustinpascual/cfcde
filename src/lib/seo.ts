@@ -4,7 +4,7 @@ import { marca } from "@/components/storefront/brand";
 /* Endereço público do site. É a base de toda URL absoluta (canonical, Open
    Graph, sitemap, JSON-LD) — defina NEXT_PUBLIC_SITE_URL no ambiente assim
    que o domínio estiver apontado, senão os buscadores indexam o placeholder. */
-export const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeuspai.vercel.app").replace(/\/$/, "");
+export const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeuspai.net").replace(/\/$/, "");
 
 export const url = (caminho: string) => `${SITE}${caminho}`;
 

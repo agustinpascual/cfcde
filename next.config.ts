@@ -119,8 +119,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        has: [{ type: "host", value: "www.cafecomdeusepai.com" }],
-        destination: "https://cafecomdeusepai.com/:path*",
+        has: [{ type: "host", value: "www.cafecomdeuspai.net" }],
+        destination: "https://cafecomdeuspai.net/:path*",
         permanent: true,
       },
       {

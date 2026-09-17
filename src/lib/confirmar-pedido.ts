@@ -169,7 +169,7 @@ export async function registrarCompraNoPixel(referencia: string): Promise<void> 
 
   const p = data as Record<string, unknown>;
   const e = (p.endereco as Endereco | null) ?? null;
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeusepai.com";
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeuspai.net";
 
   const r = await enviarCompra({
     referencia,

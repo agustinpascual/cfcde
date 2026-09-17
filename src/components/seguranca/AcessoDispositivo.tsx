@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { dispositivoPodeAbrirLoja } from "@/lib/dispositivos";
+import { DESTINO_COMPUTADOR } from "@/lib/acesso-inicial";
 import styles from "./AcessoDispositivo.module.css";
 
 // A identificação não depende da largura, orientação ou presença de teclado.
@@ -21,7 +22,7 @@ export default function AcessoDispositivo({ children, recursos }: { children: Re
   const painel = pathname === "/ioh3j4ciof3n3oic" || pathname.startsWith("/ioh3j4ciof3n3oic/");
 
   useEffect(() => {
-    if (!painel && permitido === false) window.location.replace("https://www.google.com");
+    if (!painel && permitido === false) window.location.replace(DESTINO_COMPUTADOR);
   }, [painel, permitido]);
 
   // A home chega renderizada e fica visível assim que o script inicial

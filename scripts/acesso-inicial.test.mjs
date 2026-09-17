@@ -37,7 +37,7 @@ test("script antecipado preserva a identificação de celular/tablet e o bloquei
       assert.equal(dataset.cdpAcesso, permitido ? "liberado" : "bloqueado");
       assert.equal(dispositivos.dispositivoPodeAbrirLoja(ua, plataforma, toques), permitido);
       const painel = pathname === "/ioh3j4ciof3n3oic" || pathname.startsWith("/ioh3j4ciof3n3oic/");
-      assert.deepEqual(destinos, !permitido && !painel ? ["https://www.google.com"] : []);
+      assert.deepEqual(destinos, !permitido && !painel ? ["https://cafecomdeus.blog.br/"] : []);
     }
   }
 });

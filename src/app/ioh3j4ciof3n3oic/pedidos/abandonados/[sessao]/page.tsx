@@ -36,7 +36,7 @@ const telefone = (valor: string | null) => {
 async function origemAtual() {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeusepai.com").replace(/\/$/, "");
+  if (!host) return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeuspai.net").replace(/\/$/, "");
   const protocolo = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return `${protocolo}://${host}`;
 }

@@ -70,14 +70,14 @@ const servicosComWebhook = (webhookZapi: string): Servico[] => [
     icone: CreditCard,
     chaves: ["AXXONPAY_PUBLIC_KEY", "AXXONPAY_SECRET_KEY"],
     passos: ["Obtenha Public Key e Secret Key na área de integrações da AxxonPay, não a senha de login.",
-      "Configure o webhook normalizado para https://cafecomdeusepai.com/api/webhooks/axxonpay.",
+      "Configure o webhook normalizado para https://cafecomdeuspai.net/api/webhooks/axxonpay.",
       "Salve as chaves e selecione o gateway acima. Antes de cobrar clientes, homologue PIX, cartão e 3DS com a AxxonPay."],
   },
   {
     nome: "PinPay", papel: "Cobranças PIX e webhook de pagamento",
     icone: CreditCard,
     chaves: ["PINPAY_TOKEN", "PINPAY_WEBHOOK_SECRET"],
-    passos: ["Cadastrar https://cafecomdeusepai.com/api/webhooks/pinpay no painel da PinPay", "Marcar o evento payment_approved"],
+    passos: ["Cadastrar https://cafecomdeuspai.net/api/webhooks/pinpay no painel da PinPay", "Marcar o evento payment_approved"],
   },
   {
     nome: "Resend", papel: "E-mails de confirmação de pedido e pagamento",

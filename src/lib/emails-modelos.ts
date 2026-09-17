@@ -61,7 +61,7 @@ function casca({ site, titulo, eyebrow, corpo }: Base) {
    <tr><td style="background:${PRETO};padding:24px 34px">
      <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#ffffff">Café com Deus Pai</p>
      <p style="margin:0;font-size:11px;line-height:1.7;color:#6d665c">
-       Você recebeu este e-mail porque fez um pedido em cafecomdeusepai.com.
+       Você recebeu este e-mail porque fez um pedido em cafecomdeuspai.net.
      </p>
    </td></tr>
   </table>

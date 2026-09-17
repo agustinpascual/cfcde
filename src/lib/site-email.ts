@@ -1,4 +1,4 @@
-const SITE_PUBLICO = "https://cafecomdeusepai.com";
+const SITE_PUBLICO = "https://cafecomdeuspai.net";
 
 /** E-mails precisam de URLs públicas, inclusive quando enviados pelo next dev. */
 export function sitePublicoEmail(site = process.env.NEXT_PUBLIC_SITE_URL): string {

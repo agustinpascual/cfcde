@@ -176,7 +176,7 @@ async function recuperarCarrinhos(atraso: number, modelos: readonly string[], de
       .select("sessao").maybeSingle();
     if (!reservado) { resultado.ignorados++; continue; }
     try {
-      const origem = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeusepai.com").replace(/\/$/, "");
+      const origem = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://cafecomdeuspai.net").replace(/\/$/, "");
       const link = `${origem}/checkout/recuperar/${encodeURIComponent(token)}`;
       const valor = typeof dados.valor === "number" ? moeda(dados.valor) : "a confirmar";
       const modelo = escolherModeloRecuperacao(modelos, sessao.sessao);

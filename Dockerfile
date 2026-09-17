@@ -11,7 +11,7 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Apenas configuração pública participa do build. Credenciais entram em runtime.
-ARG NEXT_PUBLIC_SITE_URL=https://cafecomdeusepai.com
+ARG NEXT_PUBLIC_SITE_URL=https://cafecomdeuspai.net
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_META_PIXEL_ID
