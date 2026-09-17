@@ -36,9 +36,7 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
   const sectionRef = useRef<HTMLElement>(null);
   const [center, setCenter] = useState(0);
   const [story, setStory] = useState<number | null>(null);
-  /* O launcher continua visível pelo pôster, mas o vídeo de prévia (333 KB)
-     só entra na rede quando há intenção real: rolagem ou toque. */
-  const [mediaAtiva, setMediaAtiva] = useState(false);
+  const [mediaAtiva, setMediaAtiva] = useState(floating);
   const [muted, setMuted] = useState(true);
   const [liked, setLiked] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -78,14 +76,8 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
 
   useEffect(() => {
     if (!floating) return;
-    const atualizar = () => {
-      const rolou = window.scrollY > 80;
-      setPageScrolled(rolou);
-      if (rolou) setMediaAtiva(true);
-    };
-    const reproduzir = () => {
-      if (mediaAtiva) launcherVideo.current?.play().catch(() => undefined);
-    };
+    const atualizar = () => setPageScrolled(window.scrollY > 80);
+    const reproduzir = () => launcherVideo.current?.play().catch(() => undefined);
     atualizar();
     reproduzir();
     window.addEventListener("scroll", atualizar, { passive: true });
@@ -94,7 +86,7 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
       window.removeEventListener("scroll", atualizar);
       document.removeEventListener("visibilitychange", reproduzir);
     };
-  }, [floating, mediaAtiva]);
+  }, [floating]);
 
   useEffect(() => {
     if (!floating) return;
@@ -161,7 +153,6 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
   }
   function clicarLauncher() {
     if (performance.now() < ignorarCliqueAte.current) return;
-    setMediaAtiva(true);
     open(0);
   }
   /* O vídeo do meio toca uma vez e o carrossel anda sozinho. Com o story
@@ -205,19 +196,7 @@ export default function HomeVideoStories({ floating = false }: { floating?: bool
   const launcher = floating ? (
     <button ref={launcherButton} className={`${styles.launcher} ${pageScrolled ? styles.launcherFollowing : ""} ${launcherDragging ? styles.launcherDragging : ""}`} style={launcherStyle} type="button" onClick={clicarLauncher} onPointerDown={iniciarArraste} onPointerMove={moverLauncher} onPointerUp={terminarArraste} onPointerCancel={terminarArraste} aria-label="Abrir stories em vídeo. Mantenha pressionado e arraste para mover">
       <span className={styles.launcherMedia}>
-        <video
-          ref={launcherVideo}
-          src={mediaAtiva ? launcherPreview : undefined}
-          poster={videos[0].poster}
-          muted
-          autoPlay={mediaAtiva}
-          loop
-          playsInline
-          preload={mediaAtiva ? "metadata" : "none"}
-          draggable={false}
-          onCanPlay={(event) => event.currentTarget.play().catch(() => undefined)}
-          aria-hidden="true"
-        />
+        <video ref={launcherVideo} src={launcherPreview} poster={videos[0].poster} muted autoPlay loop playsInline preload="metadata" draggable={false} onCanPlay={(event) => event.currentTarget.play().catch(() => undefined)} aria-hidden="true" />
         <span className={styles.launcherShade} aria-hidden="true" />
       </span>
     </button>
