@@ -104,10 +104,6 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: [],
-    /* O agrupamento padrão estava levando CSS do checkout e do catálogo para
-       a home. O modo graph do Turbopack separa os estilos por rota com base
-       no custo real de bytes/requisições, sem alterar a ordem do CSS. */
-    cssChunking: "graph",
   },
   // não anuncia a stack
   productionBrowserSourceMaps: false,
