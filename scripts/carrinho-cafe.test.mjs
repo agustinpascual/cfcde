@@ -22,9 +22,9 @@ test("carrinho soma produtos distintos e recalcula Pix no servidor", () => {
     { produto: "combo-plus2027", qtd: 2 },
     { produto: "combo-plus", qtd: 1 },
   ], "pac", { pagamento: "pix" });
-  assert.equal(valores.subtotal, 46970);
+  assert.equal(valores.subtotal, 43970);
   assert.equal(valores.quantidadeTotal, 3);
-  assert.equal(valores.total, 44600);
+  assert.equal(valores.total, 41700);
   assert.equal(valores.itens.length, 2);
 });
 
@@ -34,7 +34,7 @@ test("cupom de produto desconta só as linhas elegíveis da sacola", () => {
     { produto: "combo-plus", qtd: 1 },
   ], "pac", { pagamento: "cartao", cupom: "CAFECOMDEUS27" });
   assert.equal(valores.descontoCupom, 719);
-  assert.equal(valores.total, 46251);
+  assert.equal(valores.total, 43251);
 });
 
 test("cupom de saída do checkout aplica o desconto da Box 2027 no servidor", () => {

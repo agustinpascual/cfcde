@@ -15,6 +15,7 @@
 .card:hover .imageWrap img { transform: scale(1.025); }
 .cardBody { padding: 17px 2px 4px; }
 .cardBody h3 { min-height: 43px; margin: 0 0 9px; font-size: 12px; line-height: 17px; font-weight: 500; text-transform: uppercase; letter-spacing: .05px; }
+.cardBody del { display: block; color: #8b8682; font-size: 12px; line-height: 17px; }
 .cardBody strong { display: block; font-size: 15px; line-height: 20px; font-weight: 600; }
 .cardBody > span { display: block; font-size: 12px; color: #6d6966; line-height: 18px; }
 .cardBody small { display: block; margin-top: 4px; color: #88827d; font-size: 11px; }

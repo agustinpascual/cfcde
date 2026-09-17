@@ -14,8 +14,8 @@ const comboPlus = {
   slug: "combo-plus",
   name: "Combo Plus | Frete grátis",
   image: "/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/combo-main.webp",
-  priceCents: 28990,
-  originalPrice: "R$513,90",
+  priceCents: 25990,
+  originalPrice: "R$289,90",
 };
 
 function resolverProduto(slug: string) {

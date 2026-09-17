@@ -12,6 +12,7 @@ type Product = {
   image: string;
   name: string;
   price: string;
+  originalPrice: string | null;
   installment: string;
   reviews?: number;
   href?: string;
@@ -56,6 +57,7 @@ const doCatalogo: Product[] = PRODUCTS
     image: p.image,
     name: p.name,
     price: p.price,
+    originalPrice: p.originalPrice,
     installment: p.installment,
     href: `/produtos/${p.slug}`,
   }));
@@ -87,6 +89,7 @@ function ProductRail({ title, products }: { title: string; products: Product[] }
               </div>
               <div className={styles.cardBody}>
                 <h3>{product.name}</h3>
+                {product.originalPrice ? <del>{product.originalPrice}</del> : null}
                 <strong>{product.price}</strong>
                 <span>{product.installment}</span>
                 {product.reviews ? <small><b>★★★★★</b> ({product.reviews})</small> : null}

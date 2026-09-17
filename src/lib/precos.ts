@@ -37,7 +37,7 @@ export function calcularTotal(kitIndex: number, qtd: number, frete: IdFrete) {
 /* Combos do ComboPlusStore — não fazem parte do catálogo da vitrine, então
    ficam explícitos aqui. */
 const COMBOS: Record<string, { nome: string; centavos: number }> = {
-  "combo-plus": { nome: "Combo Plus | Frete grátis", centavos: 28990 },
+  "combo-plus": { nome: "Combo Plus | Frete grátis", centavos: 25990 },
   "combo-plus2027": { nome: "Lançamento Combo Plus | 2027", centavos: 8990 },
   "combo-plus2027-2un": { nome: "Lançamento Combo Plus | 2027 · 2 unidades", centavos: 12990 },
   /* Homologação de pagamento (/produto/testes). Remover depois de homologar. */

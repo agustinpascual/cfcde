@@ -15,7 +15,10 @@ export type CatalogProduct = {
   sku: string;
 };
 
-export const PRODUCTS = [
+/* Estes são os preços praticados antes da promoção geral de R$ 30. A
+   exportação pública abaixo deriva preço, comparação e parcelas para que a
+   vitrine, o carrinho e a cobrança usem sempre os mesmos valores. */
+const PRODUCTS_WITHOUT_SITE_DISCOUNT = [
   {
     slug: "cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa",
     name: "Café com Deus Pai vol.6 (brochura) + A vida que você busca está na cura que você precisa",
@@ -441,6 +444,22 @@ export const PRODUCTS = [
   },
 
 ] as const satisfies readonly CatalogProduct[];
+
+const SITE_DISCOUNT_CENTS = 3000;
+
+const formatCents = (cents: number) =>
+  `R$${(cents / 100).toFixed(2).replace(".", ",")}`;
+
+export const PRODUCTS: readonly CatalogProduct[] = PRODUCTS_WITHOUT_SITE_DISCOUNT.map((product) => {
+  const priceCents = product.priceCents - SITE_DISCOUNT_CENTS;
+  return {
+    ...product,
+    priceCents,
+    price: formatCents(priceCents),
+    originalPrice: formatCents(product.priceCents),
+    installment: `4 de ${formatCents(Math.round(priceCents / 4))}`,
+  };
+});
 
 export function getProductBySlug(slug: string): CatalogProduct | undefined {
   return PRODUCTS.find((product) => product.slug === slug);

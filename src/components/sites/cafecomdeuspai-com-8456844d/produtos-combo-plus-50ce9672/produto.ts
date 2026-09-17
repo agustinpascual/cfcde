@@ -53,7 +53,7 @@ export const comboPlus: Produto = {
   nome: "Combo Plus | Frete grátis",
   breadcrumb: "Home | Lançamento | Combo Plus | Frete Grátis",
   imagem: `${assetRoot}/${galeria[0]}`,
-  ofertas: [{ unidades: 1, rotulo: "1 unidade", preco: 289.9, comparado: 513.9, slug: "combo-plus" }],
+  ofertas: [{ unidades: 1, rotulo: "1 unidade", preco: 259.9, comparado: 289.9, slug: "combo-plus" }],
 };
 
 /* Galeria própria do lançamento 2027. Antes ela reaproveitava as fotos do
