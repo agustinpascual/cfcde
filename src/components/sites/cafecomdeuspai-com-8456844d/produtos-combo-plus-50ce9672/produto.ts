@@ -60,11 +60,12 @@ export const comboPlus: Produto = {
    combo do vol.6 a partir da segunda posição, que mostravam produto
    diferente do anunciado. */
 const galeria2027 = [
-  "box2027-1.webp",
-  "box-livro-1.webp",
-  "box-livro-2.webp",
-  "box-livro-3.webp",
-  "box-livro-4.webp",
+  "box-premium-2027-lancamento.webp",
+  "box-premium-2027-completo.webp",
+  "box-premium-2027-alca-detalhe-escuro.webp",
+  "box-premium-2027-fechado.webp",
+  "box-premium-2027-alca-detalhe-claro.webp",
+  "box-premium-2027-itens.webp",
 ] as const;
 
 const descricao2027: readonly Paragrafo[] = [
