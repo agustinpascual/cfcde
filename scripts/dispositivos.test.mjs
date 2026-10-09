@@ -21,13 +21,13 @@ test("identifica sistemas e diferencia celulares de tablets", () => {
   ];
   for (const [ua, plataforma, toques, esperado] of casos) {
     assert.equal(detectarDispositivo(ua, plataforma, toques), esperado, ua);
-    assert.equal(dispositivoPodeAbrirLoja(ua, plataforma, toques), ["celular", "tablet"].includes(agruparDispositivo(esperado)), ua);
+    assert.equal(dispositivoPodeAbrirLoja(ua, plataforma, toques), true, ua);
   }
 });
 
-test("toque sozinho não libera notebooks Windows e dispositivos desconhecidos não liberam a loja", () => {
-  assert.equal(dispositivoPodeAbrirLoja("Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Win32", 10), false);
-  assert.equal(dispositivoPodeAbrirLoja("", null, 0), false);
+test("libera notebooks Windows e navegadores sem identificação específica", () => {
+  assert.equal(dispositivoPodeAbrirLoja("Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Win32", 10), true);
+  assert.equal(dispositivoPodeAbrirLoja("", null, 0), true);
 });
 
 test("preserva registros genéricos e agrupa cada tipo exatamente uma vez", () => {

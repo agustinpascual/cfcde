@@ -37,7 +37,11 @@ export function dispositivoPodeAbrirLoja(ua: string, plataforma: string | null =
   return (DISPOSITIVOS_LOJA as readonly string[]).includes(detectarDispositivo(ua, plataforma, toques));
 }
 
-export const DISPOSITIVOS_LOJA = ["iphone", "android", "mobile", "ipad", "android_tablet", "tablet"] as const;
+export const DISPOSITIVOS_LOJA = [
+  "iphone", "android", "mobile",
+  "ipad", "android_tablet", "tablet",
+  "windows", "mac", "linux", "desktop",
+] as const;
 
 export function agruparDispositivo(valor: string | null | undefined): GrupoDispositivo {
   return GRUPOS_DISPOSITIVOS.find((grupo) =>

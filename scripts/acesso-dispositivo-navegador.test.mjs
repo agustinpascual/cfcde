@@ -9,17 +9,15 @@ if (base && !["localhost", "127.0.0.1"].includes(new URL(base).hostname)) throw 
 const mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
 const windows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 const linux = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
-const bloqueio = "Redirecionando…";
-
 const perfis = [
   { nome: "Windows com janela estreita", motor: chromium, opcoes: { userAgent: windows, viewport: { width: 390, height: 844 } }, plataforma: "Win32", toques: 0 },
   { nome: "notebook Windows com touch", motor: chromium, opcoes: { userAgent: windows, hasTouch: true }, plataforma: "Win32", toques: 10 },
   { nome: "Linux", motor: chromium, opcoes: { userAgent: linux }, plataforma: "Linux x86_64", toques: 0 },
   { nome: "Mac Safari", motor: webkit, opcoes: { userAgent: mac }, plataforma: "MacIntel", toques: 0 },
-  { nome: "iPhone Safari", motor: webkit, opcoes: devices["iPhone 13"], plataforma: "iPhone", toques: 5, permitido: true },
-  { nome: "Android Chrome", motor: chromium, opcoes: devices["Pixel 7"], plataforma: "Linux armv8l", toques: 5, permitido: true },
-  { nome: "tablet Android", motor: chromium, opcoes: devices["Galaxy Tab S4"], plataforma: "Linux armv8l", toques: 5, permitido: true },
-  { nome: "iPad Safari modo desktop", motor: webkit, opcoes: { userAgent: mac, hasTouch: true, viewport: { width: 1366, height: 1024 } }, plataforma: "MacIntel", toques: 5, permitido: true },
+  { nome: "iPhone Safari", motor: webkit, opcoes: devices["iPhone 13"], plataforma: "iPhone", toques: 5 },
+  { nome: "Android Chrome", motor: chromium, opcoes: devices["Pixel 7"], plataforma: "Linux armv8l", toques: 5 },
+  { nome: "tablet Android", motor: chromium, opcoes: devices["Galaxy Tab S4"], plataforma: "Linux armv8l", toques: 5 },
+  { nome: "iPad Safari modo desktop", motor: webkit, opcoes: { userAgent: mac, hasTouch: true, viewport: { width: 1366, height: 1024 } }, plataforma: "MacIntel", toques: 5 },
 ];
 
 for (const perfil of perfis) {
@@ -44,10 +42,7 @@ for (const perfil of perfis) {
       await context.route("**/*", async route => {
         const req = route.request();
         const url = new URL(req.url());
-        if (url.origin === "https://cafecomdeus.blog.br" && req.isNavigationRequest()) {
-          redirecionamentos++;
-          return route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Destino de teste</title>" });
-        }
+        if (url.origin !== origem && req.isNavigationRequest()) redirecionamentos++;
         if (url.origin !== origem) return route.abort();
         if (req.method() !== "GET") return route.fulfill({ json: { ok: true } });
         if (url.pathname === "/api/pagamentos/config") return route.fulfill({ json: { pix: "axxonpay", cartao: null, publicKey: null, cartaoDisponivel: false } });
@@ -65,18 +60,11 @@ for (const perfil of perfis) {
         // Vídeos e imagens podem continuar transferindo após a tela ficar
         // utilizável; a checagem espera a interface, não silêncio na rede.
         await page.goto(origem + caminho, { waitUntil: "domcontentloaded" });
-        if (!perfil.permitido) {
-          await page.waitForURL("https://cafecomdeus.blog.br/");
-          assert.equal(redirecionamentos, antes + 1, "computador redirecionado ao blog");
-          assert.equal(await page.getByRole("button", { name: "Abrir sacola", exact: true }).count(), 0);
-          assert.equal(await page.locator("input").count(), 0, "nenhum formulário da loja montado");
-        } else {
-          await page.locator("#acesso-dispositivo-titulo").waitFor({ state: "hidden" });
-          assert.equal(redirecionamentos, 0, "celular e tablet não são redirecionados");
-          assert.equal(await page.getByRole("heading", { name: bloqueio }).count(), 0);
-          assert.equal(await page.getByText("Verificando seu dispositivo…", { exact: true }).count(), 0);
-          if (caminho.startsWith("/checkout")) await page.getByLabel("CEP", { exact: true }).waitFor();
-          if (caminho === "/categoria/lancamento" || caminho === "/produto/box-plus2027") {
+        await page.locator("#acesso-dispositivo-titulo").waitFor({ state: "hidden" });
+        assert.equal(redirecionamentos, antes, "a loja permanece no próprio site");
+        assert.equal(await page.getByText("Verificando seu dispositivo…", { exact: true }).count(), 0);
+        if (caminho.startsWith("/checkout")) await page.getByLabel("CEP", { exact: true }).waitFor();
+        if (caminho === "/categoria/lancamento" || caminho === "/produto/box-plus2027") {
             await page.getByRole("button", { name: "Abrir sacola", exact: true }).click();
             await page.getByRole("heading", { name: "Sua sacola", exact: true }).waitFor();
             await page.getByPlaceholder("Digite seu Cupom").fill("CAFECOMDEUS27");
@@ -89,7 +77,6 @@ for (const perfil of perfis) {
             await page.getByRole("button", { name: "Abrir sacola", exact: true }).click();
             assert.equal(await page.getByPlaceholder("Digite seu Cupom").inputValue(), "CAFECOMDEUS27", "tablet em paisagem mantém o carrinho");
             assert.match(await checkout.getAttribute("href"), /cupom=CAFECOMDEUS27/);
-          }
         }
         // Drena os prefetches iniciados por rolagem/resize antes de trocar de
         // documento. O WebKit reporta cancelamento desses GETs como erro CORS.
@@ -98,8 +85,7 @@ for (const perfil of perfis) {
       const antesDoPainel = redirecionamentos;
       await page.goto(origem + "/ioh3j4ciof3n3oic/entrar", { waitUntil: "domcontentloaded" });
       await page.getByLabel("Senha", { exact: true }).waitFor();
-      assert.equal(redirecionamentos, antesDoPainel, "painel não redireciona ao blog");
-      assert.equal(await page.getByRole("heading", { name: bloqueio }).count(), 0, "login administrativo liberado");
+      assert.equal(redirecionamentos, antesDoPainel, "painel permanece no próprio site");
       assert.deepEqual(erros, [], "sem erros de renderização ou hidratação");
       await context.unrouteAll({ behavior: "wait" });
     } finally {
