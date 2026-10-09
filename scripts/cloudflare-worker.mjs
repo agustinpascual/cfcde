@@ -16,7 +16,7 @@ const worker = {
       console.error("[cron] CRON_SECRET ausente; reconciliação de PIX não executada");
       return;
     }
-    const requisicao = new Request("https://cafecomdeusepai.com/api/pix/reconciliar", {
+    const requisicao = new Request("https://cafecomdeuspai.net/api/pix/reconciliar", {
       method: "POST",
       headers: { authorization: `Bearer ${segredo}` },
     });

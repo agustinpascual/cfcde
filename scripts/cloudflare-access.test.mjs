@@ -3,7 +3,7 @@ import test from "node:test";
 import { bloqueioRegional } from "./cloudflare-access.mjs";
 
 function requisicao(caminho, cf = { country: "BR", city: "Itajaí" }, opcoes) {
-  const req = new Request(`https://cafecomdeusepai.com${caminho}`, opcoes);
+  const req = new Request(`https://cafecomdeuspai.net${caminho}`, opcoes);
   Object.defineProperty(req, "cf", { value: cf });
   return req;
 }

@@ -50,7 +50,7 @@ done
 
 echo
 echo "══ 5/5  Testando o que subiu ══════════════════════════"
-for URL in "https://cafecomdeusepai.com/" "https://cafecomdeusepai.com/ioh3j4ciof3n3oic/entrar"; do
+for URL in "https://cafecomdeuspai.net/" "https://cafecomdeuspai.net/ioh3j4ciof3n3oic/entrar"; do
   printf '%-45s ' "$URL"
   curl -s -o /dev/null -w 'HTTP %{http_code}\n' --max-time 20 "$URL" || echo "sem resposta"
 done

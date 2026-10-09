@@ -27,12 +27,12 @@
 	// Cloudflare porque não existe Worker nenhum atendendo por ele.
 	// A zona precisa estar nesta mesma conta; se não estiver, o deploy avisa.
 	// Domínio próprio. `custom_domain: true` faz o wrangler criar o registro
-	// DNS na zona durante o deploy. A zona cafecomdeusepai.com vive nesta
+	// DNS na zona durante o deploy. A zona cafecomdeuspai.net vive nesta
 	// mesma conta (62cd8cd3…), que é o que faz isto funcionar — se um dia o
 	// deploy falhar aqui, conferir se a zona não saiu da conta.
 	"routes": [
-		{ "pattern": "cafecomdeusepai.com", "custom_domain": true },
-		{ "pattern": "www.cafecomdeusepai.com", "custom_domain": true }
+		{ "pattern": "cafecomdeuspai.net", "custom_domain": true },
+		{ "pattern": "www.cafecomdeuspai.net", "custom_domain": true }
 	],
 	// Segunda proteção para pagamentos cujo webhook não seja entregue. A tela
 	// continua consultando em 1 s; o cron recupera pedidos mesmo se o cliente

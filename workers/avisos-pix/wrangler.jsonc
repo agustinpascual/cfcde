@@ -11,7 +11,7 @@
 
 	"vars": {
 		// Sem barra no fim.
-		"SITE_URL": "https://cafecomdeusepai.com"
+		"SITE_URL": "https://cafecomdeuspai.net"
 	},
 
 	// CRON_SECRET não fica aqui — é secret:

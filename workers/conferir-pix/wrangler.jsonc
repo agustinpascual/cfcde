@@ -8,6 +8,6 @@
   "preview_urls": false,
   "triggers": { "crons": ["* * * * *"] },
   "services": [{ "binding": "SITE", "service": "cfcde" }],
-  "vars": { "SITE_URL": "https://cafecomdeusepai.com" },
+  "vars": { "SITE_URL": "https://cafecomdeuspai.net" },
   "observability": { "enabled": true }
 }
