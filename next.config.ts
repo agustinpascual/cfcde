@@ -75,6 +75,11 @@ const ALIASES_BOX_PLUS_2027 = [
   "/uoypdr9fb8",
 ] as const;
 
+const ROTAS_BOX_PLUS_2027 = [
+  "/produto/box-plus2027",
+  ...ALIASES_BOX_PLUS_2027,
+] as const;
+
 const nextConfig: NextConfig = {
   // O Docker leva apenas o runtime rastreado; Next start/OpenNext mantêm seu fluxo.
   output: process.env.BUILD_VPS_STANDALONE === "1" ? "standalone" : undefined,
@@ -224,6 +229,10 @@ const nextConfig: NextConfig = {
 
     return [
       { source: "/:path*", headers: seguranca },
+      ...ROTAS_BOX_PLUS_2027.map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      })),
       // Mesma chave declarada depois vence: o checkout troca só a CSP.
       { source: "/checkout/:path*", headers: [{ key: "Content-Security-Policy", value: cspCheckout }] },
       // O link de recuperação carrega um token temporário apenas até o 303.

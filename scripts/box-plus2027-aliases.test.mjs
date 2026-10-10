@@ -106,3 +106,16 @@ test("aliases não colidem com páginas, arquivos públicos ou outros rewrites",
     assert.equal(existsSync(new URL(`../public/${relativo}`, import.meta.url)), false, source);
   }
 });
+
+test("a rota principal e todos os aliases da Box 2027 nunca armazenam HTML com preço antigo", async () => {
+  const regras = await config.headers();
+  const caminhos = [DESTINO, ...ESPERADOS];
+
+  for (const caminho of caminhos) {
+    const regra = regras.find((item) => item.source === caminho);
+    assert.ok(regra, `header ausente em ${caminho}`);
+    assert.deepEqual(regra.headers, [
+      { key: "Cache-Control", value: "no-store, max-age=0" },
+    ], caminho);
+  }
+});
