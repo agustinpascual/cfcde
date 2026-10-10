@@ -4,7 +4,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { jsonLdProduto, metadadosPagina } from "@/lib/seo";
 
 const descricao =
-  "Lançamento Combo Plus 2027 Café com Deus Pai por R$249,90, ou duas unidades por R$449,90, com frete grátis para todo o Brasil.";
+  "Lançamento Combo Plus 2027 Café com Deus Pai por R$89,90, ou duas unidades por R$129,90, com frete grátis para todo o Brasil.";
 const caminho = "/produto/box-plus2027";
 const [avulso, dupla] = comboPlus2027.ofertas;
 

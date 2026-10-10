@@ -12,7 +12,7 @@ test("vitrine da loja mostra a Box 2027 com o mesmo preço do checkout", { skip:
     await page.goto(base, { waitUntil: "domcontentloaded" });
     const box = page.getByRole("link", { name: /Lançamento Combo Plus \| 2027/ });
     await box.waitFor();
-    await assert.doesNotReject(() => box.getByText("R$249,90", { exact: true }).waitFor());
+    await assert.doesNotReject(() => box.getByText("R$89,90", { exact: true }).waitFor());
     assert.equal(await box.getAttribute("href"), "/produto/box-plus2027");
   } finally { await browser.close(); }
 });

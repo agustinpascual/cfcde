@@ -61,8 +61,8 @@ test("Combo Plus antigo, Box 2027 e homologação mantêm os preços definidos",
     { unidades: 1, rotulo: "1 unidade", preco: 259.9, comparado: 289.9, slug: "combo-plus" },
   ]);
   assert.deepEqual(comboPlus2027.ofertas, [
-    { unidades: 1, rotulo: "1 unidade", preco: 249.9, comparado: 289.9, slug: "combo-plus2027" },
-    { unidades: 2, rotulo: "2 unidades", preco: 449.9, comparado: 579.8, slug: "combo-plus2027-2un" },
+    { unidades: 1, rotulo: "1 unidade", preco: 89.9, comparado: 289.9, slug: "combo-plus2027" },
+    { unidades: 2, rotulo: "2 unidades", preco: 129.9, comparado: 579.8, slug: "combo-plus2027-2un" },
   ]);
   assert.equal(produtoTestes.ofertas[0].preco, 10);
 });
