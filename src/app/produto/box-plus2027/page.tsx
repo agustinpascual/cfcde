@@ -8,6 +8,11 @@ const descricao =
 const caminho = "/produto/box-plus2027";
 const [avulso, dupla] = comboPlus2027.ofertas;
 
+// Esta slug precisa sempre sair do runtime. O produto teve o HTML/RSC antigo
+// retido por camadas de cache; renderização dinâmica impede o Next de gerar
+// outra cópia estática reutilizável para os valores da oferta.
+export const dynamic = "force-dynamic";
+
 export const metadata = metadadosPagina({ titulo: comboPlus2027.nome, descricao, caminho });
 
 export default function BoxPlus2027Page() {
