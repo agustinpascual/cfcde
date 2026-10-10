@@ -229,6 +229,10 @@ const nextConfig: NextConfig = {
 
     return [
       { source: "/:path*", headers: seguranca },
+      {
+        source: "/",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
       ...ROTAS_BOX_PLUS_2027.map((source) => ({
         source,
         headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],

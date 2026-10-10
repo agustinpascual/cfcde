@@ -119,3 +119,13 @@ test("a rota principal e todos os aliases da Box 2027 nunca armazenam HTML com p
     ], caminho);
   }
 });
+
+test("a vitrine inicial não fica presa no CDN com o preço antigo da Box 2027", async () => {
+  const regras = await config.headers();
+  const regra = regras.find((item) => item.source === "/");
+
+  assert.ok(regra, "header sem cache ausente na vitrine inicial");
+  assert.deepEqual(regra.headers, [
+    { key: "Cache-Control", value: "no-store, max-age=0" },
+  ]);
+});
