@@ -5,6 +5,7 @@ import Link from "next/link";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import styles from "./HomeCommerce.module.css";
 import { PRODUCTS } from "@/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog";
+import { comboPlus2027, moeda } from "@/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/produto";
 
 const assets = "/sites/cafecomdeuspai-com-8456844d/root-8a5edab2";
 
@@ -62,7 +63,17 @@ const doCatalogo: Product[] = PRODUCTS
     href: `/produtos/${p.slug}`,
   }));
 
-const lancamentos: Product[] = doCatalogo;
+const ofertaBox2027 = comboPlus2027.ofertas[0];
+const box2027: Product = {
+  image: comboPlus2027.imagem,
+  name: comboPlus2027.nome,
+  price: moeda(ofertaBox2027.preco),
+  originalPrice: ofertaBox2027.comparado ? moeda(ofertaBox2027.comparado) : null,
+  installment: `4 de ${moeda(ofertaBox2027.preco / 4)}`,
+  href: "/produto/box-plus2027",
+};
+
+const lancamentos: Product[] = [box2027, ...doCatalogo];
 /* Destaques mostra somente os kits novos: todo item parte de um livro e o
    sinal de "+" identifica que há outro livro ou acessório no conjunto. */
 const featured: Product[] = doCatalogo.filter((product) => product.name.includes("+"));

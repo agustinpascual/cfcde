@@ -5,6 +5,18 @@ import { chromium, webkit, devices } from "playwright";
 const base = process.env.HOME_TEST_BASE_URL;
 if (base && !["127.0.0.1", "localhost"].includes(new URL(base).hostname)) throw new Error("Use o build local.");
 
+test("vitrine da loja mostra a Box 2027 com o mesmo preço do checkout", { skip: !base && "defina HOME_TEST_BASE_URL" }, async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.goto(base, { waitUntil: "domcontentloaded" });
+    const box = page.getByRole("link", { name: /Lançamento Combo Plus \| 2027/ });
+    await box.waitFor();
+    await assert.doesNotReject(() => box.getByText("R$249,90", { exact: true }).waitFor());
+    assert.equal(await box.getAttribute("href"), "/produto/box-plus2027");
+  } finally { await browser.close(); }
+});
+
 test("home já mostra o banner no celular antes de baixar o JavaScript do React", { skip: !base && "defina HOME_TEST_BASE_URL" }, async () => {
   const browser = await chromium.launch();
   try {
