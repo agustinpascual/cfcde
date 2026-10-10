@@ -22,9 +22,9 @@ test("carrinho soma produtos distintos e recalcula Pix no servidor", () => {
     { produto: "combo-plus2027", qtd: 2 },
     { produto: "combo-plus", qtd: 1 },
   ], "pac", { pagamento: "pix" });
-  assert.equal(valores.subtotal, 43970);
+  assert.equal(valores.subtotal, 75970);
   assert.equal(valores.quantidadeTotal, 3);
-  assert.equal(valores.total, 41700);
+  assert.equal(valores.total, 72100);
   assert.equal(valores.itens.length, 2);
 });
 
@@ -33,30 +33,38 @@ test("cupom de produto desconta só as linhas elegíveis da sacola", () => {
     { produto: "combo-plus2027", qtd: 2 },
     { produto: "combo-plus", qtd: 1 },
   ], "pac", { pagamento: "cartao", cupom: "CAFECOMDEUS27" });
-  assert.equal(valores.descontoCupom, 719);
-  assert.equal(valores.total, 43251);
+  assert.equal(valores.descontoCupom, 1999);
+  assert.equal(valores.total, 73971);
 });
 
 test("cupom de saída do checkout aplica o desconto da Box 2027 no servidor", () => {
   const valores = exports.calcularCarrinhoCafe([
     { produto: "combo-plus2027", qtd: 1 },
   ], "pac", { pagamento: "cartao", cupom: "CAFECOMDEUSPAI27" });
-  assert.equal(valores.descontoCupom, 360);
-  assert.equal(valores.total, 8630);
+  assert.equal(valores.descontoCupom, 1000);
+  assert.equal(valores.total, 23990);
+});
+
+test("pacote de 2 unidades da Box 2027 é cobrado pelo preço fechado", () => {
+  const valores = exports.calcularCarrinhoCafe([
+    { produto: "combo-plus2027-2un", qtd: 1 },
+  ], "pac", { pagamento: "cartao" });
+  assert.equal(valores.subtotal, 44990);
+  assert.equal(valores.total, 44990);
 });
 
 test("order bumps têm preço fixo no servidor e recebem o desconto do Pix", () => {
   const cartao = exports.calcularCarrinhoCafe([
     { produto: "combo-plus2027", qtd: 1 },
   ], "pac", { pagamento: "cartao", adicionais: ["embrulho_presente", "dedicatoria_junior"] });
-  assert.equal(cartao.subtotal, 11470);
-  assert.equal(cartao.total, 11470);
+  assert.equal(cartao.subtotal, 27470);
+  assert.equal(cartao.total, 27470);
   assert.equal(cartao.itens.length, 3);
 
   const pix = exports.calcularCarrinhoCafe([
     { produto: "combo-plus2027", qtd: 1 },
   ], "pac", { pagamento: "pix", adicionais: ["embrulho_presente", "dedicatoria_junior"] });
-  assert.equal(pix.total, 10800);
+  assert.equal(pix.total, 26000);
   assert.throws(() => exports.calcularCarrinhoCafe([{ produto: "combo-plus2027", qtd: 1 }], "pac", { adicionais: ["preco_inventado"] }));
 });
 
