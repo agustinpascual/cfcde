@@ -85,7 +85,7 @@ export async function proxy(req: NextRequest, evento: NextFetchEvent) {
     const paginaLoja = caminho !== "/api" && !caminho.startsWith("/api/");
     if (paginaLoja && agruparDispositivo(detectarDispositivo(req.headers.get("user-agent") ?? "")) === "computador") {
       return new NextResponse(
-        '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acesso pelo celular</title></head><body><main><h1>Acesse pelo celular</h1><p>Esta loja está disponível para navegação em dispositivos móveis. Abra este endereço no seu celular.</p></main></body></html>',
+        '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title></title></head><body><main><p>Acesso indisponivel, volte mais tarde :)</p></main></body></html>',
         {
           status: 403,
           headers: {
