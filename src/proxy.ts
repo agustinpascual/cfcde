@@ -1,6 +1,7 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { mesmaOrigem } from "@/lib/mesma-origem";
 import { NOME_COOKIE, painelConfigurado, sessaoValida } from "@/lib/painel-auth";
+import { agruparDispositivo, detectarDispositivo } from "@/lib/dispositivos";
 
 /* Blacklist de IP. Recusa o acesso ao site vindo de IPs na tabela
    `ips_bloqueados`. Regras que mantêm isto seguro para um site em produção:
@@ -77,6 +78,23 @@ export async function proxy(req: NextRequest, evento: NextFetchEvent) {
     // painel e webhooks não obedecem à blacklist manual de visitantes
     if (paginaPainel || apiPainel || caminho.startsWith("/api/webhooks")) {
       return NextResponse.next();
+    }
+
+    // Restrição de navegação, não autenticação: o User-Agent pode ser simulado.
+    // APIs e integrações mantêm suas próprias validações e não dependem do aparelho.
+    const paginaLoja = caminho !== "/api" && !caminho.startsWith("/api/");
+    if (paginaLoja && agruparDispositivo(detectarDispositivo(req.headers.get("user-agent") ?? "")) === "computador") {
+      return new NextResponse(
+        '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acesso pelo celular</title></head><body><main><h1>Acesse pelo celular</h1><p>Esta loja está disponível para navegação em dispositivos móveis. Abra este endereço no seu celular.</p></main></body></html>',
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "private, no-store",
+            "Vary": "User-Agent",
+          },
+        },
+      );
     }
 
     const ip = req.headers.get("cf-connecting-ip")
