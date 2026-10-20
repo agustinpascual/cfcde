@@ -1,5 +1,5 @@
 import "server-only";
-import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { PRAZO_LEITURA_PAINEL_MS, supabasePainel as supabaseAdmin } from "@/lib/supabase/painel";
 import { FUSO_BRASILIA } from "@/lib/data-brasilia";
 
 /* Leituras do painel. Tudo pelo service_role no servidor — o navegador
@@ -198,6 +198,7 @@ export async function lerFunil(p?: Periodo): Promise<Funil> {
   if (!p) return ler<Funil>("funil_24h", VAZIO_FUNIL, (db) => db.from("funil_24h").select("*").single());
   const db = supabaseAdmin();
   if (!db) return VAZIO_FUNIL;
+  const prazo = AbortSignal.timeout(PRAZO_LEITURA_PAINEL_MS);
 
   try {
     /* O PostgREST limita cada resposta (normalmente a 1.000 linhas). Buscar
@@ -207,11 +208,13 @@ export async function lerFunil(p?: Periodo): Promise<Funil> {
       const unicas = new Set<string>();
       const tamanho = 1000;
       for (let pagina = 0; pagina < 50; pagina++) {
+        prazo.throwIfAborted();
         const { data, error } = await db.from("eventos").select("id,sessao")
           .eq("tipo", tipo)
           .gte("criado_em", inicioDoDia(p.de)).lte("criado_em", fimDoDia(p.ate))
           .order("id", { ascending: true })
-          .range(pagina * tamanho, (pagina + 1) * tamanho - 1);
+          .range(pagina * tamanho, (pagina + 1) * tamanho - 1)
+          .abortSignal(prazo);
         if (error) throw new Error(`eventos ${tipo}: ${error.message}`);
         for (const evento of data ?? []) unicas.add(evento.sessao);
         if ((data?.length ?? 0) < tamanho) break;

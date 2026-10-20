@@ -1,6 +1,6 @@
 import { Monitor, Smartphone, Tablet, HelpCircle } from "lucide-react";
 import type { Periodo, Sessao } from "./dados";
-import { supabaseAdmin } from "@/lib/supabase/servidor";
+import { supabasePainel as supabaseAdmin } from "@/lib/supabase/painel";
 import { contarDispositivos, TIPOS_DISPOSITIVOS, type GrupoDispositivo } from "@/lib/dispositivos";
 import s from "./acessos-dispositivos.module.css";
 

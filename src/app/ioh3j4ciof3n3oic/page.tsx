@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import AvisoConfig from "@/components/painel/AvisoConfig";
 import AcessosDispositivos from "@/components/painel/AcessosDispositivos";
@@ -36,8 +37,8 @@ export default async function Page({ searchParams }: {
   if (!(await autenticado())) redirect("/ioh3j4ciof3n3oic/entrar");
 
   const periodo = resolverPeriodo(await searchParams);
-  const [resumo, dias, funil, vivos, _inst] = await Promise.all([
-    lerResumo(periodo), lerVendasPorDia(periodo), lerFunil(periodo), lerAoVivo(), estadoInstalacao(),
+  const [resumo, dias, funil, vivos] = await Promise.all([
+    lerResumo(periodo), lerVendasPorDia(periodo), lerFunil(periodo), lerAoVivo(),
   ]);
 
   const faltando: string[] = [];
@@ -67,12 +68,9 @@ export default async function Page({ searchParams }: {
   const outrosDispositivos = Math.max(0, vivos.length - apple - android - computadores);
   const conversao = funil.visitantes ? (funil.compras / funil.visitantes) * 100 : 0;
 
-  const _faltam = _inst?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
-
-
   return (
     <Casca atual="/ioh3j4ciof3n3oic" titulo="Dashboard" subtitulo={`Visão geral da operação · ${periodo.rotulo}`} aoVivo={vivos.length}>
-      <FaixaInstalar faltam={_faltam} />
+      <Suspense fallback={null}><AvisoInstalacao /></Suspense>
       <AvisoConfig faltando={faltando} />
       <Recarrega segundos={15} />
 
@@ -197,6 +195,12 @@ export default async function Page({ searchParams }: {
       </section>
     </Casca>
   );
+}
+
+async function AvisoInstalacao() {
+  const tabelas = await estadoInstalacao();
+  const faltam = tabelas?.filter((t) => !t.existe || t.colunasFaltando.length).length ?? 0;
+  return <FaixaInstalar faltam={faltam} />;
 }
 
 function Kpi({ rotulo, valor, nota, vivo }: { rotulo: string; valor: string; nota: string; vivo?: boolean }) {

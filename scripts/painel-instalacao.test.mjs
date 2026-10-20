@@ -20,7 +20,7 @@ function ambiente({ tabelaAusente, colunasAusentes = [] } = {}) {
   const exports = {};
   vm.runInNewContext(js, { exports, console, require: id => {
     if (id === "server-only") return {};
-    if (id === "@/lib/supabase/servidor") return { supabaseAdmin: () => db };
+    if (id === "@/lib/supabase/painel") return { supabasePainel: () => db };
     if (id === "@/lib/data-brasilia") return { FUSO_BRASILIA: "America/Sao_Paulo" };
     throw new Error(`Dependência inesperada: ${id}`);
   } });
