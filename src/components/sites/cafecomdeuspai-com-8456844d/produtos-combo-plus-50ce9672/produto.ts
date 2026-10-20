@@ -106,6 +106,14 @@ export const comboPlus2027: Produto = {
   ],
 };
 
+export const comboPlus2027Oferta: Produto = {
+  ...comboPlus2027,
+  ofertas: [
+    { unidades: 1, rotulo: "1 unidade", preco: 89.9, comparado: 289.9, slug: "combo-plus2027-oferta" },
+    { unidades: 2, rotulo: "2 unidades", preco: 129.9, comparado: 579.8, slug: "combo-plus2027-oferta-2un" },
+  ],
+};
+
 /* Produto de homologação de pagamento: R$10 para testar cartão (3DS) e PIX
    com valor baixo. Fora do sitemap e da vitrine, sem indexação — mas a compra
    é real. Remover depois de homologar. */
@@ -120,7 +128,7 @@ export const produtoTestes: Produto = {
 
 /* O checkout recebe só o slug do pacote; daqui ele tira nome, foto e valor. */
 export const OFERTAS_POR_SLUG = Object.fromEntries(
-  [comboPlus, comboPlus2027, produtoTestes].flatMap((item) =>
+  [comboPlus, comboPlus2027, comboPlus2027Oferta, produtoTestes].flatMap((item) =>
     item.ofertas.map((oferta) => [
       oferta.slug,
       {

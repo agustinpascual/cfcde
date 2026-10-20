@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
+import ts from "typescript";
+import * as promocoes from "../src/lib/promocoes.ts";
 import { PRODUCTS } from "../src/components/sites/cafecomdeuspai-com-8456844d/shared/productCatalog.ts";
-import { comboPlus, comboPlus2027, produtoTestes } from "../src/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/produto.ts";
+import { comboPlus, comboPlus2027, comboPlus2027Oferta, OFERTAS_POR_SLUG, produtoTestes } from "../src/components/sites/cafecomdeuspai-com-8456844d/produtos-combo-plus-50ce9672/produto.ts";
 
 const PRECOS_PROMOCIONAIS = new Map([
   ["cafe-com-deus-pai-vol-6-brochura-a-vida-que-voce-busca-esta-na-cura-que-voce-precisa", 6990],
@@ -61,8 +65,42 @@ test("Combo Plus antigo, Box 2027 e homologação mantêm os preços definidos",
     { unidades: 1, rotulo: "1 unidade", preco: 259.9, comparado: 289.9, slug: "combo-plus" },
   ]);
   assert.deepEqual(comboPlus2027.ofertas, [
-    { unidades: 1, rotulo: "1 unidade", preco: 89.9, comparado: 289.9, slug: "combo-plus2027" },
-    { unidades: 2, rotulo: "2 unidades", preco: 129.9, comparado: 579.8, slug: "combo-plus2027-2un" },
+    { unidades: 1, rotulo: "1 unidade", preco: 149.9, comparado: 289.9, slug: "combo-plus2027" },
+    { unidades: 2, rotulo: "2 unidades", preco: 249.9, comparado: 579.8, slug: "combo-plus2027-2un" },
   ]);
   assert.equal(produtoTestes.ofertas[0].preco, 10);
+});
+
+test("nova oferta preserva o conteúdo e possui preços e slugs próprios no checkout", () => {
+  assert.equal(comboPlus2027Oferta.galeria, comboPlus2027.galeria);
+  assert.equal(comboPlus2027Oferta.descricao, comboPlus2027.descricao);
+  assert.equal(comboPlus2027Oferta.nome, comboPlus2027.nome);
+  assert.equal(comboPlus2027Oferta.imagem, comboPlus2027.imagem);
+  assert.deepEqual(comboPlus2027Oferta.ofertas.map(o => o.preco), [89.9, 129.9]);
+  for (const oferta of [...comboPlus2027.ofertas, ...comboPlus2027Oferta.ofertas]) {
+    assert.equal(OFERTAS_POR_SLUG[oferta.slug].priceCents, Math.round(oferta.preco * 100));
+  }
+  assert.equal(new Set([...comboPlus2027.ofertas, ...comboPlus2027Oferta.ofertas].map(o => o.slug)).size, 4);
+});
+
+test("servidor cobra cada oferta pelo preço correto e mantém seus cupons", () => {
+  const fonte = readFileSync(new URL("../src/lib/precos.ts", import.meta.url), "utf8");
+  const js = ts.transpileModule(fonte, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const exports = {};
+  vm.runInNewContext(js, { exports, require: id => {
+    if (id === "server-only") return {};
+    if (id === "./promocoes") return promocoes;
+    if (id.endsWith("/shared/productCatalog")) return { PRODUCTS };
+    throw new Error(`Dependência inesperada: ${id}`);
+  } });
+  for (const oferta of [...comboPlus2027.ofertas, ...comboPlus2027Oferta.ofertas]) {
+    const pedido = exports.calcularTotalCafe(oferta.slug, 1, "pac", { pagamento: "cartao" });
+    assert.equal(pedido.total, Math.round(oferta.preco * 100), oferta.slug);
+    const comCupom = exports.calcularTotalCafe(oferta.slug, 1, "pac", {
+      pagamento: "cartao", cupom: "CAFECOMDEUS27",
+    });
+    assert.equal(comCupom.descontoCupom, Math.round(oferta.preco * 100 * 0.04), oferta.slug);
+  }
 });

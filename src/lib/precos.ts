@@ -40,6 +40,8 @@ const COMBOS: Record<string, { nome: string; centavos: number }> = {
   "combo-plus": { nome: "Combo Plus | Frete grátis", centavos: 25990 },
   "combo-plus2027": { nome: "Lançamento Combo Plus | 2027", centavos: 14990 },
   "combo-plus2027-2un": { nome: "Lançamento Combo Plus | 2027 · 2 unidades", centavos: 24990 },
+  "combo-plus2027-oferta": { nome: "Lançamento Combo Plus | 2027", centavos: 8990 },
+  "combo-plus2027-oferta-2un": { nome: "Lançamento Combo Plus | 2027 · 2 unidades", centavos: 12990 },
   /* Homologação de pagamento (/produto/testes). Remover depois de homologar. */
   "testes": { nome: "Produto de teste — homologação de pagamento", centavos: 1000 },
 };
