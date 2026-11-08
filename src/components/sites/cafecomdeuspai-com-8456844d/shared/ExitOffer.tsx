@@ -14,7 +14,6 @@ type Props = {
 };
 
 const CHAVE_SESSAO = "cdp-oferta-saida";
-const CHAVE_CUPOM = "cdp-cupom";
 
 export default function ExitOffer({
   codigoDoCupom: cupom,
@@ -96,17 +95,11 @@ export default function ExitOffer({
     return () => window.removeEventListener("keydown", fechaNoEsc);
   }, [aberto]);
 
-  function guardarCupom() {
-    try { localStorage.setItem(CHAVE_CUPOM, cupom); } catch {}
-  }
-
   async function copiar() {
-    guardarCupom();
     try { await navigator.clipboard.writeText(cupom); setCopiado(true); } catch {}
   }
 
   function irParaOCheckout() {
-    guardarCupom();
     if (onAplicar) {
       onAplicar();
       setAberto(false);

@@ -10,7 +10,6 @@ import styles from "./CartDrawer.module.css";
 type Cart = ReturnType<typeof useCart>;
 type Props = { open: boolean; onClose: () => void; cart: Cart };
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-const CHAVE_CUPOM = "cdp-cupom";
 
 export default function CartDrawer({ open, onClose, cart }: Props) {
   const wasOpen = useRef(false);
@@ -40,13 +39,11 @@ export default function CartDrawer({ open, onClose, cart }: Props) {
     if (!cupomValidoCarrinho(codigo, cart.items.map((item) => item.slug))) {
       setCupomAplicado("");
       setCouponStatus("invalid");
-      try { localStorage.removeItem(CHAVE_CUPOM); } catch {}
       return;
     }
     setCupomAplicado(codigo);
     setCoupon(codigo);
     setCouponStatus("valid");
-    try { localStorage.setItem(CHAVE_CUPOM, codigo); } catch {}
   }
 
   const descontos = calcularDescontosCarrinho({

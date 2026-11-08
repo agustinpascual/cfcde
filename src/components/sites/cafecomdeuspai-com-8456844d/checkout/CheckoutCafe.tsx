@@ -552,17 +552,15 @@ export default function CheckoutCafe({ products, prefill = null }: { products: C
     setCupomAplicado(CUPOM_SAIDA);
     setCouponOpen(true);
     setCouponMessage(`Cupom ${CUPOM_SAIDA} aplicado: ${DESCONTO_SAIDA}% de desconto.`);
-    try { localStorage.setItem("cdp-cupom", CUPOM_SAIDA); } catch {}
   }
 
-  /* O cupom pode chegar pela URL (?cupom=) ou do pop-up de saída da página do
-     produto, que grava no navegador. */
+  /* Somente o redirecionamento explícito transporta o cupom. Descartamos
+     a persistência antiga para não descontar novas visitas automaticamente. */
   useEffect(() => {
     if (prefill?.coupon) return;
     const daUrl = new URLSearchParams(window.location.search).get("cupom");
-    let salvo: string | null = null;
-    try { salvo = localStorage.getItem("cdp-cupom"); } catch {}
-    const codigo = (daUrl || salvo || "").trim().toUpperCase();
+    try { localStorage.removeItem("cdp-cupom"); } catch {}
+    const codigo = (daUrl || "").trim().toUpperCase();
     if (!codigo || !cupomValidoCarrinho(codigo, products.map((item) => item.slug))) return;
     // Cupom persistido/da URL só está disponível depois que o cliente hidrata.
     // eslint-disable-next-line react-hooks/set-state-in-effect
