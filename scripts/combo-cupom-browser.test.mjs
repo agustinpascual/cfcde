@@ -11,7 +11,7 @@ test('old stored coupon never discounts an ordinary checkout; exit offer remains
  assert.equal(await page.locator('body').getByText(/Cupom CAFECOMDEUSPAI27 aplicado/).count(),0);
  assert.equal(await page.evaluate(()=>localStorage.getItem('cdp-cupom')),null);
  await page.goto(base+'/produto/box-plus2027');await page.getByRole('heading',{name:'Lançamento Combo Plus | 2027',exact:true}).waitFor();
- assert.ok((await page.locator('body').innerText()).includes('99,90'));
+ assert.ok((await page.locator('body').innerText()).includes('89,90'));
  assert.equal(await page.getByRole('dialog',{name:/Você ganhou/}).count(),0);
  await page.mouse.move(300,250);await page.evaluate(()=>document.dispatchEvent(new MouseEvent('mouseout',{clientY:0,relatedTarget:null})));
  await page.getByRole('button',{name:'Usar meu desconto',exact:true}).waitFor();await page.getByRole('button',{name:'Usar meu desconto',exact:true}).click();

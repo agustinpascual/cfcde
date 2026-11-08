@@ -65,7 +65,7 @@ test("Combo Plus antigo, Box 2027 e homologação mantêm os preços definidos",
     { unidades: 1, rotulo: "1 unidade", preco: 259.9, comparado: 289.9, slug: "combo-plus" },
   ]);
   assert.deepEqual(comboPlus2027.ofertas, [
-    { unidades: 1, rotulo: "1 unidade", preco: 99.9, comparado: 289.9, slug: "combo-plus2027" },
+    { unidades: 1, rotulo: "1 unidade", preco: 89.9, comparado: 289.9, slug: "combo-plus2027" },
     { unidades: 2, rotulo: "2 unidades", preco: 149.9, comparado: 579.8, slug: "combo-plus2027-2un" },
   ]);
   assert.equal(produtoTestes.ofertas[0].preco, 10);
@@ -76,7 +76,7 @@ test("nova oferta preserva o conteúdo e possui preços e slugs próprios no che
   assert.equal(comboPlus2027Oferta.descricao, comboPlus2027.descricao);
   assert.equal(comboPlus2027Oferta.nome, comboPlus2027.nome);
   assert.equal(comboPlus2027Oferta.imagem, comboPlus2027.imagem);
-  assert.deepEqual(comboPlus2027Oferta.ofertas.map(o => o.preco), [99.9, 149.9]);
+  assert.deepEqual(comboPlus2027Oferta.ofertas.map(o => o.preco), [89.9, 149.9]);
   for (const oferta of [...comboPlus2027.ofertas, ...comboPlus2027Oferta.ofertas]) {
     assert.equal(OFERTAS_POR_SLUG[oferta.slug].priceCents, Math.round(oferta.preco * 100));
   }

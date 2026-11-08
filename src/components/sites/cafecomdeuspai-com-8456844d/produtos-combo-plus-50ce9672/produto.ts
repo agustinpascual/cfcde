@@ -101,7 +101,7 @@ export const comboPlus2027: Produto = {
   /* O valor riscado é o preço cheio do Combo Plus (R$289,90 por unidade):
      289,90 para uma e 579,80 para o par. */
   ofertas: [
-    { unidades: 1, rotulo: "1 unidade", preco: 99.9, comparado: 289.9, slug: "combo-plus2027" },
+    { unidades: 1, rotulo: "1 unidade", preco: 89.9, comparado: 289.9, slug: "combo-plus2027" },
     { unidades: 2, rotulo: "2 unidades", preco: 149.9, comparado: 579.8, slug: "combo-plus2027-2un" },
   ],
 };
@@ -109,7 +109,7 @@ export const comboPlus2027: Produto = {
 export const comboPlus2027Oferta: Produto = {
   ...comboPlus2027,
   ofertas: [
-    { unidades: 1, rotulo: "1 unidade", preco: 99.9, comparado: 289.9, slug: "combo-plus2027-oferta" },
+    { unidades: 1, rotulo: "1 unidade", preco: 89.9, comparado: 289.9, slug: "combo-plus2027-oferta" },
     { unidades: 2, rotulo: "2 unidades", preco: 149.9, comparado: 579.8, slug: "combo-plus2027-oferta-2un" },
   ],
 };
