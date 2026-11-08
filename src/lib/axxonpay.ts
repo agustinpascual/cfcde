@@ -64,7 +64,7 @@ export async function configuracaoAdquirenteAxxon() {
   }
   if (!r.ok) throw new Error("Não foi possível verificar a adquirente do cartão.");
   const config = await r.json() as { provider?: string };
-  const provider = String(config.provider ?? "").toLowerCase();
+  const provider = String(config.provider ?? "").trim().toLowerCase();
   const modo = MODOS_CARTAO[provider];
   if (!modo) throw new Error("Esta adquirente não está homologada para cartão nesta loja.");
   /* A adquirente muda somente pelo painel. Evita consultar a Axxon em cada
@@ -78,7 +78,7 @@ export type ModoCartaoAxxon = "token" | "cru";
    servidor recebe só o hash. A Bloopi não tokeniza: a API exige o cartão em
    claro na criação, e o navegador o usa de novo no 3DS (Axxon.handleNextAction).
    O modo "cru" existe por decisão do lojista registrada em docs/axxonpay.md. */
-const MODOS_CARTAO: Record<string, ModoCartaoAxxon> = { stripe: "token", upay: "token", bloopi: "cru" };
+const MODOS_CARTAO: Record<string, ModoCartaoAxxon> = { stripe: "token", upay: "token", getnet: "token", bloopi: "cru" };
 let configCache: { publica: string; provider: string; modo: ModoCartaoAxxon; ate: number } | null = null;
 
 export type CriarAxxon = {

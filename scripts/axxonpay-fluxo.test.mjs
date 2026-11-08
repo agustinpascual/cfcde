@@ -655,3 +655,10 @@ test("aprovação repetida é idempotente e evento antigo não desfaz aprovaçã
   assert.equal([...a.pedidos.values()][0].status, "estornado");
   assert.equal(a.contadores().confirmacoes, 1);
 });
+
+test('Getnet pending without nextAction keeps the existing charge and never requests renewal',async()=>{
+ const a=ambiente({provider:'getnet',consultar:id=>({id,amount:2500,status:'PENDING',method:'card'})});
+ a.pedidos.set('305591',{...pedidoFicticio('305591',body.tentativa,'axxon_payment_uuid'),metodo_pagamento:'cartao'});
+ const r=await a.processarAxxon({...body,cardHash:'GN.test'},'cartao');
+ assert.equal(r.status,200);const d=await r.json();assert.notEqual(d.renovar,true);assert.equal(a.contadores().chamadas,0);
+});

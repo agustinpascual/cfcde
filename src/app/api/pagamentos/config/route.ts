@@ -16,8 +16,8 @@ export async function GET() {
     try {
       // A chave pública só sai quando a adquirente atual é aceita pelo servidor.
       // Uma seleção antiga com adquirente não homologada não derruba o PIX.
-      const { publica } = await configuracaoAdquirenteAxxon();
-      return Response.json({ ...base, cartao: "axxonpay", publicKey: publica, cartaoDisponivel: true }, { headers });
+      const { publica, modo } = await configuracaoAdquirenteAxxon();
+      return Response.json({ ...base, cartao: "axxonpay", publicKey: publica, modoCartao: modo, cartaoDisponivel: true }, { headers });
     } catch (erro) {
       console.error("[pagamentos/config] AxxonPay indisponível:",
         erro instanceof Error ? erro.message : "erro desconhecido");

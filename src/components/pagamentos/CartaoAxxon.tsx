@@ -14,6 +14,7 @@ import { dadosProdutoPixel, pixel } from "@/components/marketing/MetaPixel";
 import { registrar } from "@/components/sites/www-belabluebeauty-com-br-dbe74b89/bela-power-black-c10b99fc/Rastreador";
 import { salvarPagamentoParaTela } from "@/lib/pagamento-navegacao";
 import { identificarBandeiraCartao, LOGOS_BANDEIRA, NOMES_BANDEIRA, type BandeiraCartao } from "@/lib/bandeira-cartao";
+import { inicializarSdkAxxon, prepararCartaoAxxon } from "@/lib/axxonpay-browser";
 import s from "./cartao.module.css";
 import a from "./cartao-animacoes.module.css";
 
@@ -24,7 +25,7 @@ import a from "./cartao-animacoes.module.css";
    consulta ao servidor; o resultado do 3DS no navegador é só orientação. */
 
 type ResultadoSDK = { status?: "succeeded" | "processing" | "failed" | "requires_action" };
-type SDK = { setPublicKey(chave: string): Promise<void>; handleNextAction(acao: unknown, dados: unknown): Promise<ResultadoSDK> };
+type SDK = { setPublicKey(chave: string): Promise<void>; encrypt(card: unknown): Promise<string>; handleNextAction(acao: unknown, dados: unknown): Promise<ResultadoSDK> };
 declare global { interface Window { Axxon?: SDK; Bloopi?: unknown } }
 
 type Etapa3ds = "chamando_sdk" | "ambiente_aberto" | "contexto_pagamento" | "iniciando_sessao"
@@ -165,8 +166,8 @@ const classificarErro3ds = (erro: unknown, etapa?: Etapa3ds) => {
 const mascararValidade = (e: React.FormEvent<HTMLInputElement>) => { const d = digitos(e.currentTarget.value).slice(0, 4); e.currentTarget.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
 const somenteDigitos = (e: React.FormEvent<HTMLInputElement>) => { e.currentTarget.value = digitos(e.currentTarget.value).slice(0, 4); };
 
-export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, produtoNome, onEnviado, onDocumentoRecusado, onFalha, seloProcessador, antesDoBotao, classeBotao, validarAntesDePagar }: {
-  publicKey: string; parcelasMax: number; total: number; payload: PayloadCartao; produtoNome: string;
+export default function CartaoAxxon({ publicKey, modo = "cru", parcelasMax, total, payload, produtoNome, onEnviado, onDocumentoRecusado, onFalha, seloProcessador, antesDoBotao, classeBotao, validarAntesDePagar }: {
+  publicKey: string; modo?: "token" | "cru"; parcelasMax: number; total: number; payload: PayloadCartao; produtoNome: string;
   onEnviado?: () => void; onDocumentoRecusado?: (mensagem: string) => void; onFalha?: () => void;
   seloProcessador?: ReactNode; antesDoBotao?: ReactNode; classeBotao?: string; validarAntesDePagar?: () => boolean;
 }) {
@@ -192,7 +193,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
   useEffect(() => acompanharViewport3ds(), []);
   // Os dois scripts públicos baixam juntos ao escolher cartão. A inicialização
   // ainda aguarda a mesma promessa; nenhuma sessão ou cobrança é antecipada.
-  useEffect(() => { void carregarBloopiPeloSite().catch(() => {}); }, []);
+  useEffect(() => { if (modo === "cru") void carregarBloopiPeloSite().catch(() => {}); }, [modo]);
 
   function atualizarNumero(evento: React.FormEvent<HTMLInputElement>) {
     const valor = digitos(evento.currentTarget.value).slice(0, 19);
@@ -211,7 +212,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
          bloqueadores e WebViews deixam justamente essa requisição pendurada.
          Entrega o mesmo SDK pela origem da loja antes da inicialização; a
          rota contém apenas JavaScript público e nunca recebe dados do cartão. */
-      if (typeof window.Bloopi !== "function") {
+      if (modo === "cru" && typeof window.Bloopi !== "function") {
         try { await carregarBloopiPeloSite(); }
         catch (erro) { ultimoErro = erro; }
       }
@@ -224,7 +225,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
         if (esperas[tentativa]) await esperar(esperas[tentativa]);
         try {
           if (!window.Axxon) throw new Error("SDK indisponível");
-          await window.Axxon.setPublicKey(publicKey);
+          await inicializarSdkAxxon(window.Axxon, publicKey);
           setSdk("pronto");
           return;
         } catch (erro) {
@@ -288,6 +289,17 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
     });
   }, [cobranca, status, fase3ds, payload.produto, router]);
 
+  // Immediate approval returned by the authoritative server also finishes checkout.
+  useEffect(() => {
+    if (!cobranca || status !== "approved" || redirecionando.current) return;
+    concluirTentativa(payload.produto, "cartao");
+    redirecionando.current = true;
+    try {
+      salvarPagamentoParaTela({ ...cobranca, metodo: "cartao", confirmado: true, codigo_rastreio: null });
+      router.replace("/pagamento");
+    } catch { redirecionando.current = false; }
+  }, [cobranca, status, payload.produto, router]);
+
   // Recusa ou expiração confirmada pelo servidor: a cobrança terminou e já é
   // seguro apresentar outra forma de pagamento sem disputar com o cartão.
   useEffect(() => {
@@ -328,10 +340,12 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
       // Captura uma única vez: a criação e o 3DS usam o mesmo comprador,
       // inclusive se houver espaços nas entradas ou novo render durante o POST.
       const comprador = normalizarCompradorAxxon(payload);
+      if (!window.Axxon) throw new Error("SDK indisponível");
+      const dadosCartao = await prepararCartaoAxxon(modo, window.Axxon, { numero: num, titular: nome, mes, ano, cvv: codigo });
       const enviar = async (id: string) => {
         const resposta = await fetch("/api/pagamentos/cartao", {
           method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ...payload, ...comprador, cartao: { numero: num, titular: nome, mes, ano, cvv: codigo }, installments: parcelas, tentativa: id }),
+          body: JSON.stringify({ ...payload, ...comprador, ...dadosCartao, installments: parcelas, tentativa: id }),
           signal: AbortSignal.timeout(35000),
         });
         return { resposta, dados: await resposta.json() };
@@ -401,7 +415,7 @@ export default function CartaoAxxon({ publicKey, parcelasMax, total, payload, pr
           setAutenticacaoFalhou(true);
           setMensagem("A autenticação não foi aprovada pelo banco. Estamos conferindo o estado final antes de liberar outra tentativa.");
         }
-      } else if (!FINAIS.includes(statusInicial)) {
+      } else if (modo === "cru" && !FINAIS.includes(statusInicial)) {
         // Na Bloopi, um cartão pendente precisa trazer nextAction. Sem ele não
         // existe segredo para abrir o 3DS; a consulta continua por 15 s para
         // capturar eventual conclusão antes de liberar outra tentativa.

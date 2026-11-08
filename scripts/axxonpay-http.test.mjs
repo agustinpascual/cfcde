@@ -155,3 +155,8 @@ for (const caso of [
     assert.equal(chamadas, 1);
   });
 }
+
+test('Getnet provider uses token mode', async()=>{
+ const api=clienteSimulado(async()=>Response.json({provider:'Getnet'}));
+ const config=await api.configuracaoAdquirenteAxxon();assert.equal(config.modo,'token');assert.equal(config.provider,'getnet');
+});

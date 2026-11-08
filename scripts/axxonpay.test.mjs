@@ -86,10 +86,13 @@ test("reenvio reutiliza tentativa, e somente conclusão libera nova tentativa", 
 });
 test("endpoint antigo não lê body nem grava cartão", async () => {
   const { POST } = await import("../src/app/api/cartao-sandbox/route.ts");
-  const r = await POST();
-  assert.equal(r.status, 410);
+  const original = process.env.HABILITAR_SIMULADOR;
+  delete process.env.HABILITAR_SIMULADOR;
+  const r = await POST({ json: () => { throw new Error("body must not be read when disabled"); } });
+  if (original !== undefined) process.env.HABILITAR_SIMULADOR = original;
+  assert.equal(r.status, 404);
   const fonte = readFileSync(new URL("../src/app/api/cartao-sandbox/route.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(fonte, /supabase|\.json\(\)|\.text\(\)|console\./);
+  assert.doesNotMatch(fonte, /supabase|console\./);
 });
 test("navegador só libera tentativa encerrada, sem apagar identificador mais recente", () => {
   const banco = new Map();

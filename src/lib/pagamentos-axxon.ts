@@ -277,7 +277,7 @@ export async function processarAxxon(bodyBruto: Record<string, unknown>, metodo:
       // ninguém consegue confirmar este intent — ele expira no gateway sem
       // capturar. Libera nova tentativa em vez de prender o comprador por
       // uma hora "em conferência"; a reserva antiga fica para a reconciliação.
-      if (metodo === "cartao" && statusAxxon(p.status) === "pending" && !p.nextAction) {
+      if (metodo === "cartao" && cartao && statusAxxon(p.status) === "pending" && !p.nextAction) {
         return tentativaEncerrada("A tentativa anterior não pôde ser confirmada e expira sem cobrança. Iniciando uma nova tentativa segura.", true);
       }
       return Response.json(await respostaAxxon(p, referencia));

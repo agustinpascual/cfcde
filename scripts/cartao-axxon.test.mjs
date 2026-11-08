@@ -191,7 +191,7 @@ test("configuração pública: chave só com cartão ativo e adquirente homologa
   const ok = rotaConfig({ pix: "axxonpay", cartao: "axxonpay" }, { publica: "pk_teste", provider: "bloopi", modo: "cru" });
   const r = await ok.GET();
   assert.equal(r.headers.get("cache-control"), "no-store");
-  assert.deepEqual(await r.json(), { pix: "axxonpay", cartao: "axxonpay", publicKey: "pk_teste", cartaoDisponivel: true, parcelas: cartao.PARCELAS_MAX });
+  assert.deepEqual(await r.json(), { pix: "axxonpay", cartao: "axxonpay", publicKey: "pk_teste", modoCartao: "cru", cartaoDisponivel: true, parcelas: cartao.PARCELAS_MAX });
 
   const recusada = rotaConfig({ pix: "pinpay", cartao: "axxonpay" }, new Error("não homologada"));
   assert.deepEqual(await (await recusada.GET()).json(), { pix: "pinpay", cartao: "desativado", publicKey: null, cartaoDisponivel: false, parcelas: cartao.PARCELAS_MAX });
@@ -428,4 +428,9 @@ test("envio Bloopi: falha de rede não repete uma confirmação", async () => {
   const resposta = await POST(req, { params: Promise.resolve({ path: "confirm-payment" }) });
   assert.equal(resposta.status, 502);
   assert.equal(chamadas, 1, "confirmação incerta não é reenviada");
+});
+
+test('public configuration exposes Getnet token mode without the secret key',async()=>{
+ const a=rotaConfig({pix:'pinpay',cartao:'axxonpay'},{publica:'pk_test',provider:'getnet',modo:'token'});
+ const d=await (await a.GET()).json();assert.equal(d.modoCartao,'token');assert.equal(d.cartaoDisponivel,true);assert.equal(d.secretKey,undefined);
 });

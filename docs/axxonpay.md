@@ -170,3 +170,11 @@ Pedidos antigos com referência `AXX-<uuid>` continuam recuperáveis sem altera�
 Testes locais: `node --test scripts/axxonpay.test.mjs scripts/axxonpay-fluxo.test.mjs scripts/axxonpay-http.test.mjs scripts/cartao-axxon.test.mjs scripts/pix-descricao.test.mjs`. Build: `npm run build`. Os testes simulam banco/gateway; não substituem transações de homologação na AxxonPay.
 
 Referências: [Pagamento direto](https://axxonpay.readme.io/reference/createdirectpayment), [SDK](https://axxonpay.readme.io/reference/get_docs-sdk-javascript), [Validação](https://axxonpay.readme.io/reference/post_api-v1-tokens-validate), [Consulta](https://axxonpay.readme.io/reference/get_api-v1-payments-id), [Webhook](https://axxonpay.readme.io/reference/post_api-v1-webhooks-normalized-examples).
+
+## Getnet — 08/11/2026
+
+Diagnóstico: Getnet ausente da lista de adquirentes e formulário restrito ao envio Bloopi. SDK oficial consultado em 08/11: `encrypt` chama o cofre Getnet e devolve `GN.*`, com fingerprint criado por `setPublicKey`.
+
+Correção: API pública informa modo token/cru; Getnet usa token; cartão bruto não é enviado ao servidor da loja nesse modo. Inicialização é compartilhada para conservar fingerprint. Pagamento tokenizado pendente sem nextAction é consultado sem liberar outra cobrança. Aprovação confirmada na resposta inicial também navega para a confirmação. Bloopi mantém caminho existente. CSP do checkout já permite app.axxonpay.com.br e online-metrix.net.
+
+Publicação: somente arquivos da CFC, em revisão isolada. Nenhuma credencial ou arquivo da Pattini incluído. GitHub aciona Dokploy via workflow existente. Ativação da Axxon no painel exige chaves válidas; nenhuma cobrança real será criada automaticamente.
